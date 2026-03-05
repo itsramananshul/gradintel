@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<meta name="description" content="Gradintel — Smart GPA tracker with AI, policies, export and more"/>
 <title>Gradintel</title>
+<link rel="manifest" href="data:application/json,{&quot;name&quot;:&quot;Gradintel&quot;,&quot;short_name&quot;:&quot;Gradintel&quot;,&quot;start_url&quot;:&quot;/&quot;,&quot;display&quot;:&quot;standalone&quot;,&quot;background_color&quot;:&quot;%2307070e&quot;,&quot;theme_color&quot;:&quot;%23818cf8&quot;,&quot;icons&quot;:[{&quot;src&quot;:&quot;data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>&quot;,&quot;sizes&quot;:&quot;any&quot;,&quot;type&quot;:&quot;image/svg+xml&quot;}]}"/>
 <link href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@400;500;600;700&family=Cabinet+Grotesk:wght@300;400;500;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
-<!-- Supabase SDK -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-/* ── PASTE YOUR SUPABASE KEYS AT THE TOP OF THE <script> SECTION BELOW ── */
 :root{
   --bg:#07070e;--surface:#0f0f1a;--surface2:#161624;--surface3:#1e1e2e;
   --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
@@ -25,12 +25,17 @@
   --text:#1e1b4b;--muted:#6b7280;--muted2:#4b5563;
   --shadow:0 4px 24px rgba(129,140,248,0.1);
 }
+[data-reduce-motion] *,[data-reduce-motion] *::before,[data-reduce-motion] *::after{
+  animation-duration:0.01ms!important;transition-duration:0.01ms!important;
+}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
 body{background:var(--bg);color:var(--text);font-family:'Cabinet Grotesk',sans-serif;
   font-size:15px;min-height:100vh;overflow-x:hidden;transition:background .3s,color .3s;cursor:none}
+body.reduced-motion{cursor:auto}
+body.reduced-motion #cur,body.reduced-motion #cur-ring{display:none}
 
-/* ── AMBIENT ── */
+/* AMBIENT */
 .bg-layer{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
 .bg-blob{position:absolute;border-radius:50%;filter:blur(110px);opacity:.11;animation:blobFloat 14s ease-in-out infinite}
 .bb1{width:700px;height:700px;top:-200px;left:-200px;background:var(--accent)}
@@ -62,7 +67,7 @@ body{background:var(--bg);color:var(--text);font-family:'Cabinet Grotesk',sans-s
 [data-theme="light"] .anno{display:none}
 [data-theme="light"] #bgCanvas{opacity:.25}
 
-/* ── CONFIG BANNER ── */
+/* CONFIG BANNER */
 .config-banner{position:fixed;top:0;left:0;right:0;z-index:500;
   background:linear-gradient(90deg,rgba(251,191,36,.15),rgba(248,113,113,.15));
   border-bottom:1px solid rgba(251,191,36,.3);
@@ -70,10 +75,9 @@ body{background:var(--bg);color:var(--text);font-family:'Cabinet Grotesk',sans-s
   display:flex;align-items:center;gap:10px;font-family:'Space Mono',monospace}
 .config-banner.hidden{display:none}
 
-/* ── AUTH ── */
+/* AUTH */
 .auth-wrap{position:fixed;inset:0;z-index:100;display:flex;align-items:center;
-  justify-content:center;padding:20px;
-  transition:opacity .4s,transform .4s}
+  justify-content:center;padding:20px;transition:opacity .4s,transform .4s}
 .auth-wrap.out{opacity:0;transform:scale(1.04);pointer-events:none}
 .auth-box{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r-xl);
   padding:40px 36px;width:100%;max-width:420px;position:relative;overflow:hidden;
@@ -110,12 +114,8 @@ body{background:var(--bg);color:var(--text);font-family:'Cabinet Grotesk',sans-s
   margin-bottom:14px;display:none}
 .auth-note{text-align:center;font-size:11px;color:var(--muted);margin-top:14px;line-height:1.7}
 .auth-note a{color:var(--accent);cursor:pointer;text-decoration:none}
-.auth-divider{display:flex;align-items:center;gap:12px;margin:14px 0;color:var(--muted);font-size:11px}
-.auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:var(--border2)}
-.loading-dots::after{content:'...';animation:ldots 1s infinite}
-@keyframes ldots{0%{content:'.'}33%{content:'..'}66%{content:'...'}100%{content:'.'}}
 
-/* ── ONBOARDING ── */
+/* ONBOARDING */
 .ob-wrap{position:fixed;inset:0;z-index:99;display:flex;align-items:center;
   justify-content:center;padding:20px;background:rgba(7,7,14,.95);backdrop-filter:blur(12px)}
 .ob-box{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r-xl);
@@ -133,8 +133,8 @@ body{background:var(--bg);color:var(--text);font-family:'Cabinet Grotesk',sans-s
 .mc-title{font-family:'Clash Display',sans-serif;font-weight:700;font-size:15px;margin-bottom:5px}
 .mc-desc{font-size:12px;color:var(--muted);line-height:1.5}
 
-/* ── APP ── */
-.app{position:relative;z-index:10;max-width:920px;margin:0 auto;padding:0 20px 100px;display:none}
+/* APP */
+.app{position:relative;z-index:10;max-width:960px;margin:0 auto;padding:0 20px 100px;display:none}
 
 /* TOPBAR */
 .topbar{display:flex;align-items:center;justify-content:space-between;padding:20px 0 8px}
@@ -172,6 +172,21 @@ body{background:var(--bg);color:var(--text);font-family:'Cabinet Grotesk',sans-s
 .stat-val{font-family:'Clash Display',sans-serif;font-weight:700;font-size:28px;line-height:1}
 .stat-sub{font-size:11px;color:var(--muted);margin-top:4px}
 
+/* GOAL RING */
+.goal-ring-wrap{display:flex;align-items:center;gap:20px;background:var(--surface2);
+  border:1px solid var(--border);border-radius:var(--r);padding:16px 20px;margin-bottom:16px}
+.goal-ring-svg{flex-shrink:0}
+.goal-ring-info{flex:1}
+.goal-ring-title{font-family:'Clash Display',sans-serif;font-weight:700;font-size:14px;margin-bottom:4px}
+.goal-ring-sub{font-size:12px;color:var(--muted)}
+
+/* AT RISK */
+.risk-card{background:rgba(248,113,113,.07);border:1px solid rgba(248,113,113,.25);
+  border-radius:var(--r);padding:13px 16px;margin-bottom:10px;display:flex;align-items:center;gap:12px}
+.risk-card .risk-ico{font-size:20px;flex-shrink:0}
+.risk-card .risk-name{font-family:'Clash Display',sans-serif;font-weight:700;font-size:13px}
+.risk-card .risk-msg{font-size:11px;color:var(--red);margin-top:2px}
+
 /* NAV */
 .nav-tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);
   border-radius:var(--r-lg);padding:5px;margin-bottom:22px;overflow-x:auto}
@@ -204,6 +219,7 @@ input:not(.af input)::placeholder{color:var(--muted)}
 select option{background:var(--surface2)}
 .field-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .field-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.field-row-4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px}
 
 /* TOGGLE */
 .tgl-group{display:flex;gap:6px}
@@ -229,7 +245,8 @@ select option{background:var(--surface2)}
 .btn-green{background:rgba(52,211,153,.12);color:var(--green);border:1px solid rgba(52,211,153,.28)}
 .btn-green:hover{background:rgba(52,211,153,.22)}
 .btn-red{background:rgba(248,113,113,.1);color:var(--red);border:1px solid rgba(248,113,113,.2);font-size:12px;padding:7px 14px}
-.btn-row{display:flex;gap:10px;justify-content:flex-end;margin-top:22px}
+.btn-yellow{background:rgba(251,191,36,.1);color:var(--yellow);border:1px solid rgba(251,191,36,.25);font-size:12px;padding:7px 14px}
+.btn-row{display:flex;gap:10px;justify-content:flex-end;margin-top:22px;flex-wrap:wrap}
 
 /* INFOBOX */
 .infobox{background:rgba(129,140,248,.07);border:1px solid rgba(129,140,248,.17);
@@ -238,6 +255,7 @@ select option{background:var(--surface2)}
 .infobox strong{color:var(--accent)}
 .infobox.green{background:rgba(52,211,153,.07);border-color:rgba(52,211,153,.2);color:var(--green)}
 .infobox.yellow{background:rgba(251,191,36,.07);border-color:rgba(251,191,36,.2);color:var(--yellow)}
+.infobox.red{background:rgba(248,113,113,.07);border-color:rgba(248,113,113,.2);color:var(--red)}
 
 /* COURSE ITEM */
 .course-item{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);
@@ -272,8 +290,6 @@ select option{background:var(--surface2)}
   clip-path:inset(0 0 50% 0);transform:translate(-2px,0);opacity:.4;pointer-events:none}
 .sh-num::after{content:attr(data-val);position:absolute;inset:0;color:var(--accent3);
   clip-path:inset(50% 0 0 0);transform:translate(2px,0);opacity:.4;pointer-events:none}
-.sh-num:hover::before{animation:caRed .2s steps(3) infinite}
-.sh-num:hover::after{animation:caGreen .2s steps(3) infinite}
 .sh-sub{margin-top:10px;font-size:13px;color:var(--muted)}
 .grade-pill{display:inline-block;padding:3px 12px;border-radius:100px;
   font-family:'Clash Display',sans-serif;font-weight:700;font-size:14px;margin-left:8px}
@@ -388,11 +404,14 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2)}
   padding:20px;opacity:0;pointer-events:none;transition:opacity .3s}
 .modal-overlay.show{opacity:1;pointer-events:all}
 .modal-box{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r-xl);
-  padding:30px;width:100%;max-width:440px;max-height:85vh;overflow-y:auto;
+  padding:30px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;
   transform:translateY(20px) scale(.97);transition:transform .3s;
   box-shadow:0 24px 80px rgba(0,0,0,.5)}
 .modal-overlay.show .modal-box{transform:translateY(0) scale(1)}
-.modal-title{font-family:'Clash Display',sans-serif;font-weight:700;font-size:20px;margin-bottom:20px}
+.modal-title{font-family:'Clash Display',sans-serif;font-weight:700;font-size:20px;margin-bottom:20px;
+  display:flex;align-items:center;justify-content:space-between}
+.modal-close{background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:20px;padding:4px}
+.modal-close:hover{color:var(--text)}
 
 /* SHARE */
 .share-preview{background:linear-gradient(135deg,#0f0f1a,#1a1a2e);
@@ -412,7 +431,7 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2)}
 .study-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;margin-bottom:10px}
 .study-h{font-family:'Clash Display',sans-serif;font-weight:700;font-size:30px;color:var(--accent4)}
 
-/* SYNC INDICATOR */
+/* SYNC */
 .sync-badge{display:inline-flex;align-items:center;gap:5px;font-size:10px;
   color:var(--green);letter-spacing:.08em;text-transform:uppercase}
 .sync-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulseDot 2s infinite}
@@ -429,6 +448,62 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2)}
 
 /* CONFETTI */
 .confetti-piece{position:fixed;top:-10px;border-radius:3px;animation:confettiFall linear both;pointer-events:none;z-index:9999}
+
+/* AI PANEL */
+.ai-input-wrap{position:relative}
+.ai-input-wrap textarea{min-height:80px;resize:vertical;padding:12px 14px;font-size:13px;line-height:1.6}
+.ai-send-btn{position:absolute;bottom:10px;right:10px;padding:7px 14px;border-radius:var(--r-sm);
+  border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;
+  cursor:pointer;font-family:'Clash Display',sans-serif;transition:all .2s}
+.ai-send-btn:hover{background:#6366f1}
+.ai-send-btn:disabled{opacity:.5;cursor:not-allowed}
+.ai-resp{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);
+  padding:14px;margin-top:14px;font-size:13px;line-height:1.7;display:none}
+.ai-resp.show{display:block;animation:fadeUp .3s ease both}
+.ai-typing::after{content:'▋';animation:blink .7s infinite}
+@keyframes blink{0%,50%{opacity:1}51%,100%{opacity:0}}
+
+/* POLICIES PANEL */
+.policy-section{margin-bottom:20px}
+.policy-title{font-family:'Clash Display',sans-serif;font-weight:700;font-size:13px;
+  color:var(--muted2);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px}
+.policy-row{display:flex;align-items:center;justify-content:space-between;
+  padding:11px 14px;background:var(--surface2);border:1px solid var(--border);
+  border-radius:var(--r-sm);margin-bottom:8px}
+.policy-label{font-size:13px;font-weight:600}
+.policy-desc{font-size:11px;color:var(--muted);margin-top:2px}
+.toggle-switch{position:relative;width:40px;height:22px;flex-shrink:0}
+.toggle-switch input{opacity:0;width:0;height:0}
+.toggle-track{position:absolute;inset:0;background:var(--surface3);border-radius:100px;
+  cursor:pointer;transition:background .2s}
+.toggle-track::before{content:'';position:absolute;width:16px;height:16px;left:3px;top:3px;
+  background:#fff;border-radius:50%;transition:transform .2s}
+.toggle-switch input:checked+.toggle-track{background:var(--accent)}
+.toggle-switch input:checked+.toggle-track::before{transform:translateX(18px)}
+
+/* SCALE SELECTOR */
+.scale-pills{display:flex;gap:6px;flex-wrap:wrap}
+.scale-pill{padding:6px 14px;border-radius:100px;border:1px solid var(--border2);
+  background:var(--surface2);cursor:pointer;font-size:12px;font-family:'Clash Display',sans-serif;
+  font-weight:700;color:var(--muted);transition:all .2s}
+.scale-pill.on{border-color:var(--accent);background:rgba(129,140,248,.12);color:var(--accent)}
+
+/* EXPORT PANEL */
+.export-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.export-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);
+  padding:18px;cursor:pointer;transition:all .2s;text-align:center}
+.export-card:hover{border-color:var(--accent);transform:translateY(-2px)}
+.export-ico{font-size:28px;margin-bottom:8px}
+.export-name{font-family:'Clash Display',sans-serif;font-weight:700;font-size:13px;margin-bottom:3px}
+.export-desc{font-size:11px;color:var(--muted)}
+
+/* CALENDAR EXAM */
+.cal-exam-row{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);
+  padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px}
+.cal-exam-row .cal-date{font-family:'Clash Display',sans-serif;font-weight:700;font-size:13px;
+  color:var(--accent);width:90px;flex-shrink:0}
+.cal-exam-row .cal-name{font-size:13px;font-weight:600}
+.cal-exam-row .cal-sub{font-size:11px;color:var(--muted)}
 
 /* ANIMATIONS */
 @keyframes fadeDown{from{opacity:0;transform:translateY(-16px)}to{opacity:1;transform:translateY(0)}}
@@ -448,52 +523,49 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2)}
 
 .hidden{display:none!important}
 @media(max-width:640px){
-  .field-row,.field-row-3{grid-template-columns:1fr}
+  .field-row,.field-row-3,.field-row-4{grid-template-columns:1fr}
   .cum-card{flex-direction:column;text-align:center}
   .dash-stats{grid-template-columns:1fr 1fr}
   .mode-grid{grid-template-columns:1fr}
+  .export-grid{grid-template-columns:1fr}
 }
 </style>
 </head>
 <body>
 
-<!-- AMBIENT -->
 <canvas id="bgCanvas"></canvas>
 <div class="bg-layer"><div class="bg-blob bb1"></div><div class="bg-blob bb2"></div><div class="bg-blob bb3"></div></div>
 <div class="bg-grid"></div>
 <div class="fog"></div><div class="fog2"></div>
 <div class="scanline"></div>
 <div class="anno anno-bl">STUDENT_SYSTEM<br/>SUPABASE_CLOUD</div>
-<div class="anno anno-br" id="anno-br">GRADINTEL<br/>v3.0_LIVE</div>
+<div class="anno anno-br" id="anno-br">GRADINTEL<br/>v4.0_LIVE</div>
 <div id="cur"></div><div id="cur-ring"></div>
 <div class="toast" id="toast"></div>
 
-<!-- CONFIG BANNER -->
 <div class="config-banner" id="config-banner">
-  ⚠️ &nbsp;SUPABASE NOT CONFIGURED — open this file and add your Project URL + Anon Key at the top of the &lt;script&gt; section. &nbsp;<a href="#" onclick="document.getElementById('config-banner').classList.add('hidden')" style="color:var(--yellow);text-decoration:underline">Dismiss</a>
+  ⚠️ &nbsp;SUPABASE NOT CONFIGURED — add your Project URL + Anon Key at the top of the &lt;script&gt; section. &nbsp;<a href="#" onclick="document.getElementById('config-banner').classList.add('hidden')" style="color:var(--yellow);text-decoration:underline">Dismiss</a>
 </div>
 
-<!-- ══ AUTH ══ -->
+<!-- AUTH -->
 <div class="auth-wrap" id="auth-wrap">
   <div class="auth-box">
     <div class="auth-logo">
       <span class="auth-logo-ico">📊</span>
       <div class="auth-logo-text">Gradintel</div>
-      <div class="auth-logo-sub">Cloud-synced · Works on any device</div>
+      <div class="auth-logo-sub">Cloud-synced · AI-powered · Works on any device</div>
     </div>
     <div class="auth-tabs">
       <button class="auth-tab on" onclick="switchAuth('in')" id="at-in">Sign In</button>
       <button class="auth-tab" onclick="switchAuth('up')" id="at-up">Create Account</button>
     </div>
     <div id="auth-err" class="auth-err"></div>
-
     <div id="auth-in">
       <div class="af"><label>Email</label><input type="email" id="in-email" placeholder="you@email.com" autocomplete="email"/></div>
       <div class="af"><label>Password</label><input type="password" id="in-pass" placeholder="••••••••" autocomplete="current-password"/></div>
       <button class="auth-btn" id="in-btn" onclick="doSignIn()">Sign In →</button>
       <div class="auth-note">Forgot password? <a onclick="doReset()">Reset via email</a></div>
     </div>
-
     <div id="auth-up" class="hidden">
       <div class="af"><label>Full Name</label><input type="text" id="up-name" placeholder="e.g. Sarah Ahmed"/></div>
       <div class="af"><label>Email</label><input type="email" id="up-email" placeholder="you@email.com" autocomplete="email"/></div>
@@ -505,7 +577,7 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2)}
   </div>
 </div>
 
-<!-- ══ ONBOARDING ══ -->
+<!-- ONBOARDING -->
 <div class="ob-wrap hidden" id="ob-wrap">
   <div class="ob-box">
     <div class="ob-step show" id="ob-1">
@@ -532,7 +604,7 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2)}
       <div class="ob-sub" id="ob2-sub">Enter your current GPA and credits so we can factor them into your cumulative.</div>
       <div id="ob2-fields">
         <div class="field-row">
-          <div class="field"><label>Current Cumulative GPA</label><input type="number" id="ob-gpa" placeholder="e.g. 3.45" min="0" max="4" step="0.01"/></div>
+          <div class="field"><label>Current Cumulative GPA</label><input type="number" id="ob-gpa" placeholder="e.g. 3.45" min="0" max="5" step="0.01"/></div>
           <div class="field"><label>Total Credits Done</label><input type="number" id="ob-credits" placeholder="e.g. 45" min="0"/></div>
         </div>
         <div class="field"><label>Semesters Completed</label><input type="number" id="ob-sems" placeholder="e.g. 3" min="1"/></div>
@@ -546,12 +618,13 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2)}
   </div>
 </div>
 
-<!-- ══ MAIN APP ══ -->
+<!-- MAIN APP -->
 <div class="app" id="app">
   <div class="topbar">
     <div class="logo">📊 Gradintel</div>
     <div class="topbar-r">
       <span class="sync-badge" id="sync-badge" style="display:none"><span class="sync-dot"></span>Synced</span>
+      <button class="icon-btn" onclick="toggleMotion()" id="motionBtn" title="Reduce Motion">✨</button>
       <button class="icon-btn" onclick="toggleTheme()" id="themeBtn" title="Theme">🌙</button>
       <button class="icon-btn" onclick="window.print()" title="Print">🖨️</button>
       <div class="user-pill" onclick="openUserModal()">
@@ -585,11 +658,16 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2)}
       <div class="stat-sub">total</div>
     </div>
     <div class="stat-card" style="animation-delay:.2s">
-      <div class="stat-lbl">Exams Logged</div>
-      <div class="stat-val" id="ds-exams">0</div>
-      <div class="stat-sub">scores entered</div>
+      <div class="stat-lbl">Credits Completed</div>
+      <div class="stat-val" id="ds-credits">0</div>
+      <div class="stat-sub" id="ds-credits-sub">total</div>
     </div>
   </div>
+
+  <!-- GOAL PROGRESS -->
+  <div id="goal-ring-section"></div>
+  <!-- AT RISK WARNING CENTER -->
+  <div id="risk-center"></div>
 
   <div class="nav-tabs">
     <button class="nav-tab active" onclick="showTab('dashboard')" id="tab-dashboard">🏠 Dashboard</button>
@@ -598,8 +676,12 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2)}
     <button class="nav-tab" onclick="showTab('whatif')" id="tab-whatif">🔮 What-If</button>
     <button class="nav-tab" onclick="showTab('study')" id="tab-study">⏱ Study Planner</button>
     <button class="nav-tab" onclick="showTab('history')" id="tab-history">📅 Semesters</button>
+    <button class="nav-tab" onclick="showTab('ai')" id="tab-ai">🤖 AI Assistant</button>
+    <button class="nav-tab" onclick="showTab('policies')" id="tab-policies">⚖️ Policies</button>
+    <button class="nav-tab" onclick="showTab('export')" id="tab-export">📦 Export</button>
   </div>
 
+  <!-- DASHBOARD -->
   <div id="tc-dashboard">
     <div id="dash-banner"></div>
     <div id="dash-list"></div>
@@ -609,6 +691,7 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2)}
     </div>
   </div>
 
+  <!-- TRACKER -->
   <div id="tc-tracker" class="hidden">
     <div class="steps">
       <div class="sw active" id="sw1"><div class="sw-node"><div class="sw-dot">1</div><div class="sw-lbl">Setup</div></div></div>
@@ -669,7 +752,7 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2)}
         <div class="share-preview" id="share-el"></div>
         <div class="btn-row">
           <button class="btn btn-green" onclick="copyShare()">📋 Copy Text</button>
-          <button class="btn btn-primary" onclick="dlReport()">⬇ Download Report</button>
+          <button class="btn btn-primary" onclick="dlReport()">⬇ Download Report (.txt)</button>
         </div>
       </div>
       <div style="text-align:center;margin-top:10px">
@@ -678,15 +761,17 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2)}
     </div>
   </div>
 
+  <!-- COURSES -->
   <div id="tc-courses" class="hidden">
     <div class="card">
       <div class="card-title"><span class="ico">📚</span>My Courses</div>
-      <div class="infobox">All your saved subjects. Click ➕ to log a new exam score — it <strong>instantly updates</strong> your GPA everywhere.</div>
+      <div class="infobox">Click ✏️ to <strong>edit anything</strong> — name, credits, weights, scores, even add or remove exams. Changes sync instantly.</div>
       <div id="sem-filter"></div>
       <div id="courses-list"></div>
     </div>
   </div>
 
+  <!-- WHAT-IF -->
   <div id="tc-whatif" class="hidden">
     <div class="card">
       <div class="card-title"><span class="ico">🔮</span>What-If Simulator</div>
@@ -695,14 +780,24 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2)}
     </div>
   </div>
 
+  <!-- STUDY -->
   <div id="tc-study" class="hidden">
     <div class="card">
       <div class="card-title"><span class="ico">⏱</span>Study Time Estimator</div>
-      <div class="infobox">Estimated study hours based on what you need to score per exam.</div>
+      <div class="infobox">Estimated study hours based on what you need to score per exam. <strong>Highest ROI exam</strong> is flagged with 🎯.</div>
       <div id="study-content"></div>
+    </div>
+    <div class="card" id="cal-card">
+      <div class="card-title"><span class="ico">📅</span>Exam Calendar & .ics Export</div>
+      <div class="infobox">Add dates to your exams, then export to Google Calendar, Apple Calendar, or Outlook.</div>
+      <div id="cal-content"></div>
+      <div class="btn-row">
+        <button class="btn btn-green" onclick="exportICS()">📅 Export .ics Calendar</button>
+      </div>
     </div>
   </div>
 
+  <!-- HISTORY -->
   <div id="tc-history" class="hidden">
     <div class="card">
       <div class="card-title"><span class="ico">📅</span>Semester History</div>
@@ -714,12 +809,142 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2)}
       <div class="chart-wrap"><canvas id="semTrendChart"></canvas></div>
     </div>
   </div>
+
+  <!-- AI ASSISTANT -->
+  <div id="tc-ai" class="hidden">
+    <div class="card">
+      <div class="card-title"><span class="ico">🤖</span>AI Study Assistant</div>
+      <div class="infobox">Ask anything in plain English. Try: <strong>"I have 3 exams left, midterm is 30% and I got 78 on it, final is 50%"</strong> — or ask for a study plan, ROI analysis, or grade strategy.</div>
+      <div class="ai-input-wrap">
+        <textarea id="ai-input" placeholder="e.g. 'What should I focus on to get a B+ in Calculus?' or 'I have Midterm worth 40% and got 72, Final is 60% not taken yet. What do I need?'" style="width:100%;padding:12px 14px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r-sm);color:var(--text);font-family:'Cabinet Grotesk',sans-serif;font-size:13px;line-height:1.6;resize:vertical;min-height:90px;outline:none;padding-bottom:48px"></textarea>
+        <button class="ai-send-btn" id="ai-send-btn" onclick="runAI()">Ask AI →</button>
+      </div>
+      <div class="ai-resp" id="ai-resp"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="ico">🎯</span>Highest ROI Exam</div>
+      <div class="infobox">Which exam will give you the biggest grade boost per hour studied?</div>
+      <div id="roi-content"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="ico">🗓️</span>AI Weekly Study Plan</div>
+      <div class="infobox">Enter your exam dates and available hours per day to auto-generate a weekly study schedule.</div>
+      <div class="field-row">
+        <div class="field"><label>Available hours/day</label><input type="number" id="plan-hrs" value="3" min="1" max="12"/></div>
+        <div class="field"><label>Days until next exam</label><input type="number" id="plan-days" value="14" min="1" max="90"/></div>
+      </div>
+      <div class="btn-row" style="margin-top:0">
+        <button class="btn btn-primary" onclick="genStudyPlan()">Generate Plan →</button>
+      </div>
+      <div id="plan-output" style="margin-top:16px"></div>
+    </div>
+  </div>
+
+  <!-- POLICIES -->
+  <div id="tc-policies" class="hidden">
+    <div class="card">
+      <div class="card-title"><span class="ico">⚖️</span>Grading Policies</div>
+      <div class="infobox">Match Gradintel to your institution's exact rules. These affect how your GPA is calculated everywhere in the app.</div>
+
+      <div class="policy-section">
+        <div class="policy-title">GPA Scale</div>
+        <div class="scale-pills" id="scale-pills"></div>
+      </div>
+
+      <div class="policy-section">
+        <div class="policy-title">Grade Rules</div>
+        <div class="policy-row">
+          <div><div class="policy-label">Grade Replacement (Retakes)</div><div class="policy-desc">When repeating a course, replace old grade instead of averaging</div></div>
+          <label class="toggle-switch"><input type="checkbox" id="pol-replace" onchange="savePolicy()"><span class="toggle-track"></span></label>
+        </div>
+        <div class="policy-row">
+          <div><div class="policy-label">Pass/No Pass Courses</div><div class="policy-desc">P/NP courses don't affect GPA (credit only)</div></div>
+          <label class="toggle-switch"><input type="checkbox" id="pol-pnp" onchange="savePolicy()"><span class="toggle-track"></span></label>
+        </div>
+        <div class="policy-row">
+          <div><div class="policy-label">Withdrawals (W) Excluded</div><div class="policy-desc">W grades don't count toward GPA calculation</div></div>
+          <label class="toggle-switch"><input type="checkbox" id="pol-withdraw" checked onchange="savePolicy()"><span class="toggle-track"></span></label>
+        </div>
+        <div class="policy-row">
+          <div><div class="policy-label">Weighted Courses (Honors/AP/IB)</div><div class="policy-desc">Allow courses to add bonus points to GPA scale</div></div>
+          <label class="toggle-switch"><input type="checkbox" id="pol-weighted" onchange="savePolicy()"><span class="toggle-track"></span></label>
+        </div>
+      </div>
+
+      <div class="policy-section">
+        <div class="policy-title">GPA Target Goal</div>
+        <div class="field-row">
+          <div class="field"><label>Target Cumulative GPA</label><input type="number" id="goal-gpa" placeholder="e.g. 3.5" min="0" max="5" step="0.01" oninput="savePolicy()"/></div>
+          <div class="field"><label>Total Target Credits</label><input type="number" id="goal-credits" placeholder="e.g. 120" min="0" oninput="savePolicy()"/></div>
+        </div>
+      </div>
+
+      <div class="btn-row" style="margin-top:0">
+        <button class="btn btn-primary" onclick="savePolicy();showToast('✅ Policies saved!')">Save Policies</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXPORT -->
+  <div id="tc-export" class="hidden">
+    <div class="card">
+      <div class="card-title"><span class="ico">📦</span>Export & Import</div>
+      <div class="infobox">Export your data in multiple formats, or import from a backup.</div>
+      <div class="export-grid">
+        <div class="export-card" onclick="exportJSON()">
+          <div class="export-ico">📄</div>
+          <div class="export-name">JSON Backup</div>
+          <div class="export-desc">Full data export · Import later</div>
+        </div>
+        <div class="export-card" onclick="exportCSV()">
+          <div class="export-ico">📊</div>
+          <div class="export-name">CSV Spreadsheet</div>
+          <div class="export-desc">All courses + grades · Open in Excel</div>
+        </div>
+        <div class="export-card" onclick="dlReport()">
+          <div class="export-ico">📝</div>
+          <div class="export-name">Text Report</div>
+          <div class="export-desc">Full academic summary</div>
+        </div>
+        <div class="export-card" onclick="exportICS()">
+          <div class="export-ico">📅</div>
+          <div class="export-name">Calendar (.ics)</div>
+          <div class="export-desc">Export exam dates · Add to any calendar</div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="card-title" style="font-size:14px;margin-bottom:12px"><span class="ico">📥</span>Import JSON Backup</div>
+      <div class="infobox yellow">⚠️ Importing will merge with your existing data, not replace it.</div>
+      <div class="field">
+        <label>Upload JSON file</label>
+        <input type="file" id="import-file" accept=".json" onchange="importJSON(this)" style="padding:8px"/>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT SUBJECT MODAL -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal-box" style="max-width:600px">
+    <div class="modal-title">
+      <span id="edit-modal-title">Edit Subject</span>
+      <button class="modal-close" onclick="closeEditModal()">✕</button>
+    </div>
+    <div id="edit-modal-body"></div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
+      <button class="btn btn-primary" id="edit-modal-save" onclick="saveEditModal()">Save Changes</button>
+    </div>
+  </div>
 </div>
 
 <!-- SCORE MODAL -->
 <div class="modal-overlay" id="score-modal">
   <div class="modal-box">
-    <div class="modal-title" id="modal-title">Update Exam Score</div>
+    <div class="modal-title">
+      <span id="modal-title">Update Exam Score</span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
     <div id="modal-body"></div>
     <div class="btn-row">
       <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
@@ -730,8 +955,11 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2)}
 
 <!-- USER MODAL -->
 <div class="modal-overlay" id="user-modal">
-  <div class="modal-box" style="max-width:340px">
-    <div class="modal-title">My Account</div>
+  <div class="modal-box" style="max-width:360px">
+    <div class="modal-title">
+      <span>My Account</span>
+      <button class="modal-close" onclick="document.getElementById('user-modal').classList.remove('show')">✕</button>
+    </div>
     <div id="user-modal-body"></div>
     <div class="btn-row">
       <button class="btn btn-red" onclick="doSignOut()">🚪 Sign Out</button>
@@ -742,18 +970,17 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2)}
 
 <script>
 // ══════════════════════════════════════════════════════════════
-//  ⚙️  SUPABASE CONFIG — REPLACE THESE TWO VALUES
-//  Get them from: supabase.com → your project → Settings → API
+//  ⚙️  SUPABASE CONFIG
 // ══════════════════════════════════════════════════════════════
-const SUPABASE_URL  = 'https://pbcahhkobxrrnqzeqhra.supabase.co';   // e.g. https://abcdefgh.supabase.co
-const SUPABASE_ANON = 'sb_publishable_JNjLBiahRGmxbY5pF9deeQ_PQ4dg8yl';      // long string starting with eyJ...
+const SUPABASE_URL  = 'https://pbcahhkobxrrnqzeqhra.supabase.co';
+const SUPABASE_ANON = 'sb_publishable_JNjLBiahRGmxbY5pF9deeQ_PQ4dg8yl';
 
 // ══════════════════════════════════════════════════════════════
-// INIT SUPABASE
+// INIT
 // ══════════════════════════════════════════════════════════════
 let sb = null;
 function initSupabase() {
-  if (SUPABASE_URL === 'YOUR_SUPABASE_PROJECT_URL') return false;
+  if (!SUPABASE_URL || SUPABASE_URL === 'YOUR_SUPABASE_PROJECT_URL') return false;
   try {
     sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
     document.getElementById('config-banner').classList.add('hidden');
@@ -762,34 +989,57 @@ function initSupabase() {
 }
 
 // ══════════════════════════════════════════════════════════════
-// GPA SCALE
+// GPA SCALES
 // ══════════════════════════════════════════════════════════════
-const GPA=[
-  {l:'A',p:4.0,m:93},{l:'A-',p:3.6667,m:90},
-  {l:'B+',p:3.3333,m:87},{l:'B',p:3.0,m:83},
-  {l:'B-',p:2.6667,m:80},{l:'C+',p:2.3333,m:77},
-  {l:'C',p:2.0,m:73},{l:'C-',p:1.6667,m:70},
-  {l:'D+',p:1.3333,m:67},{l:'D',p:1.0,m:63},
-  {l:'D-',p:0.6667,m:60},{l:'F',p:0.0,m:0}
-];
+const GPA_SCALES = {
+  '4.0': [
+    {l:'A',p:4.0,m:93},{l:'A-',p:3.6667,m:90},
+    {l:'B+',p:3.3333,m:87},{l:'B',p:3.0,m:83},
+    {l:'B-',p:2.6667,m:80},{l:'C+',p:2.3333,m:77},
+    {l:'C',p:2.0,m:73},{l:'C-',p:1.6667,m:70},
+    {l:'D+',p:1.3333,m:67},{l:'D',p:1.0,m:63},
+    {l:'D-',p:0.6667,m:60},{l:'F',p:0.0,m:0}
+  ],
+  '4.3': [
+    {l:'A+',p:4.3,m:97},{l:'A',p:4.0,m:93},{l:'A-',p:3.7,m:90},
+    {l:'B+',p:3.3,m:87},{l:'B',p:3.0,m:83},{l:'B-',p:2.7,m:80},
+    {l:'C+',p:2.3,m:77},{l:'C',p:2.0,m:73},{l:'C-',p:1.7,m:70},
+    {l:'D+',p:1.3,m:67},{l:'D',p:1.0,m:63},{l:'F',p:0.0,m:0}
+  ],
+  '5.0': [
+    {l:'A',p:5.0,m:93},{l:'A-',p:4.667,m:90},
+    {l:'B+',p:4.333,m:87},{l:'B',p:4.0,m:83},{l:'B-',p:3.667,m:80},
+    {l:'C+',p:3.333,m:77},{l:'C',p:3.0,m:73},{l:'C-',p:2.667,m:70},
+    {l:'D+',p:2.333,m:67},{l:'D',p:2.0,m:63},{l:'F',p:0.0,m:0}
+  ]
+};
+let GPA = GPA_SCALES['4.0'];
 const pctToG = s => GPA.find(g=>s>=g.m)||GPA[GPA.length-1];
-const gCol   = l => ({A:'#34d399','A-':'#6ee7b7','B+':'#818cf8',B:'#a78bfa','B-':'#c4b5fd','C+':'#fbbf24',C:'#fcd34d','C-':'#fde68a','D+':'#f87171',D:'#fca5a5','D-':'#fecaca',F:'#ef4444'}[l]||'#6b7280');
+const gCol = l => ({
+  'A+':'#10b981','A':'#34d399','A-':'#6ee7b7',
+  'B+':'#818cf8','B':'#a78bfa','B-':'#c4b5fd',
+  'C+':'#fbbf24','C':'#fcd34d','C-':'#fde68a',
+  'D+':'#f87171','D':'#fca5a5','D-':'#fecaca','F':'#ef4444'
+}[l]||'#6b7280');
 const closestL = gpa => GPA.reduce((b,g)=>Math.abs(g.p-gpa)<Math.abs(b.p-gpa)?g:b).l;
 
 // ══════════════════════════════════════════════════════════════
 // STATE
 // ══════════════════════════════════════════════════════════════
-let currentUser = null;        // Supabase user object
-let profile     = null;        // row from gpa_profiles table
-let semesters   = [];          // cached from DB
-let appMode     = 'single';
-let calcSubjs   = [], calcRes  = [];
+let currentUser = null;
+let profile = null;
+let semesters = [];
+let policies = { scale:'4.0', replace:false, pnp:false, withdraw:true, weighted:false, goalGpa:0, goalCredits:0 };
+let appMode = 'single';
+let calcSubjs = [], calcRes = [];
 let activeCalcIdx = 0;
-let modalCtx    = null;
-let chartInst   = null, trendInst = null, semTrendInst = null;
+let modalCtx = null;
+let editCtx = null;
+let chartInst = null, trendInst = null, semTrendInst = null;
+let examDates = {}; // examId -> date string
 
 // ══════════════════════════════════════════════════════════════
-// AUTH FLOW
+// AUTH
 // ══════════════════════════════════════════════════════════════
 function switchAuth(tab) {
   ['in','up'].forEach(t => {
@@ -806,9 +1056,9 @@ function setAuthLoading(id, loading) {
 }
 
 async function doSignIn() {
-  if (!sb) { showAuthErr('Supabase not configured. See setup instructions.'); return; }
+  if (!sb) { showAuthErr('Supabase not configured.'); return; }
   const email = document.getElementById('in-email').value.trim();
-  const pass  = document.getElementById('in-pass').value;
+  const pass = document.getElementById('in-pass').value;
   if (!email||!pass) { showAuthErr('Fill in all fields.'); return; }
   setAuthLoading('in-btn', true);
   const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
@@ -817,39 +1067,30 @@ async function doSignIn() {
   currentUser = data.user;
   await onAuthSuccess();
 }
-
 async function doSignUp() {
-  if (!sb) { showAuthErr('Supabase not configured. See setup instructions.'); return; }
-  const name  = document.getElementById('up-name').value.trim();
+  if (!sb) { showAuthErr('Supabase not configured.'); return; }
+  const name = document.getElementById('up-name').value.trim();
   const email = document.getElementById('up-email').value.trim();
-  const pass  = document.getElementById('up-pass').value;
-  const uni   = document.getElementById('up-uni').value.trim();
+  const pass = document.getElementById('up-pass').value;
+  const uni = document.getElementById('up-uni').value.trim();
   if (!name||!email||!pass) { showAuthErr('Please fill in name, email and password.'); return; }
   if (pass.length < 6) { showAuthErr('Password must be at least 6 characters.'); return; }
   setAuthLoading('up-btn', true);
-  const { data, error } = await sb.auth.signUp({
-    email, password: pass,
-    options: { data: { full_name: name, university: uni } }
-  });
+  const { data, error } = await sb.auth.signUp({ email, password: pass, options: { data: { full_name: name, university: uni } } });
   setAuthLoading('up-btn', false);
   if (error) { showAuthErr(error.message); return; }
-  if (data.user && !data.session) {
-    showAuthErr('Check your email to confirm your account, then sign in.');
-    switchAuth('in'); return;
-  }
+  if (data.user && !data.session) { showAuthErr('Check your email to confirm your account, then sign in.'); switchAuth('in'); return; }
   currentUser = data.user;
   await onAuthSuccess();
 }
-
 async function doReset() {
   if (!sb) return;
   const email = document.getElementById('in-email').value.trim();
   if (!email) { showAuthErr('Enter your email above first.'); return; }
   const { error } = await sb.auth.resetPasswordForEmail(email);
   if (error) showAuthErr(error.message);
-  else showAuthErr('✅ Password reset email sent! Check your inbox.');
+  else showAuthErr('✅ Password reset email sent!');
 }
-
 async function doSignOut() {
   if (sb) await sb.auth.signOut();
   currentUser = null; profile = null; semesters = [];
@@ -863,51 +1104,33 @@ async function doSignOut() {
   document.getElementById('auth-err').style.display = 'none';
   showToast('Signed out.');
 }
-
 async function onAuthSuccess() {
-  // Hide auth
   document.getElementById('auth-wrap').classList.add('out');
   setTimeout(() => document.getElementById('auth-wrap').style.display = 'none', 400);
-  // Load or create profile
   await loadProfile();
 }
 
 // ══════════════════════════════════════════════════════════════
-// PROFILE & DATA (Supabase DB)
+// DB
 // ══════════════════════════════════════════════════════════════
 async function loadProfile() {
-  const { data, error } = await sb
-    .from('gpa_profiles')
-    .select('*')
-    .eq('user_id', currentUser.id)
-    .single();
-
+  const { data, error } = await sb.from('gpa_profiles').select('*').eq('user_id', currentUser.id).single();
   if (error || !data) {
-    // No profile yet → show onboarding
     document.getElementById('ob-wrap').classList.remove('hidden');
   } else {
     profile = data;
     await loadSemesters();
+    loadPolicies();
     launchApp();
   }
 }
-
 async function loadSemesters() {
-  const { data, error } = await sb
-    .from('gpa_semesters')
-    .select('*')
-    .eq('user_id', currentUser.id)
-    .order('created_at', { ascending: true });
+  const { data, error } = await sb.from('gpa_semesters').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: true });
   if (!error && data) semesters = data.map(s => ({ ...s, subjects: s.subjects || [] }));
   else semesters = [];
 }
-
 async function saveSemesterToDB(sem) {
-  const { data, error } = await sb
-    .from('gpa_semesters')
-    .upsert({ ...sem, user_id: currentUser.id }, { onConflict: 'id' })
-    .select()
-    .single();
+  const { data, error } = await sb.from('gpa_semesters').upsert({ ...sem, user_id: currentUser.id }, { onConflict: 'id' }).select().single();
   if (!error && data) {
     const idx = semesters.findIndex(s => s.id === data.id);
     if (idx >= 0) semesters[idx] = data;
@@ -915,17 +1138,61 @@ async function saveSemesterToDB(sem) {
   }
   showSyncBadge();
 }
-
 async function deleteSemesterFromDB(id) {
   await sb.from('gpa_semesters').delete().eq('id', id);
   semesters = semesters.filter(s => s.id !== id);
   showSyncBadge();
 }
-
 function showSyncBadge() {
   const b = document.getElementById('sync-badge');
   b.style.display = 'inline-flex';
   setTimeout(() => b.style.display = 'none', 3000);
+}
+
+// ══════════════════════════════════════════════════════════════
+// POLICIES
+// ══════════════════════════════════════════════════════════════
+function loadPolicies() {
+  try {
+    const stored = localStorage.getItem('gradintel-policies-'+currentUser.id);
+    if (stored) policies = { ...policies, ...JSON.parse(stored) };
+  } catch(e) {}
+  GPA = GPA_SCALES[policies.scale] || GPA_SCALES['4.0'];
+  renderPoliciesUI();
+}
+function savePolicy() {
+  policies.scale = document.querySelector('.scale-pill.on')?.dataset.scale || '4.0';
+  policies.replace = document.getElementById('pol-replace')?.checked || false;
+  policies.pnp = document.getElementById('pol-pnp')?.checked || false;
+  policies.withdraw = document.getElementById('pol-withdraw')?.checked !== false;
+  policies.weighted = document.getElementById('pol-weighted')?.checked || false;
+  policies.goalGpa = parseFloat(document.getElementById('goal-gpa')?.value) || 0;
+  policies.goalCredits = parseFloat(document.getElementById('goal-credits')?.value) || 0;
+  GPA = GPA_SCALES[policies.scale] || GPA_SCALES['4.0'];
+  if (currentUser) localStorage.setItem('gradintel-policies-'+currentUser.id, JSON.stringify(policies));
+  updateStats(); renderDashboard();
+}
+function renderPoliciesUI() {
+  const sp = document.getElementById('scale-pills');
+  if (!sp) return;
+  sp.innerHTML = Object.keys(GPA_SCALES).map(k =>
+    `<div class="scale-pill ${k===policies.scale?'on':''}" data-scale="${k}" onclick="selectScale('${k}')">${k} Scale</div>`
+  ).join('');
+  const setChk = (id, val) => { const el=document.getElementById(id); if(el) el.checked=val; };
+  setChk('pol-replace', policies.replace);
+  setChk('pol-pnp', policies.pnp);
+  setChk('pol-withdraw', policies.withdraw);
+  setChk('pol-weighted', policies.weighted);
+  const setInp = (id, val) => { const el=document.getElementById(id); if(el&&val) el.value=val; };
+  setInp('goal-gpa', policies.goalGpa || '');
+  setInp('goal-credits', policies.goalCredits || '');
+}
+function selectScale(k) {
+  document.querySelectorAll('.scale-pill').forEach(p => p.classList.toggle('on', p.dataset.scale===k));
+  policies.scale = k;
+  GPA = GPA_SCALES[k];
+  savePolicy();
+  showToast(`✅ Switched to ${k} GPA scale`);
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -970,9 +1237,10 @@ async function obFinish() {
     start_sems: obMode === 'existing' ? (parseInt(document.getElementById('ob-sems').value)||0) : 0,
   };
   const { data, error } = await sb.from('gpa_profiles').insert(profileData).select().single();
-  if (error) { btn.disabled=false; btn.textContent='Start Tracking →'; showToast('Error saving profile: '+error.message); return; }
+  if (error) { btn.disabled=false; btn.textContent='Start Tracking →'; showToast('Error: '+error.message); return; }
   profile = data;
   document.getElementById('ob-wrap').classList.add('hidden');
+  loadPolicies();
   launchApp();
 }
 
@@ -989,153 +1257,254 @@ function launchApp() {
     ? `${profile.university} · GPA Dashboard`
     : 'Your GPA Dashboard · Works on any device';
   document.getElementById('anno-br').innerHTML = `GRADINTEL<br/>${name.toUpperCase()}_ONLINE`;
+  examDates = JSON.parse(localStorage.getItem('gradintel-dates-'+(currentUser?.id||'')) || '{}');
   updateStats();
   renderDashboard();
   renderCourses();
   renderWIFull();
   renderStudy();
+  renderROI();
   initAnimations();
 }
 
 // ══════════════════════════════════════════════════════════════
-// COMPUTE
+// COMPUTE — only counts TAKEN exams for current score
 // ══════════════════════════════════════════════════════════════
 function computeSubject(s) {
-  const op=s.other_pct/100, os=s.other_score/100, ep=s.exam_pct/100;
-  let earned=op*os, remW=0;
-  (s.exams||[]).forEach(e => {
-    const wf=e.weight/100;
-    if (e.taken && e.score!==null) earned+=ep*wf*(e.score/100);
-    else remW+=wf;
+  const op = s.other_pct / 100;
+  const os = s.other_score / 100;
+  const ep = s.exam_pct / 100;
+  let earned = op * os;
+  let totalTakenWeight = 0;
+  let remW = 0;
+  (s.exams || []).forEach(e => {
+    const wf = e.weight / 100;
+    if (e.taken && e.score !== null) {
+      earned += ep * wf * (e.score / 100);
+      totalTakenWeight += wf;
+    } else {
+      remW += wf;
+    }
   });
-  const cur=earned*100;
-  const curG=pctToG(cur);
-  const remFrac=remW*ep;
-  const remExams=(s.exams||[]).filter(e=>!e.taken).map(e=>({name:e.name,weight:e.weight,gf:e.weight/100*ep,id:e.id}));
-  const takenExams=(s.exams||[]).filter(e=>e.taken).map(e=>({name:e.name,weight:e.weight,score:e.score,id:e.id}));
-  const targets=GPA.map(g=>{
-    const avg=remFrac<0.001?null:(g.m-cur)/(remFrac*100)*100;
-    const perExam=remExams.map(ex=>{
-      const of=remFrac-ex.gf;
-      const assumed=avg===null||avg>100?75:Math.max(0,Math.min(100,avg));
-      const oc=of*(assumed/100)*100;
-      const nd=ex.gf<0.001?null:(g.m-cur-oc)/(ex.gf*100)*100;
-      return{name:ex.name,gf:ex.gf,needed:nd,id:ex.id};
+  // cur = score based only on taken portions (not projecting untaken)
+  const takenFrac = op + ep * totalTakenWeight;
+  const cur = takenFrac > 0 ? (earned / takenFrac) * 100 : 0;
+  const curG = pctToG(cur);
+  const remFrac = remW * ep;
+  const remExams = (s.exams || []).filter(e => !e.taken).map(e => ({ name: e.name, weight: e.weight, gf: e.weight / 100 * ep, id: e.id }));
+  const takenExams = (s.exams || []).filter(e => e.taken).map(e => ({ name: e.name, weight: e.weight, score: e.score, id: e.id }));
+
+  // For targets: project what final score would be
+  const earnedAbs = op * os + ep * totalTakenWeight * (takenExams.reduce((a,e)=> a + (e.score/100 * (e.weight/100)), 0) / Math.max(totalTakenWeight, 0.001) || 0);
+  const earnedRaw = op * os;
+  takenExams.forEach(e => { earnedRaw; });
+  let e2 = op * os;
+  (s.exams||[]).forEach(e => { if(e.taken && e.score!==null) e2 += ep*(e.weight/100)*(e.score/100); });
+  const curAbsolute = e2 * 100; // absolute score so far as fraction of 100%
+
+  const targets = GPA.map(g => {
+    const avg = remFrac < 0.001 ? null : (g.m - curAbsolute) / (remFrac * 100) * 100;
+    const perExam = remExams.map(ex => {
+      const of = remFrac - ex.gf;
+      const assumed = avg === null || avg > 100 ? 75 : Math.max(0, Math.min(100, avg));
+      const oc = of * (assumed / 100) * 100;
+      const nd = ex.gf < 0.001 ? null : (g.m - curAbsolute - oc) / (ex.gf * 100) * 100;
+      return { name: ex.name, gf: ex.gf, needed: nd, id: ex.id };
     });
-    return{...g,avg,perExam};
+    return { ...g, avg, perExam };
   });
-  return{cur,curG,remFrac,remExams,takenExams,targets};
+
+  return { cur, curG, remFrac, remExams, takenExams, targets, curAbsolute };
 }
 
 function computeAllGPA() {
-  let totalCP=0, totalCR=0, totalSubjs=0, totalExams=0;
-  if (profile.mode==='existing' && profile.start_gpa>0) {
+  let totalCP = 0, totalCR = 0, totalSubjs = 0, totalExams = 0;
+  if (profile.mode === 'existing' && profile.start_gpa > 0) {
     totalCP += profile.start_gpa * profile.start_credits;
     totalCR += profile.start_credits;
   }
   semesters.forEach(sem => {
-    let semCP=0, semCR=0;
-    (sem.subjects||[]).forEach(s => {
-      const res=computeSubject(s);
-      totalCP+=s.credits*res.curG.p; totalCR+=s.credits;
-      semCP+=s.credits*res.curG.p; semCR+=s.credits;
+    let semCP = 0, semCR = 0;
+    (sem.subjects || []).forEach(s => {
+      if (s.status === 'W' && policies.withdraw) return; // skip withdrawals
+      if (s.status === 'P' && policies.pnp) { totalCR += s.credits; return; } // P/NP
+      const res = computeSubject(s);
+      totalCP += s.credits * res.curG.p; totalCR += s.credits;
+      semCP += s.credits * res.curG.p; semCR += s.credits;
       totalSubjs++;
-      totalExams+=(s.exams||[]).filter(e=>e.taken).length;
+      totalExams += (s.exams || []).filter(e => e.taken).length;
     });
-    sem._gpa = semCR ? semCP/semCR : 0;
+    sem._gpa = semCR ? semCP / semCR : 0;
   });
-  return { cumGPA: totalCR?totalCP/totalCR:0, totalCR, totalSubjs, totalExams };
+  return { cumGPA: totalCR ? totalCP / totalCR : 0, totalCR, totalSubjs, totalExams };
 }
 
 function updateStats() {
-  const{cumGPA,totalCR,totalSubjs,totalExams}=computeAllGPA();
-  const cl=closestL(cumGPA); const col=gCol(cl);
-  const gpaEl=document.getElementById('ds-gpa');
-  gpaEl.textContent=cumGPA>0?cumGPA.toFixed(4):'—';
-  gpaEl.dataset.val=gpaEl.textContent;
-  gpaEl.style.color=cumGPA>0?col:'var(--muted)';
-  document.getElementById('ds-gpa-sub').textContent=cumGPA>0?`${cl} · ${totalCR} credits`:'No data yet';
-  const sem=semesters[semesters.length-1];
+  const { cumGPA, totalCR, totalSubjs } = computeAllGPA();
+  const cl = closestL(cumGPA); const col = gCol(cl);
+  const gpaEl = document.getElementById('ds-gpa');
+  gpaEl.textContent = cumGPA > 0 ? cumGPA.toFixed(4) : '—';
+  gpaEl.dataset.val = gpaEl.textContent;
+  gpaEl.style.color = cumGPA > 0 ? col : 'var(--muted)';
+  document.getElementById('ds-gpa-sub').textContent = cumGPA > 0 ? `${cl} · ${policies.scale} scale` : 'No data yet';
+  const sem = semesters[semesters.length - 1];
   if (sem) {
-    document.getElementById('ds-sem').textContent=(sem._gpa||0).toFixed(4);
-    document.getElementById('ds-sem').style.color=gCol(closestL(sem._gpa||0));
-    document.getElementById('ds-sem-sub').textContent=sem.name;
+    document.getElementById('ds-sem').textContent = (sem._gpa || 0).toFixed(4);
+    document.getElementById('ds-sem').style.color = gCol(closestL(sem._gpa || 0));
+    document.getElementById('ds-sem-sub').textContent = sem.name;
   }
-  document.getElementById('ds-subjs').textContent=totalSubjs;
-  document.getElementById('ds-exams').textContent=totalExams;
+  document.getElementById('ds-subjs').textContent = totalSubjs;
+  document.getElementById('ds-credits').textContent = totalCR.toFixed(0);
+  document.getElementById('ds-credits-sub').textContent = policies.goalCredits ? `of ${policies.goalCredits} target` : 'total';
+  renderGoalRing(cumGPA, totalCR);
+  renderRiskCenter();
+}
+
+// ══════════════════════════════════════════════════════════════
+// GOAL RING
+// ══════════════════════════════════════════════════════════════
+function renderGoalRing(cumGPA, totalCR) {
+  const el = document.getElementById('goal-ring-section');
+  if (!policies.goalGpa || policies.goalGpa <= 0) { el.innerHTML = ''; return; }
+  const pct = Math.min(1, cumGPA / policies.goalGpa);
+  const r = 36, cx = 44, cy = 44, stroke = 7;
+  const circ = 2 * Math.PI * r;
+  const dash = pct * circ;
+  const col = cumGPA >= policies.goalGpa ? '#34d399' : cumGPA >= policies.goalGpa * 0.8 ? '#fbbf24' : '#f87171';
+  const semNeeded = computeSemNeeded(cumGPA, totalCR);
+  el.innerHTML = `<div class="goal-ring-wrap">
+    <svg class="goal-ring-svg" width="88" height="88" viewBox="0 0 88 88">
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="${stroke}"/>
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${col}" stroke-width="${stroke}"
+        stroke-dasharray="${dash} ${circ}" stroke-dashoffset="${circ/4}" stroke-linecap="round"
+        style="transition:stroke-dasharray 1s ease"/>
+      <text x="${cx}" y="${cy-4}" text-anchor="middle" fill="${col}" font-family="'Clash Display',sans-serif" font-weight="700" font-size="13">${(pct*100).toFixed(0)}%</text>
+      <text x="${cx}" y="${cy+12}" text-anchor="middle" fill="#6b7280" font-size="9">of goal</text>
+    </svg>
+    <div class="goal-ring-info">
+      <div class="goal-ring-title">GPA Goal: ${policies.goalGpa.toFixed(2)}</div>
+      <div class="goal-ring-sub" style="margin-bottom:6px">Current: <strong style="color:${col}">${cumGPA.toFixed(4)}</strong>${cumGPA>=policies.goalGpa?' 🎉 Goal reached!':` · Need ${(policies.goalGpa-cumGPA).toFixed(4)} more`}</div>
+      ${semNeeded ? `<div class="goal-ring-sub">Need <strong>${semNeeded}</strong> this semester to stay on track</div>` : ''}
+    </div>
+  </div>`;
+}
+function computeSemNeeded(cumGPA, totalCR) {
+  if (!policies.goalGpa || !policies.goalCredits) return null;
+  const remainCR = policies.goalCredits - totalCR;
+  if (remainCR <= 0) return null;
+  const needed = (policies.goalGpa * policies.goalCredits - cumGPA * totalCR) / remainCR;
+  if (needed <= 0) return 'Any GPA';
+  const maxGPA = Math.max(...GPA.map(g=>g.p));
+  if (needed > maxGPA) return 'Not achievable';
+  return `${needed.toFixed(2)} GPA`;
+}
+
+// ══════════════════════════════════════════════════════════════
+// AT RISK CENTER
+// ══════════════════════════════════════════════════════════════
+function renderRiskCenter() {
+  const el = document.getElementById('risk-center');
+  const risks = [];
+  semesters.forEach(sem => {
+    (sem.subjects || []).forEach(s => {
+      const res = computeSubject(s);
+      if (res.remExams.length > 0) {
+        const bTarget = res.targets.find(t => t.l === 'B') || res.targets[3];
+        const allImpossible = bTarget && bTarget.perExam.every(e => e.needed !== null && e.needed > 100);
+        const cTarget = res.targets.find(t => t.l === 'C');
+        const cImpossible = cTarget && cTarget.perExam.every(e => e.needed !== null && e.needed > 100);
+        if (cImpossible) {
+          risks.push({ name: s.name, sem: sem.name, msg: 'Passing grade (C) is at risk — all remaining marks needed', level: 'critical' });
+        } else if (allImpossible) {
+          risks.push({ name: s.name, sem: sem.name, msg: 'B grade is no longer achievable — focus on locking in a C+', level: 'warn' });
+        }
+      }
+    });
+  });
+  if (!risks.length) { el.innerHTML = ''; return; }
+  el.innerHTML = risks.map(r => `
+    <div class="risk-card">
+      <div class="risk-ico">${r.level==='critical'?'🚨':'⚠️'}</div>
+      <div>
+        <div class="risk-name">${r.name} <span style="font-size:11px;font-weight:400;color:var(--muted)">· ${r.sem}</span></div>
+        <div class="risk-msg">${r.msg}</div>
+      </div>
+    </div>`).join('');
 }
 
 // ══════════════════════════════════════════════════════════════
 // DASHBOARD
 // ══════════════════════════════════════════════════════════════
 function renderDashboard() {
-  const banner=document.getElementById('dash-banner');
-  const list=document.getElementById('dash-list');
-  banner.innerHTML=''; list.innerHTML='';
+  const banner = document.getElementById('dash-banner');
+  const list = document.getElementById('dash-list');
+  banner.innerHTML = ''; list.innerHTML = '';
   if (!semesters.length) {
-    list.innerHTML=`<div class="infobox" style="text-align:center;padding:24px">No subjects yet. Go to <strong>Add Subject</strong> to start! 🚀</div>`;
-    document.getElementById('dash-chart-card').style.display='none'; return;
+    list.innerHTML = `<div class="infobox" style="text-align:center;padding:24px">No subjects yet. Go to <strong>Add Subject</strong> to start! 🚀</div>`;
+    document.getElementById('dash-chart-card').style.display = 'none'; return;
   }
-  const sem=semesters[semesters.length-1];
-  banner.innerHTML=`<div class="infobox" style="margin-bottom:16px">
-    📅 <strong>${sem.name}</strong> · ${(sem.subjects||[]).length} subject${(sem.subjects||[]).length!==1?'s':''} ·
-    <span style="color:var(--accent3)">${sem._gpa?sem._gpa.toFixed(4)+' GPA':''}</span>
+  const sem = semesters[semesters.length - 1];
+  banner.innerHTML = `<div class="infobox" style="margin-bottom:16px">
+    📅 <strong>${sem.name}</strong> · ${(sem.subjects || []).length} subject${(sem.subjects || []).length !== 1 ? 's' : ''} ·
+    <span style="color:var(--accent3)">${sem._gpa ? sem._gpa.toFixed(4) + ' GPA' : ''}</span>
     &nbsp;<span class="sync-badge" style="display:inline-flex"><span class="sync-dot"></span>Cloud Synced</span>
   </div>`;
-  (sem.subjects||[]).forEach(s => {
-    const res=computeSubject(s); const col=gCol(res.curG.l);
-    const rem=res.remExams.length;
-    const card=document.createElement('div'); card.className='course-item';
-    card.innerHTML=`<div class="ci-ico">📚</div>
+  (sem.subjects || []).forEach(s => {
+    const res = computeSubject(s); const col = gCol(res.curG.l);
+    const rem = res.remExams.length;
+    const card = document.createElement('div'); card.className = 'course-item';
+    card.innerHTML = `<div class="ci-ico">📚</div>
       <div class="ci-info">
-        <div class="ci-name">${s.name}</div>
-        <div class="ci-meta">${s.credits} cr · ${rem>0?`<span style="color:var(--yellow)">${rem} exam${rem!==1?'s':''} remaining</span>`:'<span style="color:var(--green)">All done ✓</span>'}</div>
+        <div class="ci-name">${s.name}${s.status==='W'?' <span style="color:var(--muted);font-size:11px">[W]</span>':s.status==='P'?' <span style="color:var(--accent3);font-size:11px">[P/NP]</span>':''}</div>
+        <div class="ci-meta">${s.credits} cr · ${rem > 0 ? `<span style="color:var(--yellow)">${rem} exam${rem !== 1 ? 's' : ''} remaining</span>` : '<span style="color:var(--green)">All done ✓</span>'}</div>
       </div>
       <div class="ci-grade" style="color:${col}">${res.curG.l}</div>
       <div class="ci-actions">
-        ${rem>0?`<button class="ca-btn" onclick="openAddScore('${sem.id}','${s.id}')" title="Add score">➕</button>`:''}
+        ${rem > 0 ? `<button class="ca-btn" onclick="openAddScore('${sem.id}','${s.id}')" title="Add score">➕</button>` : ''}
+        <button class="ca-btn" onclick="openEditSubject('${sem.id}','${s.id}')" title="Edit subject">✏️</button>
         <button class="ca-btn" onclick="viewDetail('${sem.id}','${s.id}')" title="Details">👁</button>
       </div>`;
     list.appendChild(card);
   });
   buildTrendChart();
-  document.getElementById('dash-chart-card').style.display='block';
+  document.getElementById('dash-chart-card').style.display = 'block';
 }
 
 // ══════════════════════════════════════════════════════════════
 // COURSES TAB
 // ══════════════════════════════════════════════════════════════
 function renderCourses() {
-  const sf=document.getElementById('sem-filter');
-  const cl=document.getElementById('courses-list');
-  sf.innerHTML=''; cl.innerHTML='';
-  if (!semesters.length) { cl.innerHTML='<div style="text-align:center;padding:40px;color:var(--muted)">No courses yet.</div>'; return; }
-  const row=document.createElement('div'); row.className='chip-row';
-  semesters.forEach((sem,i) => {
-    const chip=document.createElement('div');
-    chip.className='chip'+(i===semesters.length-1?' on':'');
-    chip.textContent=sem.name;
-    chip.onclick=()=>{ row.querySelectorAll('.chip').forEach(c=>c.classList.remove('on')); chip.classList.add('on'); renderSemCourses(sem.id); };
+  const sf = document.getElementById('sem-filter');
+  const cl = document.getElementById('courses-list');
+  sf.innerHTML = ''; cl.innerHTML = '';
+  if (!semesters.length) { cl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted)">No courses yet.</div>'; return; }
+  const row = document.createElement('div'); row.className = 'chip-row';
+  semesters.forEach((sem, i) => {
+    const chip = document.createElement('div');
+    chip.className = 'chip' + (i === semesters.length - 1 ? ' on' : '');
+    chip.textContent = sem.name;
+    chip.onclick = () => { row.querySelectorAll('.chip').forEach(c => c.classList.remove('on')); chip.classList.add('on'); renderSemCourses(sem.id); };
     row.appendChild(chip);
   });
   sf.appendChild(row);
-  renderSemCourses(semesters[semesters.length-1].id);
+  renderSemCourses(semesters[semesters.length - 1].id);
 }
 function renderSemCourses(semId) {
-  const sem=semesters.find(s=>s.id===semId);
-  const cl=document.getElementById('courses-list'); cl.innerHTML='';
-  if (!sem||(sem.subjects||[]).length===0) { cl.innerHTML='<div style="text-align:center;padding:30px;color:var(--muted)">No subjects in this semester.</div>'; return; }
+  const sem = semesters.find(s => s.id === semId);
+  const cl = document.getElementById('courses-list'); cl.innerHTML = '';
+  if (!sem || (sem.subjects || []).length === 0) { cl.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted)">No subjects in this semester.</div>'; return; }
   sem.subjects.forEach(s => {
-    const res=computeSubject(s); const col=gCol(res.curG.l);
-    const card=document.createElement('div'); card.className='course-item';
-    card.innerHTML=`<div class="ci-ico">📚</div>
+    const res = computeSubject(s); const col = gCol(res.curG.l);
+    const card = document.createElement('div'); card.className = 'course-item';
+    card.innerHTML = `<div class="ci-ico">📚</div>
       <div class="ci-info">
-        <div class="ci-name">${s.name}</div>
-        <div class="ci-meta">${s.credits} cr · ${res.cur.toFixed(1)}% · ${res.remExams.length>0?`${res.remExams.length} remaining`:'All exams taken'}</div>
+        <div class="ci-name">${s.name}${s.status==='W'?' <span style="color:var(--muted);font-size:11px">[W]</span>':s.status==='P'?' <span style="color:var(--accent3);font-size:11px">[P/NP]</span>':''}</div>
+        <div class="ci-meta">${s.credits} cr · ${res.cur.toFixed(1)}% (taken only) · ${res.remExams.length > 0 ? `${res.remExams.length} exams remaining` : 'All exams taken'}</div>
       </div>
       <div class="ci-grade" style="color:${col}">${res.curG.l}</div>
       <div class="ci-actions">
-        ${res.remExams.length>0?`<button class="ca-btn" onclick="openAddScore('${sem.id}','${s.id}')" title="Add score">➕</button>`:''}
+        ${res.remExams.length > 0 ? `<button class="ca-btn" onclick="openAddScore('${sem.id}','${s.id}')" title="Add score">➕</button>` : ''}
+        <button class="ca-btn" onclick="openEditSubject('${sem.id}','${s.id}')" title="Edit">✏️</button>
         <button class="ca-btn" onclick="viewDetail('${sem.id}','${s.id}')" title="Details">👁</button>
         <button class="ca-btn" onclick="deleteCourse('${sem.id}','${s.id}')" title="Delete" style="color:var(--red)">🗑</button>
       </div>`;
@@ -1144,21 +1513,130 @@ function renderSemCourses(semId) {
 }
 
 // ══════════════════════════════════════════════════════════════
-// COURSE DETAIL
+// EDIT SUBJECT (full edit modal)
+// ══════════════════════════════════════════════════════════════
+function openEditSubject(semId, subjectId) {
+  const sem = semesters.find(s => s.id === semId);
+  const s = sem.subjects.find(x => x.id === subjectId);
+  editCtx = { semId, subjectId };
+  document.getElementById('edit-modal-title').textContent = `Edit — ${s.name}`;
+  const icos = ['📄','📝','📖','✏️','🧪','📊','📐','🔬'];
+  document.getElementById('edit-modal-body').innerHTML = `
+    <div class="field-row">
+      <div class="field"><label>Subject Name</label><input type="text" id="ed-name" value="${s.name}"/></div>
+      <div class="field"><label>Credits</label><input type="number" id="ed-cr" value="${s.credits}" min=".5" max="12" step=".5"/></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Other Stuff %</label><input type="number" id="ed-op" value="${s.other_pct}" min="0" max="100" oninput="edUpdEP()"/></div>
+      <div class="field"><label>Exam % (auto)</label><input type="number" id="ed-ep" value="${s.exam_pct}" readonly style="opacity:.4;cursor:not-allowed"/></div>
+    </div>
+    <div class="field"><label>Other Stuff Score (out of 100)</label><input type="number" id="ed-os" value="${s.other_score}" min="0" max="100"/></div>
+    <div class="field"><label>Course Status</label>
+      <select id="ed-status">
+        <option value="normal" ${!s.status||s.status==='normal'?'selected':''}>Normal</option>
+        <option value="W" ${s.status==='W'?'selected':''}>Withdrawal (W)</option>
+        <option value="P" ${s.status==='P'?'selected':''}>Pass/No Pass (P/NP)</option>
+      </select>
+    </div>
+    <div class="divider"></div>
+    <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:13px;color:var(--muted2);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px">Exams</div>
+    <div id="ed-exams">
+      ${(s.exams || []).map((e, i) => `
+        <div class="exam-card" id="ed-exam-${i}">
+          <div class="exam-card-hdr">
+            <div class="exam-badge">${icos[i%icos.length]} Exam ${i+1}</div>
+            <button onclick="removeEdExam(${i})" style="background:transparent;border:none;color:var(--red);cursor:pointer;font-size:13px">Remove</button>
+          </div>
+          <div class="field-row-3">
+            <div class="field"><label>Name</label><input type="text" id="ed-en-${i}" value="${e.name}"/></div>
+            <div class="field"><label>Weight (% of exam)</label><input type="number" id="ed-ew-${i}" value="${e.weight.toFixed(1)}" min="0" max="100"/></div>
+            <div class="field"><label>Taken?</label>
+              <select id="ed-et-${i}" onchange="edTogSc(${i})">
+                <option value="no" ${!e.taken?'selected':''}>Not yet</option>
+                <option value="yes" ${e.taken?'selected':''}>Yes</option>
+              </select>
+            </div>
+          </div>
+          <div class="field" id="ed-esf-${i}" style="${e.taken?'':'display:none'}">
+            <label>Score (out of 100)</label>
+            <input type="number" id="ed-es-${i}" value="${e.taken?e.score:''}" min="0" max="100"/>
+          </div>
+        </div>`).join('')}
+    </div>
+    <button class="btn btn-ghost" onclick="addEdExam()" style="width:100%;margin-top:6px">+ Add Exam</button>
+  `;
+  document.getElementById('edit-modal').classList.add('show');
+}
+function edUpdEP() { const v=parseFloat(document.getElementById('ed-op').value)||0; document.getElementById('ed-ep').value=Math.max(0,100-v).toFixed(0); }
+function edTogSc(i) { document.getElementById(`ed-esf-${i}`).style.display=document.getElementById(`ed-et-${i}`).value==='yes'?'block':'none'; }
+function removeEdExam(i) { document.getElementById(`ed-exam-${i}`)?.remove(); }
+function addEdExam() {
+  const wrap = document.getElementById('ed-exams');
+  const idx = wrap.querySelectorAll('.exam-card').length;
+  const icos = ['📄','📝','📖','✏️','🧪','📊','📐','🔬'];
+  const d = document.createElement('div'); d.className='exam-card'; d.id=`ed-exam-${idx}`;
+  d.innerHTML=`<div class="exam-card-hdr"><div class="exam-badge">${icos[idx%icos.length]} Exam ${idx+1}</div>
+    <button onclick="removeEdExam(${idx})" style="background:transparent;border:none;color:var(--red);cursor:pointer;font-size:13px">Remove</button></div>
+    <div class="field-row-3">
+      <div class="field"><label>Name</label><input type="text" id="ed-en-${idx}" placeholder="e.g. Final"/></div>
+      <div class="field"><label>Weight</label><input type="number" id="ed-ew-${idx}" placeholder="e.g. 50" min="0" max="100"/></div>
+      <div class="field"><label>Taken?</label><select id="ed-et-${idx}" onchange="edTogSc(${idx})">
+        <option value="no">Not yet</option><option value="yes">Yes</option></select></div>
+    </div>
+    <div class="field" id="ed-esf-${idx}" style="display:none">
+      <label>Score (out of 100)</label><input type="number" id="ed-es-${idx}" min="0" max="100"/></div>`;
+  wrap.appendChild(d);
+}
+async function saveEditModal() {
+  const sem = semesters.find(s => s.id === editCtx.semId);
+  const s = sem.subjects.find(x => x.id === editCtx.subjectId);
+  s.name = document.getElementById('ed-name').value.trim() || s.name;
+  s.credits = parseFloat(document.getElementById('ed-cr').value) || s.credits;
+  s.other_pct = parseFloat(document.getElementById('ed-op').value) || 0;
+  s.exam_pct = 100 - s.other_pct;
+  s.other_score = parseFloat(document.getElementById('ed-os').value) || 0;
+  s.status = document.getElementById('ed-status').value;
+  const newExams = [];
+  document.querySelectorAll('#ed-exams .exam-card').forEach((card, i) => {
+    const nm = document.getElementById(`ed-en-${i}`)?.value || `Exam ${i+1}`;
+    const wt = parseFloat(document.getElementById(`ed-ew-${i}`)?.value) || 0;
+    const taken = document.getElementById(`ed-et-${i}`)?.value === 'yes';
+    const score = taken ? (parseFloat(document.getElementById(`ed-es-${i}`)?.value) || 0) : null;
+    const existingExam = s.exams?.[i];
+    newExams.push({ id: existingExam?.id || uid(), name: nm, weight: wt, taken, score });
+  });
+  const tw = newExams.reduce((a, e) => a + e.weight, 0);
+  if (tw > 0 && Math.abs(tw - 100) > 0.01) newExams.forEach(e => e.weight = e.weight / tw * 100);
+  s.exams = newExams;
+  const btn = document.getElementById('edit-modal-save');
+  btn.disabled = true; btn.textContent = 'Saving...';
+  const semCP = sem.subjects.reduce((a, x) => a + x.credits * computeSubject(x).curG.p, 0);
+  const semCR = sem.subjects.reduce((a, x) => a + x.credits, 0);
+  sem._gpa = semCR ? semCP / semCR : 0;
+  await saveSemesterToDB(sem);
+  btn.disabled = false; btn.textContent = 'Save Changes';
+  closeEditModal();
+  updateStats(); renderDashboard(); renderCourses(); renderWIFull(); renderStudy(); renderROI();
+  showToast(`✅ ${s.name} updated!`);
+}
+function closeEditModal() { document.getElementById('edit-modal').classList.remove('show'); editCtx = null; }
+
+// ══════════════════════════════════════════════════════════════
+// COURSE DETAIL VIEW
 // ══════════════════════════════════════════════════════════════
 function viewDetail(semId, subjectId) {
-  const sem=semesters.find(s=>s.id===semId);
-  const s=sem.subjects.find(x=>x.id===subjectId);
-  const res=computeSubject(s);
-  const col=gCol(res.curG.l);
-  const motiv=getMotiv(res.cur);
-  const mBg=res.cur>=87?'rgba(52,211,153,.08)':res.cur>=73?'rgba(251,191,36,.08)':'rgba(248,113,113,.08)';
-  const mBd=res.cur>=87?'rgba(52,211,153,.25)':res.cur>=73?'rgba(251,191,36,.25)':'rgba(248,113,113,.25)';
-  document.getElementById('modal-title').textContent=s.name;
-  document.getElementById('modal-save').style.display='none';
-  document.getElementById('modal-body').innerHTML=`
+  const sem = semesters.find(s => s.id === semId);
+  const s = sem.subjects.find(x => x.id === subjectId);
+  const res = computeSubject(s);
+  const col = gCol(res.curG.l);
+  const motiv = getMotiv(res.cur);
+  const mBg = res.cur >= 87 ? 'rgba(52,211,153,.08)' : res.cur >= 73 ? 'rgba(251,191,36,.08)' : 'rgba(248,113,113,.08)';
+  const mBd = res.cur >= 87 ? 'rgba(52,211,153,.25)' : res.cur >= 73 ? 'rgba(251,191,36,.25)' : 'rgba(248,113,113,.25)';
+  document.getElementById('modal-title').textContent = s.name;
+  document.getElementById('modal-save').style.display = 'none';
+  document.getElementById('modal-body').innerHTML = `
     <div class="score-hero" style="padding:22px;margin-bottom:14px">
-      <div class="sh-lbl">Current Score</div>
+      <div class="sh-lbl">Current Score (taken exams only)</div>
       <div class="sh-num" data-val="${res.cur.toFixed(1)}%">${res.cur.toFixed(1)}<span style="font-size:.4em;opacity:.5">%</span></div>
       <div class="sh-sub">Grade: <span class="grade-pill" style="background:${col}22;color:${col};border:1px solid ${col}44">${res.curG.l}</span> &nbsp; ${res.curG.p.toFixed(4)} pts</div>
     </div>
@@ -1167,52 +1645,52 @@ function viewDetail(semId, subjectId) {
       <div><div class="motiv-title">${motiv.title}</div><div style="font-size:12px;color:var(--muted2)">${motiv.msg}</div></div>
     </div>
     <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:12px;color:var(--muted2);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px">Exams</div>
-    ${(s.exams||[]).map(e=>`
+    ${(s.exams || []).map(e => `
       <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
         <div><div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:13px">${e.name}</div>
           <div style="font-size:11px;color:var(--muted)">${e.weight.toFixed(0)}% of exam marks</div></div>
         ${e.taken
-          ?`<div style="display:flex;align-items:center;gap:8px">
+          ? `<div style="display:flex;align-items:center;gap:8px">
               <span style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:18px;color:${gCol(pctToG(e.score).l)}">${e.score}%</span>
               <button class="ca-btn" onclick="openEditScore('${semId}','${subjectId}','${e.id}');closeModal()" title="Edit">✏️</button>
             </div>`
-          :`<div style="display:flex;align-items:center;gap:8px">
+          : `<div style="display:flex;align-items:center;gap:8px">
               <span style="color:var(--muted);font-size:12px">Not taken</span>
               <button class="ca-btn" onclick="openEditScore('${semId}','${subjectId}','${e.id}');closeModal()" title="Add" style="color:var(--accent)">➕</button>
             </div>`}
       </div>`).join('')}
-    ${res.remExams.length>0?`
+    ${res.remExams.length > 0 ? `
       <div class="divider"></div>
       <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:12px;color:var(--muted2);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px">Scores needed</div>
       <div class="chip-row" id="det-chips"></div>
-      <div id="det-ecards"></div>`:''}`;
-  if (res.remExams.length>0) {
-    const cc=document.getElementById('det-chips');
-    GPA.slice(0,7).forEach((g,i)=>{
-      const chip=document.createElement('div'); chip.className='chip'+(i===0?' on':'');
-      chip.textContent=`${g.l} (${g.p.toFixed(4)})`;
-      chip.onclick=()=>{ cc.querySelectorAll('.chip').forEach((c,j)=>c.classList.toggle('on',j===i)); renderDetCards(res,i); };
+      <div id="det-ecards"></div>` : ''}`;
+  if (res.remExams.length > 0) {
+    const cc = document.getElementById('det-chips');
+    GPA.slice(0, 7).forEach((g, i) => {
+      const chip = document.createElement('div'); chip.className = 'chip' + (i === 0 ? ' on' : '');
+      chip.textContent = `${g.l} (${g.p.toFixed(4)})`;
+      chip.onclick = () => { cc.querySelectorAll('.chip').forEach((c, j) => c.classList.toggle('on', j === i)); renderDetCards(res, i); };
       cc.appendChild(chip);
     });
-    renderDetCards(res,0);
+    renderDetCards(res, 0);
   }
   syncDataVal();
   document.getElementById('score-modal').classList.add('show');
 }
-function renderDetCards(res,ti) {
-  const c=document.getElementById('det-ecards'); if(!c)return;
-  const t=res.targets[ti]; c.innerHTML='';
-  const icos=['📄','📝','📖','✏️','🧪','📊','📐','🔬'];
-  t.perExam.forEach((ex,i)=>{
-    const nd=ex.needed; let sc,rng,col;
-    if(nd===null){sc='N/A';rng='';col='var(--muted)'}
-    else if(nd>100){sc='Not possible';rng=`Need ${nd.toFixed(1)}%`;col='var(--red)'}
-    else if(nd<=0){sc='Any score';rng='Already on track';col='var(--green)'}
-    else{const lo=Math.max(0,nd-3-Math.random()*4).toFixed(1);const hi=Math.min(100,nd+3+Math.random()*4).toFixed(1);
-      sc=nd.toFixed(1)+'%';rng=`Safe: ${lo}%–${hi}%`;col=nd<60?'var(--green)':nd<80?'var(--yellow)':'var(--red)';}
-    const card=document.createElement('div'); card.className='eneed'; card.style.animationDelay=(i*.06)+'s';
-    card.innerHTML=`<div class="eneed-ico">${icos[i%icos.length]}</div>
-      <div class="eneed-info"><div class="eneed-name">${ex.name}</div><div class="eneed-meta">Worth ${(ex.gf*100).toFixed(1)}% of total</div></div>
+function renderDetCards(res, ti) {
+  const c = document.getElementById('det-ecards'); if (!c) return;
+  const t = res.targets[ti]; c.innerHTML = '';
+  const icos = ['📄','📝','📖','✏️','🧪','📊','📐','🔬'];
+  t.perExam.forEach((ex, i) => {
+    const nd = ex.needed; let sc, rng, col;
+    if (nd === null) { sc = 'N/A'; rng = ''; col = 'var(--muted)'; }
+    else if (nd > 100) { sc = 'Not possible'; rng = `Need ${nd.toFixed(1)}%`; col = 'var(--red)'; }
+    else if (nd <= 0) { sc = 'Any score'; rng = 'Already on track'; col = 'var(--green)'; }
+    else { const lo = Math.max(0, nd - 3).toFixed(1); const hi = Math.min(100, nd + 3).toFixed(1);
+      sc = nd.toFixed(1) + '%'; rng = `Safe: ${lo}%–${hi}%`; col = nd < 60 ? 'var(--green)' : nd < 80 ? 'var(--yellow)' : 'var(--red)'; }
+    const card = document.createElement('div'); card.className = 'eneed'; card.style.animationDelay = (i * .06) + 's';
+    card.innerHTML = `<div class="eneed-ico">${icos[i % icos.length]}</div>
+      <div class="eneed-info"><div class="eneed-name">${ex.name}</div><div class="eneed-meta">Worth ${(ex.gf * 100).toFixed(1)}% of total</div></div>
       <div><div class="eneed-score" style="color:${col}">${sc}</div><div class="eneed-range">${rng}</div></div>`;
     c.appendChild(card);
   });
@@ -1222,17 +1700,17 @@ function renderDetCards(res,ti) {
 // ADD / EDIT SCORE
 // ══════════════════════════════════════════════════════════════
 function openAddScore(semId, subjectId) {
-  const sem=semesters.find(s=>s.id===semId);
-  const s=sem.subjects.find(x=>x.id===subjectId);
-  const rem=s.exams.filter(e=>!e.taken);
+  const sem = semesters.find(s => s.id === semId);
+  const s = sem.subjects.find(x => x.id === subjectId);
+  const rem = s.exams.filter(e => !e.taken);
   if (!rem.length) { showToast('All exams already scored!'); return; }
-  modalCtx={semId,subjectId,examId:null};
-  document.getElementById('modal-title').textContent=`Add Score — ${s.name}`;
-  document.getElementById('modal-save').style.display='';
-  document.getElementById('modal-body').innerHTML=`
-    <div class="infobox">Select the exam and enter your score. It will sync to cloud automatically.</div>
+  modalCtx = { semId, subjectId, examId: null };
+  document.getElementById('modal-title').textContent = `Add Score — ${s.name}`;
+  document.getElementById('modal-save').style.display = '';
+  document.getElementById('modal-body').innerHTML = `
+    <div class="infobox">Select the exam and enter your score. Cloud sync is automatic.</div>
     <div class="field"><label>Exam</label>
-      <select id="modal-exam-sel">${rem.map(e=>`<option value="${e.id}">${e.name} (${e.weight.toFixed(0)}% of exam marks)</option>`).join('')}</select>
+      <select id="modal-exam-sel">${rem.map(e => `<option value="${e.id}">${e.name} (${e.weight.toFixed(0)}% of exam marks)</option>`).join('')}</select>
     </div>
     <div class="field"><label>Your Score (out of 100)</label>
       <input type="number" id="modal-score-inp" placeholder="e.g. 82" min="0" max="100"/>
@@ -1240,56 +1718,55 @@ function openAddScore(semId, subjectId) {
   document.getElementById('score-modal').classList.add('show');
 }
 function openEditScore(semId, subjectId, examId) {
-  const sem=semesters.find(s=>s.id===semId);
-  const s=sem.subjects.find(x=>x.id===subjectId);
-  const e=s.exams.find(x=>x.id===examId);
-  modalCtx={semId,subjectId,examId};
-  document.getElementById('modal-title').textContent=`${e.taken?'Edit':'Add'} Score — ${e.name}`;
-  document.getElementById('modal-save').style.display='';
-  document.getElementById('modal-body').innerHTML=`
+  const sem = semesters.find(s => s.id === semId);
+  const s = sem.subjects.find(x => x.id === subjectId);
+  const e = s.exams.find(x => x.id === examId);
+  modalCtx = { semId, subjectId, examId };
+  document.getElementById('modal-title').textContent = `${e.taken ? 'Edit' : 'Add'} Score — ${e.name}`;
+  document.getElementById('modal-save').style.display = '';
+  document.getElementById('modal-body').innerHTML = `
     <div class="infobox">Enter your score for <strong>${e.name}</strong>.</div>
     <div class="field"><label>Your Score (out of 100)</label>
-      <input type="number" id="modal-score-inp" value="${e.taken?e.score:''}" placeholder="e.g. 82" min="0" max="100"/>
+      <input type="number" id="modal-score-inp" value="${e.taken ? e.score : ''}" placeholder="e.g. 82" min="0" max="100"/>
     </div>`;
   document.getElementById('score-modal').classList.add('show');
 }
 async function saveModalScore() {
-  const sem=semesters.find(s=>s.id===modalCtx.semId);
-  const s=sem.subjects.find(x=>x.id===modalCtx.subjectId);
-  let examId=modalCtx.examId;
-  if (!examId) { const sel=document.getElementById('modal-exam-sel'); if(!sel){showToast('Select an exam.');return;} examId=sel.value; }
-  const scoreRaw=document.getElementById('modal-score-inp').value;
-  if (scoreRaw==='') { showToast('Enter a score.'); return; }
-  const score=parseFloat(scoreRaw);
-  if (isNaN(score)||score<0||score>100) { showToast('Score must be 0–100.'); return; }
-  document.getElementById('modal-save').disabled=true;
-  document.getElementById('modal-save').textContent='Saving...';
-  const exam=s.exams.find(e=>e.id===examId);
-  exam.taken=true; exam.score=score;
-  // Recompute semester GPA
-  const semCP=sem.subjects.reduce((a,x)=>a+x.credits*computeSubject(x).curG.p,0);
-  const semCR=sem.subjects.reduce((a,x)=>a+x.credits,0);
-  sem._gpa=semCR?semCP/semCR:0;
+  const sem = semesters.find(s => s.id === modalCtx.semId);
+  const s = sem.subjects.find(x => x.id === modalCtx.subjectId);
+  let examId = modalCtx.examId;
+  if (!examId) { const sel = document.getElementById('modal-exam-sel'); if (!sel) { showToast('Select an exam.'); return; } examId = sel.value; }
+  const scoreRaw = document.getElementById('modal-score-inp').value;
+  if (scoreRaw === '') { showToast('Enter a score.'); return; }
+  const score = parseFloat(scoreRaw);
+  if (isNaN(score) || score < 0 || score > 100) { showToast('Score must be 0–100.'); return; }
+  document.getElementById('modal-save').disabled = true;
+  document.getElementById('modal-save').textContent = 'Saving...';
+  const exam = s.exams.find(e => e.id === examId);
+  exam.taken = true; exam.score = score;
+  const semCP = sem.subjects.reduce((a, x) => a + x.credits * computeSubject(x).curG.p, 0);
+  const semCR = sem.subjects.reduce((a, x) => a + x.credits, 0);
+  sem._gpa = semCR ? semCP / semCR : 0;
   await saveSemesterToDB(sem);
-  document.getElementById('modal-save').disabled=false;
-  document.getElementById('modal-save').textContent='Save Score';
+  document.getElementById('modal-save').disabled = false;
+  document.getElementById('modal-save').textContent = 'Save Score';
   closeModal();
-  const res=computeSubject(s);
-  updateStats(); renderDashboard(); renderCourses(); renderWIFull(); renderStudy();
+  const res = computeSubject(s);
+  updateStats(); renderDashboard(); renderCourses(); renderWIFull(); renderStudy(); renderROI();
   showToast(`✅ Saved! ${s.name}: ${res.curG.l} (${res.cur.toFixed(1)}%)`);
-  if (res.curG.l==='A') fireConfetti();
+  if (res.curG.l === 'A' || res.curG.l === 'A+') fireConfetti();
 }
 function closeModal() {
   document.getElementById('score-modal').classList.remove('show');
-  document.getElementById('modal-save').style.display='';
-  document.getElementById('modal-save').disabled=false;
-  document.getElementById('modal-save').textContent='Save Score';
-  modalCtx=null;
+  document.getElementById('modal-save').style.display = '';
+  document.getElementById('modal-save').disabled = false;
+  document.getElementById('modal-save').textContent = 'Save Score';
+  modalCtx = null;
 }
 async function deleteCourse(semId, subjectId) {
   if (!confirm('Delete this course and all its exam data?')) return;
-  const sem=semesters.find(s=>s.id===semId);
-  sem.subjects=sem.subjects.filter(s=>s.id!==subjectId);
+  const sem = semesters.find(s => s.id === semId);
+  sem.subjects = sem.subjects.filter(s => s.id !== subjectId);
   if (!sem.subjects.length) { await deleteSemesterFromDB(semId); }
   else { await saveSemesterToDB(sem); }
   updateStats(); renderDashboard(); renderCourses(); renderHistory();
@@ -1297,20 +1774,20 @@ async function deleteCourse(semId, subjectId) {
 }
 
 // ══════════════════════════════════════════════════════════════
-// TRACKER FLOW (Add Subject)
+// TRACKER FLOW
 // ══════════════════════════════════════════════════════════════
 function setMode(m) {
-  appMode=m;
-  document.getElementById('mode-s').classList.toggle('on',m==='single');
-  document.getElementById('mode-m').classList.toggle('on',m==='multi');
-  document.getElementById('n-subj-f').classList.toggle('hidden',m==='single');
+  appMode = m;
+  document.getElementById('mode-s').classList.toggle('on', m === 'single');
+  document.getElementById('mode-m').classList.toggle('on', m === 'multi');
+  document.getElementById('n-subj-f').classList.toggle('hidden', m === 'single');
 }
 function setStep(n) {
-  [1,2,3].forEach(i=>{
-    const el=document.getElementById('sw'+i); if(!el)return;
-    el.classList.remove('active','done');
-    if(i<n) el.classList.add('done');
-    if(i===n) el.classList.add('active');
+  [1, 2, 3].forEach(i => {
+    const el = document.getElementById('sw' + i); if (!el) return;
+    el.classList.remove('active', 'done');
+    if (i < n) el.classList.add('done');
+    if (i === n) el.classList.add('active');
   });
 }
 function goStep1() {
@@ -1320,23 +1797,23 @@ function goStep1() {
   document.getElementById('pg-results').classList.add('hidden');
 }
 function goStep2() {
-  const n=appMode==='single'?1:parseInt(document.getElementById('n-subjs').value)||2;
+  const n = appMode === 'single' ? 1 : parseInt(document.getElementById('n-subjs').value) || 2;
   setStep(2);
   document.getElementById('pg-setup').classList.add('hidden');
   document.getElementById('pg-subjects').classList.remove('hidden');
   buildForms(n);
 }
-function uid() { return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
-function buildForms(n) { const c=document.getElementById('subj-forms');c.innerHTML='';for(let i=0;i<n;i++)c.appendChild(makeForm(i,n)); }
-function makeForm(idx,total) {
-  const d=document.createElement('div');d.className='card';d.style.animationDelay=(idx*.08)+'s';d.id='sf-'+idx;
-  d.innerHTML=`<div class="card-title"><span class="ico">📚</span>${total>1?`Subject ${idx+1} of ${total}`:'Subject Details'}</div>
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+function buildForms(n) { const c = document.getElementById('subj-forms'); c.innerHTML = ''; for (let i = 0; i < n; i++) c.appendChild(makeForm(i, n)); }
+function makeForm(idx, total) {
+  const d = document.createElement('div'); d.className = 'card'; d.style.animationDelay = (idx * .08) + 's'; d.id = 'sf-' + idx;
+  d.innerHTML = `<div class="card-title"><span class="ico">📚</span>${total > 1 ? `Subject ${idx + 1} of ${total}` : 'Subject Details'}</div>
     <div class="field-row">
       <div class="field"><label>Subject Name</label><input type="text" id="s${idx}_nm" placeholder="e.g. Calculus"/></div>
       <div class="field"><label>Credits</label><input type="number" id="s${idx}_cr" value="3" min=".5" max="12" step=".5"/></div>
     </div>
     <div class="divider"></div>
-    <div class="infobox">Split grade into <strong>Exams</strong> and <strong>Other stuff</strong> (assignments, attendance, quizzes).</div>
+    <div class="infobox">Split grade into <strong>Exams</strong> and <strong>Other stuff</strong> (assignments, attendance, quizzes).<br/>GPA is calculated on <strong>taken exams only</strong> — untaken exams won't drag your score down.</div>
     <div class="field-row">
       <div class="field"><label>Other Stuff %</label><input type="number" id="s${idx}_op" value="40" min="0" max="100" oninput="updEP(${idx})"/></div>
       <div class="field"><label>Exam % (auto)</label><input type="number" id="s${idx}_ep" value="60" readonly style="opacity:.4;cursor:not-allowed"/></div>
@@ -1345,219 +1822,216 @@ function makeForm(idx,total) {
     <div class="divider"></div>
     <div class="field" style="max-width:180px"><label>Number of Exams</label><input type="number" id="s${idx}_ne" value="2" min="1" max="15" oninput="rebuildEx(${idx})"/></div>
     <div id="s${idx}_ex"></div>`;
-  setTimeout(()=>rebuildEx(idx),40);
+  setTimeout(() => rebuildEx(idx), 40);
   return d;
 }
-function updEP(i){const v=parseFloat(document.getElementById(`s${i}_op`).value)||0;document.getElementById(`s${i}_ep`).value=Math.max(0,100-v).toFixed(0);}
-function rebuildEx(idx){
-  const n=parseInt(document.getElementById(`s${idx}_ne`).value)||1;
-  const c=document.getElementById(`s${idx}_ex`);
-  const prev=[];
-  c.querySelectorAll('.exam-card').forEach(card=>{
-    prev.push({nm:card.querySelector('[data-f="nm"]')?.value||'',wt:card.querySelector('[data-f="wt"]')?.value||'',tk:card.querySelector('[data-f="tk"]')?.value||'no',sc:card.querySelector('[data-f="sc"]')?.value||''});
+function updEP(i) { const v = parseFloat(document.getElementById(`s${i}_op`).value) || 0; document.getElementById(`s${i}_ep`).value = Math.max(0, 100 - v).toFixed(0); }
+function rebuildEx(idx) {
+  const n = parseInt(document.getElementById(`s${idx}_ne`).value) || 1;
+  const c = document.getElementById(`s${idx}_ex`);
+  const prev = [];
+  c.querySelectorAll('.exam-card').forEach(card => {
+    prev.push({ nm: card.querySelector('[data-f="nm"]')?.value || '', wt: card.querySelector('[data-f="wt"]')?.value || '', tk: card.querySelector('[data-f="tk"]')?.value || 'no', sc: card.querySelector('[data-f="sc"]')?.value || '' });
   });
-  c.innerHTML='';
-  const icos=['📄','📝','📖','✏️','🧪','📊','📐','🔬'];
-  for(let i=0;i<n;i++){
-    const e=prev[i]||{};
-    const card=document.createElement('div');card.className='exam-card';
-    card.innerHTML=`<div class="exam-card-hdr"><div class="exam-badge">${icos[i%icos.length]} Exam ${i+1}</div></div>
+  c.innerHTML = '';
+  const icos = ['📄','📝','📖','✏️','🧪','📊','📐','🔬'];
+  for (let i = 0; i < n; i++) {
+    const e = prev[i] || {};
+    const card = document.createElement('div'); card.className = 'exam-card';
+    card.innerHTML = `<div class="exam-card-hdr"><div class="exam-badge">${icos[i % icos.length]} Exam ${i + 1}</div></div>
       <div class="field-row-3">
-        <div class="field"><label>Name</label><input data-f="nm" type="text" value="${e.nm||''}" placeholder="e.g. Midterm"/></div>
-        <div class="field"><label>Weight (% of exam marks)</label><input data-f="wt" type="number" value="${e.wt||''}" placeholder="e.g. 40" min="0" max="100"/></div>
+        <div class="field"><label>Name</label><input data-f="nm" type="text" value="${e.nm || ''}" placeholder="e.g. Midterm"/></div>
+        <div class="field"><label>Weight (% of exam marks)</label><input data-f="wt" type="number" value="${e.wt || ''}" placeholder="e.g. 40" min="0" max="100"/></div>
         <div class="field"><label>Taken?</label><select data-f="tk" onchange="togSc(this,${idx},${i})">
-          <option value="no" ${e.tk!=='yes'?'selected':''}>Not yet</option>
-          <option value="yes" ${e.tk==='yes'?'selected':''}>Yes</option>
+          <option value="no" ${e.tk !== 'yes' ? 'selected' : ''}>Not yet</option>
+          <option value="yes" ${e.tk === 'yes' ? 'selected' : ''}>Yes</option>
         </select></div>
       </div>
-      <div class="field" id="s${idx}_e${i}_sf" style="${e.tk==='yes'?'':'display:none'}">
+      <div class="field" id="s${idx}_e${i}_sf" style="${e.tk === 'yes' ? '' : 'display:none'}">
         <label>Score (out of 100)</label>
-        <input data-f="sc" type="number" value="${e.sc||''}" placeholder="e.g. 78" min="0" max="100"/>
+        <input data-f="sc" type="number" value="${e.sc || ''}" placeholder="e.g. 78" min="0" max="100"/>
       </div>`;
     c.appendChild(card);
   }
 }
-function togSc(sel,si,ei){document.getElementById(`s${si}_e${ei}_sf`).style.display=sel.value==='yes'?'block':'none';}
-function readSubjFromForm(idx){
-  const nm=document.getElementById(`s${idx}_nm`)?.value.trim()||`Subject ${idx+1}`;
-  const cr=parseFloat(document.getElementById(`s${idx}_cr`)?.value)||3;
-  const op=parseFloat(document.getElementById(`s${idx}_op`)?.value)||40;
-  const ep=100-op;
-  const osRaw=document.getElementById(`s${idx}_os`)?.value;
-  const os=osRaw===''||osRaw==null?35:parseFloat(osRaw);
-  const cards=document.querySelectorAll(`#s${idx}_ex .exam-card`);
-  const exams=[];
-  cards.forEach((card,i)=>{
-    const ename=card.querySelector('[data-f="nm"]')?.value||`Exam ${i+1}`;
-    const wt=parseFloat(card.querySelector('[data-f="wt"]')?.value)||0;
-    const taken=card.querySelector('[data-f="tk"]')?.value==='yes';
-    const score=taken?(parseFloat(card.querySelector('[data-f="sc"]')?.value)||0):null;
-    exams.push({id:uid(),name:ename,weight:wt,taken,score});
+function togSc(sel, si, ei) { document.getElementById(`s${si}_e${ei}_sf`).style.display = sel.value === 'yes' ? 'block' : 'none'; }
+function readSubjFromForm(idx) {
+  const nm = document.getElementById(`s${idx}_nm`)?.value.trim() || `Subject ${idx + 1}`;
+  const cr = parseFloat(document.getElementById(`s${idx}_cr`)?.value) || 3;
+  const op = parseFloat(document.getElementById(`s${idx}_op`)?.value) || 40;
+  const ep = 100 - op;
+  const osRaw = document.getElementById(`s${idx}_os`)?.value;
+  const os = osRaw === '' || osRaw == null ? 35 : parseFloat(osRaw);
+  const cards = document.querySelectorAll(`#s${idx}_ex .exam-card`);
+  const exams = [];
+  cards.forEach((card, i) => {
+    const ename = card.querySelector('[data-f="nm"]')?.value || `Exam ${i + 1}`;
+    const wt = parseFloat(card.querySelector('[data-f="wt"]')?.value) || 0;
+    const taken = card.querySelector('[data-f="tk"]')?.value === 'yes';
+    const score = taken ? (parseFloat(card.querySelector('[data-f="sc"]')?.value) || 0) : null;
+    exams.push({ id: uid(), name: ename, weight: wt, taken, score });
   });
-  const tw=exams.reduce((a,e)=>a+e.weight,0);
-  if(tw>0&&Math.abs(tw-100)>.01) exams.forEach(e=>e.weight=e.weight/tw*100);
-  return{id:uid(),name:nm,credits:cr,other_pct:op,other_score:os,exam_pct:ep,exams};
+  const tw = exams.reduce((a, e) => a + e.weight, 0);
+  if (tw > 0 && Math.abs(tw - 100) > .01) exams.forEach(e => e.weight = e.weight / tw * 100);
+  return { id: uid(), name: nm, credits: cr, other_pct: op, other_score: os, exam_pct: ep, exams, status: 'normal' };
 }
-async function calcAndSave(){
-  const btn=document.getElementById('calc-save-btn');
-  btn.disabled=true; btn.textContent='💾 Saving to cloud...';
-  const semName=document.getElementById('sem-name-inp').value.trim()||`Semester ${semesters.length+1}`;
-  const forms=document.querySelectorAll('[id^="sf-"]');
-  calcSubjs=[]; calcRes=[];
-  forms.forEach((_,i)=>{
-    const s=readSubjFromForm(i);
+async function calcAndSave() {
+  const btn = document.getElementById('calc-save-btn');
+  btn.disabled = true; btn.textContent = '💾 Saving to cloud...';
+  const semName = document.getElementById('sem-name-inp').value.trim() || `Semester ${semesters.length + 1}`;
+  const forms = document.querySelectorAll('[id^="sf-"]');
+  calcSubjs = []; calcRes = [];
+  forms.forEach((_, i) => {
+    const s = readSubjFromForm(i);
     calcSubjs.push(s); calcRes.push(computeSubject(s));
   });
-  // Find or create semester
-  let sem=semesters.find(s=>s.name===semName);
-  if (sem) {
-    calcSubjs.forEach(s=>sem.subjects.push(s));
-  } else {
-    sem={id:uid(),name:semName,date:new Date().toLocaleDateString(),subjects:calcSubjs};
-  }
-  const semCP=sem.subjects.reduce((a,s,i)=>a+s.credits*computeSubject(s).curG.p,0);
-  const semCR=sem.subjects.reduce((a,s)=>a+s.credits,0);
-  sem._gpa=semCR?semCP/semCR:0;
+  let sem = semesters.find(s => s.name === semName);
+  if (sem) { calcSubjs.forEach(s => sem.subjects.push(s)); }
+  else { sem = { id: uid(), name: semName, date: new Date().toLocaleDateString(), subjects: calcSubjs }; }
+  const semCP = sem.subjects.reduce((a, s) => a + s.credits * computeSubject(s).curG.p, 0);
+  const semCR = sem.subjects.reduce((a, s) => a + s.credits, 0);
+  sem._gpa = semCR ? semCP / semCR : 0;
   await saveSemesterToDB(sem);
-  btn.disabled=false; btn.textContent='💾 Save & Calculate →';
-  activeCalcIdx=0;
-  updateStats(); renderDashboard(); renderCourses(); renderHistory(); renderWIFull(); renderStudy();
+  btn.disabled = false; btn.textContent = '💾 Save & Calculate →';
+  activeCalcIdx = 0;
+  updateStats(); renderDashboard(); renderCourses(); renderHistory(); renderWIFull(); renderStudy(); renderROI();
   renderResults();
-  showToast(`✅ Saved to cloud! ${calcSubjs.length} subject${calcSubjs.length!==1?'s':''}`);
+  showToast(`✅ Saved! ${calcSubjs.length} subject${calcSubjs.length !== 1 ? 's' : ''}`);
 }
 
 // ══════════════════════════════════════════════════════════════
 // RESULTS
 // ══════════════════════════════════════════════════════════════
-function renderResults(){
+function renderResults() {
   setStep(3);
   document.getElementById('pg-subjects').classList.add('hidden');
   document.getElementById('pg-results').classList.remove('hidden');
-  const wrap=document.getElementById('results-wrap'); wrap.innerHTML='';
-  if(calcSubjs.length>1){
-    const tcp=calcSubjs.reduce((a,s,i)=>a+s.credits*calcRes[i].curG.p,0);
-    const tcr=calcSubjs.reduce((a,s)=>a+s.credits,0);
-    const cum=tcp/tcr; const cl=closestL(cum); const col=gCol(cl);
-    const cd=document.createElement('div'); cd.className='cum-card';
-    cd.innerHTML=`<div><div class="cum-lbl">Session GPA</div>
+  const wrap = document.getElementById('results-wrap'); wrap.innerHTML = '';
+  if (calcSubjs.length > 1) {
+    const tcp = calcSubjs.reduce((a, s, i) => a + s.credits * calcRes[i].curG.p, 0);
+    const tcr = calcSubjs.reduce((a, s) => a + s.credits, 0);
+    const cum = tcp / tcr; const cl = closestL(cum); const col = gCol(cl);
+    const cd = document.createElement('div'); cd.className = 'cum-card';
+    cd.innerHTML = `<div><div class="cum-lbl">Session GPA</div>
       <div class="cum-num" style="color:${col}">${cum.toFixed(4)}</div>
-      <div class="cum-letter" style="color:${col}">${cl} — ${cum.toFixed(2)}/4.0</div></div>
-      <div style="flex:1">${calcSubjs.map((s,i)=>`
+      <div class="cum-letter" style="color:${col}">${cl} — ${cum.toFixed(2)}/${Math.max(...GPA.map(g=>g.p)).toFixed(1)}</div></div>
+      <div style="flex:1">${calcSubjs.map((s, i) => `
         <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px">
           <span>${s.name}</span>
           <span style="color:${gCol(calcRes[i].curG.l)}">${calcRes[i].curG.l} · ${calcRes[i].curG.p.toFixed(4)}</span>
         </div>`).join('')}</div>`;
     wrap.appendChild(cd);
   }
-  if(calcSubjs.length>1){
-    const tabs=document.createElement('div'); tabs.className='subj-tabs';
-    calcSubjs.forEach((s,i)=>{const t=document.createElement('div');t.className='subj-tab'+(i===0?' on':'');t.textContent=s.name||`Subject ${i+1}`;t.onclick=()=>swCalcSubj(i);tabs.appendChild(t);});
+  if (calcSubjs.length > 1) {
+    const tabs = document.createElement('div'); tabs.className = 'subj-tabs';
+    calcSubjs.forEach((s, i) => { const t = document.createElement('div'); t.className = 'subj-tab' + (i === 0 ? ' on' : ''); t.textContent = s.name || `Subject ${i + 1}`; t.onclick = () => swCalcSubj(i); tabs.appendChild(t); });
     wrap.appendChild(tabs);
   }
-  calcSubjs.forEach((s,i)=>{ const p=buildPanel(s,calcRes[i],i); p.id=`rp-${i}`; if(i>0)p.style.display='none'; wrap.appendChild(p); });
+  calcSubjs.forEach((s, i) => { const p = buildPanel(s, calcRes[i], i); p.id = `rp-${i}`; if (i > 0) p.style.display = 'none'; wrap.appendChild(p); });
   buildWISubjSel(); updateWI(); buildGradeChart(); buildShareCard();
 }
-function swCalcSubj(i){
-  activeCalcIdx=i;
-  document.querySelectorAll('.subj-tab').forEach((t,j)=>t.classList.toggle('on',j===i));
-  document.querySelectorAll('[id^="rp-"]').forEach((p,j)=>p.style.display=j===i?'block':'none');
+function swCalcSubj(i) {
+  activeCalcIdx = i;
+  document.querySelectorAll('.subj-tab').forEach((t, j) => t.classList.toggle('on', j === i));
+  document.querySelectorAll('[id^="rp-"]').forEach((p, j) => p.style.display = j === i ? 'block' : 'none');
   updateWI(); buildShareCard();
 }
-function buildPanel(s,res,idx){
-  const div=document.createElement('div');
-  const g=res.curG; const col=gCol(g.l);
-  const motiv=getMotiv(res.cur);
-  const mBg=res.cur>=87?'rgba(52,211,153,.08)':res.cur>=73?'rgba(251,191,36,.08)':'rgba(248,113,113,.08)';
-  const mBd=res.cur>=87?'rgba(52,211,153,.25)':res.cur>=73?'rgba(251,191,36,.25)':'rgba(248,113,113,.25)';
-  div.innerHTML=`
+function buildPanel(s, res, idx) {
+  const div = document.createElement('div');
+  const g = res.curG; const col = gCol(g.l);
+  const motiv = getMotiv(res.cur);
+  const mBg = res.cur >= 87 ? 'rgba(52,211,153,.08)' : res.cur >= 73 ? 'rgba(251,191,36,.08)' : 'rgba(248,113,113,.08)';
+  const mBd = res.cur >= 87 ? 'rgba(52,211,153,.25)' : res.cur >= 73 ? 'rgba(251,191,36,.25)' : 'rgba(248,113,113,.25)';
+  div.innerHTML = `
     <div class="motiv" style="background:${mBg};border:1px solid ${mBd}">
       <div class="motiv-ico">${motiv.ico}</div>
       <div><div class="motiv-title">${motiv.title}</div><div style="font-size:12px;color:var(--muted2)">${motiv.msg}</div></div>
     </div>
     <div class="score-hero">
-      <div class="sh-lbl">Current Score — ${s.name}</div>
+      <div class="sh-lbl">Current Score (taken exams only) — ${s.name}</div>
       <div class="sh-num" data-val="${res.cur.toFixed(1)}%">${res.cur.toFixed(1)}<span style="font-size:.4em;opacity:.5">%</span></div>
       <div class="sh-sub">Grade: <span class="grade-pill" style="background:${col}22;color:${col};border:1px solid ${col}44">${g.l}</span>&nbsp;<span style="color:var(--muted)">${g.p.toFixed(4)} quality pts</span></div>
     </div>
     <div class="card">
       <div class="card-title"><span class="ico">🎯</span>Scores Needed in Remaining Exams</div>
-      ${res.remFrac<0.001
-        ?`<div class="infobox green">✅ All exams done!</div>`
-        :`<div class="infobox">Remaining exams worth <strong>${(res.remFrac*100).toFixed(1)}%</strong> of your total.</div>
+      ${res.remFrac < 0.001
+        ? `<div class="infobox green">✅ All exams done!</div>`
+        : `<div class="infobox">Remaining exams worth <strong>${(res.remFrac * 100).toFixed(1)}%</strong> of your total.</div>
         <table class="gpa-tbl"><thead><tr><th>Grade</th><th>Quality Pts</th><th>Avg Needed</th><th>Feasibility</th></tr></thead>
-        <tbody id="tbl-${idx}">${res.targets.map((t,ti)=>{
-          const avg=t.avg;let txt,bp,bc,rc='';
-          if(avg===null){txt='N/A';bp=0;bc='var(--muted)'}
-          else if(avg>100){txt=`<span style="color:var(--red)">Not possible</span>`;bp=100;bc='var(--red)'}
-          else if(avg<=0){txt=`<span style="color:var(--green)">Secured 🎉</span>`;bp=100;bc='var(--green)';rc='hl'}
-          else{bp=Math.min(100,avg);bc=avg<60?'var(--green)':avg<80?'var(--yellow)':'var(--red)';txt=`<strong>${avg.toFixed(1)}%</strong>`}
-          const gc=gCol(t.l);
-          return`<tr class="gpa-row ${rc}" onclick="selTargRow(${idx},${ti})">
+        <tbody id="tbl-${idx}">${res.targets.map((t, ti) => {
+          const avg = t.avg; let txt, bp, bc, rc = '';
+          if (avg === null) { txt = 'N/A'; bp = 0; bc = 'var(--muted)'; }
+          else if (avg > 100) { txt = `<span style="color:var(--red)">Not possible</span>`; bp = 100; bc = 'var(--red)'; }
+          else if (avg <= 0) { txt = `<span style="color:var(--green)">Secured 🎉</span>`; bp = 100; bc = 'var(--green)'; rc = 'hl'; }
+          else { bp = Math.min(100, avg); bc = avg < 60 ? 'var(--green)' : avg < 80 ? 'var(--yellow)' : 'var(--red)'; txt = `<strong>${avg.toFixed(1)}%</strong>`; }
+          const gc = gCol(t.l);
+          return `<tr class="gpa-row ${rc}" onclick="selTargRow(${idx},${ti})">
             <td><span class="gl-badge" style="background:${gc}22;color:${gc}">${t.l}</span></td>
             <td style="color:var(--muted)">${t.p.toFixed(4)}</td><td>${txt}</td>
             <td><div class="bar-bg"><div class="bar-fg" style="width:0%;background:${bc}" data-target="${bp}"></div></div></td>
-          </tr>`;}).join('')}</tbody></table>`}
+          </tr>`;
+        }).join('')}</tbody></table>`}
     </div>
-    ${res.remExams.length>0?`<div class="card">
+    ${res.remExams.length > 0 ? `<div class="card">
       <div class="card-title"><span class="ico">📋</span>Per-Exam Breakdown</div>
       <div class="chip-row" id="chips-${idx}">
-        ${res.targets.slice(0,9).map((t,ti)=>`<div class="chip ${ti===0?'on':''}" onclick="selTarg(${idx},${ti})" id="chip-${idx}-${ti}">${t.l} (${t.p.toFixed(4)})</div>`).join('')}
+        ${res.targets.slice(0, 9).map((t, ti) => `<div class="chip ${ti === 0 ? 'on' : ''}" onclick="selTarg(${idx},${ti})" id="chip-${idx}-${ti}">${t.l} (${t.p.toFixed(4)})</div>`).join('')}
       </div>
       <div id="ec-${idx}"></div>
-    </div>`:''}`;
-  setTimeout(()=>{ div.querySelectorAll('.bar-fg[data-target]').forEach(b=>b.style.width=b.dataset.target+'%'); if(res.remExams.length>0)renderExamCards(idx,0); syncDataVal(); },120);
+    </div>` : ''}`;
+  setTimeout(() => { div.querySelectorAll('.bar-fg[data-target]').forEach(b => b.style.width = b.dataset.target + '%'); if (res.remExams.length > 0) renderExamCards(idx, 0); syncDataVal(); }, 120);
   return div;
 }
-function selTargRow(si,ti){ document.querySelectorAll(`#tbl-${si} .gpa-row`).forEach((r,i)=>r.classList.toggle('sel',i===ti)); selTarg(si,ti); }
-function selTarg(si,ti){ document.querySelectorAll(`#chips-${si} .chip`).forEach((c,i)=>c.classList.toggle('on',i===ti)); renderExamCards(si,ti); }
-function renderExamCards(si,ti){
-  const c=document.getElementById(`ec-${si}`);if(!c)return;
-  const t=calcRes[si].targets[ti];c.innerHTML='';
-  const icos=['📄','📝','📖','✏️','🧪','📊','📐','🔬'];
-  t.perExam.forEach((ex,i)=>{
-    const nd=ex.needed;let sc,rng,col;
-    if(nd===null){sc='N/A';rng='';col='var(--muted)'}
-    else if(nd>100){sc='Not possible';rng=`Need ${nd.toFixed(1)}%`;col='var(--red)'}
-    else if(nd<=0){sc='Any score';rng='Already on track';col='var(--green)'}
-    else{const lo=Math.max(0,nd-3-Math.random()*4).toFixed(1);const hi=Math.min(100,nd+3+Math.random()*4).toFixed(1);sc=nd.toFixed(1)+'%';rng=`Safe: ${lo}%–${hi}%`;col=nd<60?'var(--green)':nd<80?'var(--yellow)':'var(--red)';}
-    const card=document.createElement('div');card.className='eneed';card.style.animationDelay=(i*.06)+'s';
-    card.innerHTML=`<div class="eneed-ico">${icos[i%icos.length]}</div>
-      <div class="eneed-info"><div class="eneed-name">${ex.name}</div><div class="eneed-meta">Worth ${(ex.gf*100).toFixed(1)}% of total</div></div>
+function selTargRow(si, ti) { document.querySelectorAll(`#tbl-${si} .gpa-row`).forEach((r, i) => r.classList.toggle('sel', i === ti)); selTarg(si, ti); }
+function selTarg(si, ti) { document.querySelectorAll(`#chips-${si} .chip`).forEach((c, i) => c.classList.toggle('on', i === ti)); renderExamCards(si, ti); }
+function renderExamCards(si, ti) {
+  const c = document.getElementById(`ec-${si}`); if (!c) return;
+  const t = calcRes[si].targets[ti]; c.innerHTML = '';
+  const icos = ['📄','📝','📖','✏️','🧪','📊','📐','🔬'];
+  t.perExam.forEach((ex, i) => {
+    const nd = ex.needed; let sc, rng, col;
+    if (nd === null) { sc = 'N/A'; rng = ''; col = 'var(--muted)'; }
+    else if (nd > 100) { sc = 'Not possible'; rng = `Need ${nd.toFixed(1)}%`; col = 'var(--red)'; }
+    else if (nd <= 0) { sc = 'Any score'; rng = 'Already on track'; col = 'var(--green)'; }
+    else { const lo = Math.max(0, nd - 3).toFixed(1); const hi = Math.min(100, nd + 3).toFixed(1); sc = nd.toFixed(1) + '%'; rng = `Safe: ${lo}%–${hi}%`; col = nd < 60 ? 'var(--green)' : nd < 80 ? 'var(--yellow)' : 'var(--red)'; }
+    const card = document.createElement('div'); card.className = 'eneed'; card.style.animationDelay = (i * .06) + 's';
+    card.innerHTML = `<div class="eneed-ico">${icos[i % icos.length]}</div>
+      <div class="eneed-info"><div class="eneed-name">${ex.name}</div><div class="eneed-meta">Worth ${(ex.gf * 100).toFixed(1)}% of total</div></div>
       <div><div class="eneed-score" style="color:${col}">${sc}</div><div class="eneed-range">${rng}</div></div>`;
     c.appendChild(card);
   });
-  if(ti===0&&t.perExam.every(e=>e.needed!==null&&e.needed<=100&&e.needed>=0)) fireConfetti();
+  if (ti === 0 && t.perExam.every(e => e.needed !== null && e.needed <= 100 && e.needed >= 0)) fireConfetti();
 }
 
 // ══════════════════════════════════════════════════════════════
 // WHAT-IF
 // ══════════════════════════════════════════════════════════════
-function buildWISubjSel(){
-  const c=document.getElementById('wi-subj-sel');if(!c)return;
-  if(calcSubjs.length<=1){c.innerHTML='';return;}
-  c.innerHTML=`<div class="chip-row">${calcSubjs.map((s,i)=>`<div class="chip ${i===0?'on':''}" onclick="setWIS(${i},this)">${s.name}</div>`).join('')}</div>`;
+function buildWISubjSel() {
+  const c = document.getElementById('wi-subj-sel'); if (!c) return;
+  if (calcSubjs.length <= 1) { c.innerHTML = ''; return; }
+  c.innerHTML = `<div class="chip-row">${calcSubjs.map((s, i) => `<div class="chip ${i === 0 ? 'on' : ''}" onclick="setWIS(${i},this)">${s.name}</div>`).join('')}</div>`;
 }
-function setWIS(i,el){activeCalcIdx=i;el.closest('.chip-row').querySelectorAll('.chip').forEach((c,j)=>c.classList.toggle('on',j===i));updateWI();}
-function updateWI(){
-  if(!calcRes.length)return;
-  const res=calcRes[activeCalcIdx];
-  const v=parseFloat(document.getElementById('wi-slider')?.value||75);
-  document.getElementById('wi-val').textContent=v.toFixed(0)+'%';
-  if(res.remFrac<0.001){document.getElementById('wi-tot').textContent=res.cur.toFixed(1)+'%';const g=res.curG;document.getElementById('wi-grade').textContent=g.l;document.getElementById('wi-grade').style.color=gCol(g.l);return;}
-  const proj=Math.min(100,res.cur+(res.remFrac*v));const g=pctToG(proj);
-  document.getElementById('wi-tot').textContent=proj.toFixed(1)+'%';
-  document.getElementById('wi-grade').textContent=g.l;document.getElementById('wi-grade').style.color=gCol(g.l);
-  if(g.l==='A'&&v>=90)fireConfetti();
+function setWIS(i, el) { activeCalcIdx = i; el.closest('.chip-row').querySelectorAll('.chip').forEach((c, j) => c.classList.toggle('on', j === i)); updateWI(); }
+function updateWI() {
+  if (!calcRes.length) return;
+  const res = calcRes[activeCalcIdx];
+  const v = parseFloat(document.getElementById('wi-slider')?.value || 75);
+  document.getElementById('wi-val').textContent = v.toFixed(0) + '%';
+  if (res.remFrac < 0.001) { document.getElementById('wi-tot').textContent = res.cur.toFixed(1) + '%'; const g = res.curG; document.getElementById('wi-grade').textContent = g.l; document.getElementById('wi-grade').style.color = gCol(g.l); return; }
+  const proj = Math.min(100, res.curAbsolute + res.remFrac * v); const g = pctToG(proj);
+  document.getElementById('wi-tot').textContent = proj.toFixed(1) + '%';
+  document.getElementById('wi-grade').textContent = g.l; document.getElementById('wi-grade').style.color = gCol(g.l);
+  if ((g.l === 'A' || g.l === 'A+') && v >= 90) fireConfetti();
 }
-function renderWIFull(){
-  const c=document.getElementById('wi-full');c.innerHTML='';
-  const all=[];semesters.forEach(sem=>sem.subjects.forEach(s=>all.push({s,sem})));
-  if(!all.length){c.innerHTML='<div style="text-align:center;padding:40px;color:var(--muted)">Add subjects first.</div>';return;}
-  all.forEach(({s,sem},si)=>{
-    const res=computeSubject(s);
-    const div=document.createElement('div');div.style.marginBottom='24px';
-    div.innerHTML=`<div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:16px;margin-bottom:10px">${s.name} <span style="font-size:12px;color:var(--muted);font-weight:400">· ${sem.name}</span></div>
-      <div class="infobox">Current: <strong>${res.cur.toFixed(1)}%</strong> (${res.curG.l}) · Remaining: <strong>${(res.remFrac*100).toFixed(1)}%</strong></div>
+function renderWIFull() {
+  const c = document.getElementById('wi-full'); c.innerHTML = '';
+  const all = []; semesters.forEach(sem => sem.subjects.forEach(s => all.push({ s, sem })));
+  if (!all.length) { c.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted)">Add subjects first.</div>'; return; }
+  all.forEach(({ s, sem }, si) => {
+    const res = computeSubject(s);
+    const div = document.createElement('div'); div.style.marginBottom = '24px';
+    div.innerHTML = `<div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:16px;margin-bottom:10px">${s.name} <span style="font-size:12px;color:var(--muted);font-weight:400">· ${sem.name}</span></div>
+      <div class="infobox">Current: <strong>${res.cur.toFixed(1)}%</strong> (${res.curG.l}) · Remaining weight: <strong>${(res.remFrac * 100).toFixed(1)}%</strong></div>
       <input type="range" min="0" max="100" value="75" style="width:100%" oninput="wiUpd(this,${si})"/>
       <div class="slider-labels"><span>0%</span><span>50%</span><span>100%</span></div>
       <div style="display:flex;gap:18px;margin-top:12px;flex-wrap:wrap">
@@ -1571,284 +2045,524 @@ function renderWIFull(){
           <div id="wi2g${si}" style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:26px">—</div></div>
       </div><div class="divider"></div>`;
     c.appendChild(div);
-    div._res=res;
-    setTimeout(()=>{ const sl=div.querySelector('input[type=range]'); wiUpd(sl,si,res); },50);
+    setTimeout(() => { const sl = div.querySelector('input[type=range]'); wiUpd(sl, si, res); }, 50);
   });
 }
-function wiUpd(sl,si,resOv){
-  const v=parseFloat(sl.value);
-  const all=[];semesters.forEach(sem=>sem.subjects.forEach(s=>all.push(s)));
-  const res=resOv||computeSubject(all[si]);
-  document.getElementById(`wi2v${si}`).textContent=v.toFixed(0)+'%';
-  const proj=Math.min(100,res.cur+(res.remFrac*v));const g=pctToG(proj);
-  document.getElementById(`wi2t${si}`).textContent=proj.toFixed(1)+'%';
-  document.getElementById(`wi2g${si}`).textContent=g.l;document.getElementById(`wi2g${si}`).style.color=gCol(g.l);
+function wiUpd(sl, si, resOv) {
+  const v = parseFloat(sl.value);
+  const all = []; semesters.forEach(sem => sem.subjects.forEach(s => all.push(s)));
+  const res = resOv || computeSubject(all[si]);
+  document.getElementById(`wi2v${si}`).textContent = v.toFixed(0) + '%';
+  const proj = Math.min(100, res.curAbsolute + (res.remFrac * v)); const g = pctToG(proj);
+  document.getElementById(`wi2t${si}`).textContent = proj.toFixed(1) + '%';
+  document.getElementById(`wi2g${si}`).textContent = g.l; document.getElementById(`wi2g${si}`).style.color = gCol(g.l);
 }
 
 // ══════════════════════════════════════════════════════════════
-// STUDY PLANNER
+// STUDY PLANNER + ROI
 // ══════════════════════════════════════════════════════════════
-function renderStudy(){
-  const c=document.getElementById('study-content');c.innerHTML='';
-  const all=[];semesters.forEach(sem=>sem.subjects.forEach(s=>all.push({s,sem})));
-  const withRem=all.filter(({s})=>(s.exams||[]).some(e=>!e.taken));
-  if(!withRem.length){c.innerHTML='<div style="text-align:center;padding:40px;color:var(--muted)">No remaining exams to plan for.</div>';return;}
-  withRem.forEach(({s,sem})=>{
-    const res=computeSubject(s);
-    const bTarg=res.targets.find(t=>t.l==='B')||res.targets[3];
-    const sec=document.createElement('div');sec.style.marginBottom='22px';
-    sec.innerHTML=`<div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:15px;margin-bottom:10px">${s.name} <span style="font-size:12px;font-weight:400;color:var(--muted)">· ${sem.name}</span></div>`;
-    res.remExams.forEach(ex=>{
-      const nd=bTarg.perExam.find(p=>p.name===ex.name)?.needed||75;
+function renderStudy() {
+  const c = document.getElementById('study-content'); c.innerHTML = '';
+  const all = []; semesters.forEach(sem => sem.subjects.forEach(s => all.push({ s, sem })));
+  const withRem = all.filter(({ s }) => (s.exams || []).some(e => !e.taken));
+  if (!withRem.length) { c.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted)">No remaining exams to plan for.</div>'; renderCalendar(); return; }
+
+  // Find highest ROI exam across all subjects
+  let maxROI = 0, roiExam = null, roiSubj = null;
+  withRem.forEach(({ s }) => {
+    const res = computeSubject(s);
+    res.remExams.forEach(ex => {
+      if (ex.gf > maxROI) { maxROI = ex.gf; roiExam = ex; roiSubj = s; }
+    });
+  });
+
+  withRem.forEach(({ s, sem }) => {
+    const res = computeSubject(s);
+    const bTarg = res.targets.find(t => t.l === 'B') || res.targets[3];
+    const sec = document.createElement('div'); sec.style.marginBottom = '22px';
+    sec.innerHTML = `<div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:15px;margin-bottom:10px">${s.name} <span style="font-size:12px;font-weight:400;color:var(--muted)">· ${sem.name}</span></div>`;
+    res.remExams.forEach(ex => {
+      const nd = bTarg.perExam.find(p => p.name === ex.name)?.needed || 75;
       let hrs;
-      if(nd<=0)hrs=2;else if(nd>100)hrs=20;
-      else if(nd<60)hrs=Math.round(4+nd*.05);else if(nd<80)hrs=Math.round(8+nd*.08);else hrs=Math.round(12+nd*.12);
-      const card=document.createElement('div');card.className='study-card';
-      card.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:flex-start">
-        <div><div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:14px;margin-bottom:3px">${ex.name}</div>
-          <div style="font-size:11px;color:var(--muted)">Target B: ${nd>100?'Not achievable':nd<=0?'Secured':nd.toFixed(1)+'%'}</div></div>
+      if (nd <= 0) hrs = 2; else if (nd > 100) hrs = 20;
+      else if (nd < 60) hrs = Math.round(4 + nd * .05); else if (nd < 80) hrs = Math.round(8 + nd * .08); else hrs = Math.round(12 + nd * .12);
+      const isROI = roiExam && ex.name === roiExam.name && roiSubj?.id === s.id;
+      const card = document.createElement('div'); card.className = 'study-card';
+      card.style.borderColor = isROI ? 'rgba(129,140,248,.5)' : '';
+      card.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div><div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:14px;margin-bottom:3px">${ex.name} ${isROI ? '🎯 <span style="font-size:10px;background:rgba(129,140,248,.15);color:var(--accent);padding:2px 7px;border-radius:100px">Highest ROI</span>' : ''}</div>
+          <div style="font-size:11px;color:var(--muted)">Target B: ${nd > 100 ? 'Not achievable' : nd <= 0 ? 'Secured' : nd.toFixed(1) + '%'} · Worth ${(ex.gf * 100).toFixed(1)}% of total</div></div>
         <div style="text-align:right"><div class="study-h">${hrs}h</div><div style="font-size:11px;color:var(--muted)">Recommended</div></div>
       </div>
-      <div style="margin-top:10px;font-size:12px;color:var(--muted2)">${hrs<=4?'✅ Light review — go over notes.':hrs<=8?'📚 Medium prep — practice questions.':hrs<=14?'🔥 Heavy prep — daily sessions!':'🚨 Intensive prep — get a study group!'}</div>`;
+      <div style="margin-top:10px;font-size:12px;color:var(--muted2)">${hrs <= 4 ? '✅ Light review — go over notes.' : hrs <= 8 ? '📚 Medium prep — practice questions.' : hrs <= 14 ? '🔥 Heavy prep — daily sessions!' : '🚨 Intensive prep — get a study group!'}</div>`;
       sec.appendChild(card);
     });
     c.appendChild(sec);
   });
+  renderCalendar();
+}
+
+function renderROI() {
+  const c = document.getElementById('roi-content'); if (!c) return;
+  const all = []; semesters.forEach(sem => sem.subjects.forEach(s => all.push({ s, sem })));
+  const withRem = all.filter(({ s }) => (s.exams || []).some(e => !e.taken));
+  if (!withRem.length) { c.innerHTML = '<div style="color:var(--muted);font-size:13px">No remaining exams.</div>'; return; }
+  const exams = [];
+  withRem.forEach(({ s, sem }) => {
+    const res = computeSubject(s);
+    res.remExams.forEach(ex => {
+      const gradeImpact = ex.gf * 100;
+      const bTarget = res.targets.find(t => t.l === 'B');
+      const needed = bTarget?.perExam.find(p => p.name === ex.name)?.needed || 75;
+      const hrs = needed <= 0 ? 1 : needed > 100 ? 99 : needed < 60 ? Math.round(4 + needed * .05) : needed < 80 ? Math.round(8 + needed * .08) : Math.round(12 + needed * .12);
+      const roi = gradeImpact / hrs;
+      exams.push({ name: ex.name, subject: s.name, sem: sem.name, gradeImpact, hrs, roi, needed });
+    });
+  });
+  exams.sort((a, b) => b.roi - a.roi);
+  c.innerHTML = exams.slice(0, 5).map((ex, i) => `
+    <div class="eneed" style="${i === 0 ? 'border-color:rgba(129,140,248,.4);background:rgba(129,140,248,.06)' : ''}">
+      <div class="eneed-ico">${i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉'}</div>
+      <div class="eneed-info">
+        <div class="eneed-name">${ex.name} <span style="font-size:11px;font-weight:400;color:var(--muted)">· ${ex.subject}</span></div>
+        <div class="eneed-meta">+${ex.gradeImpact.toFixed(1)}% impact · ~${ex.hrs}h study · Need ${ex.needed > 100 ? 'too high' : ex.needed <= 0 ? 'secured' : ex.needed.toFixed(0) + '%'}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:18px;color:var(--accent)">${ex.roi.toFixed(1)}</div>
+        <div style="font-size:10px;color:var(--muted)">ROI/hr</div>
+      </div>
+    </div>`).join('');
+}
+
+function renderCalendar() {
+  const c = document.getElementById('cal-content'); if (!c) return;
+  const all = []; semesters.forEach(sem => sem.subjects.forEach(s => all.push({ s, sem })));
+  const withRem = all.filter(({ s }) => (s.exams || []).some(e => !e.taken));
+  if (!withRem.length) { c.innerHTML = '<div style="color:var(--muted);font-size:13px">No remaining exams.</div>'; return; }
+  let html = '';
+  withRem.forEach(({ s }) => {
+    (s.exams || []).filter(e => !e.taken).forEach(e => {
+      const key = e.id;
+      html += `<div class="cal-exam-row">
+        <div class="cal-date"><input type="date" value="${examDates[key]||''}" onchange="setExamDate('${key}',this.value)" style="padding:6px;font-size:11px;width:100%"/></div>
+        <div><div class="cal-name">${e.name}</div><div class="cal-sub">${s.name} · ${e.weight.toFixed(0)}% of exam marks</div></div>
+      </div>`;
+    });
+  });
+  c.innerHTML = html;
+}
+function setExamDate(examId, date) {
+  examDates[examId] = date;
+  localStorage.setItem('gradintel-dates-' + (currentUser?.id || ''), JSON.stringify(examDates));
+  showToast('📅 Date saved');
+}
+function exportICS() {
+  const all = []; semesters.forEach(sem => sem.subjects.forEach(s => all.push({ s, sem })));
+  let ics = `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Gradintel//EN\r\nCALSCALE:GREGORIAN\r\n`;
+  let count = 0;
+  all.forEach(({ s }) => {
+    (s.exams || []).filter(e => !e.taken).forEach(e => {
+      if (!examDates[e.id]) return;
+      const d = examDates[e.id].replace(/-/g, '');
+      ics += `BEGIN:VEVENT\r\nDTSTART;VALUE=DATE:${d}\r\nDTEND;VALUE=DATE:${d}\r\n`;
+      ics += `SUMMARY:${e.name} — ${s.name}\r\n`;
+      ics += `DESCRIPTION:Weight: ${e.weight.toFixed(0)}% of exam marks\r\n`;
+      ics += `UID:${e.id}@gradintel\r\nEND:VEVENT\r\n`;
+      count++;
+    });
+  });
+  ics += `END:VCALENDAR`;
+  if (!count) { showToast('⚠️ Add dates to exams first!'); return; }
+  const blob = new Blob([ics], { type: 'text/calendar' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'gradintel_exams.ics'; a.click();
+  showToast(`📅 Exported ${count} exam${count !== 1 ? 's' : ''} to calendar!`);
+}
+
+// ══════════════════════════════════════════════════════════════
+// AI ASSISTANT
+// ══════════════════════════════════════════════════════════════
+async function runAI() {
+  const inp = document.getElementById('ai-input').value.trim();
+  if (!inp) { showToast('Type a question first!'); return; }
+  const btn = document.getElementById('ai-send-btn');
+  btn.disabled = true; btn.textContent = 'Thinking...';
+  const resp = document.getElementById('ai-resp');
+  resp.className = 'ai-resp show ai-typing';
+  resp.textContent = 'Analysing your situation';
+
+  // Build context from current data
+  const { cumGPA } = computeAllGPA();
+  const subjectSummary = semesters.flatMap(sem => sem.subjects.map(s => {
+    const res = computeSubject(s);
+    return `${s.name}: ${res.cur.toFixed(1)}% (${res.curG.l}), ${res.remExams.length} exams left`;
+  })).join('; ');
+
+  const systemPrompt = `You are Gradintel's AI academic advisor. Be concise, specific and practical. The user's GPA scale is ${policies.scale}.
+Current cumulative GPA: ${cumGPA.toFixed(4)}.
+${subjectSummary ? `Their subjects: ${subjectSummary}` : ''}
+Answer in 3-5 sentences max. Give numbers. Be direct. If they describe exams/weights, calculate needed scores.`;
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: inp }]
+      })
+    });
+    const data = await response.json();
+    const text = data.content?.map(b => b.text || '').join('') || 'Sorry, I could not generate a response.';
+    resp.className = 'ai-resp show';
+    resp.innerHTML = text.replace(/\n/g, '<br/>');
+  } catch(e) {
+    resp.className = 'ai-resp show';
+    resp.innerHTML = `<span style="color:var(--red)">AI request failed. Make sure you're using this via Claude.ai which handles the API key automatically.</span>`;
+  }
+  btn.disabled = false; btn.textContent = 'Ask AI →';
+}
+
+function genStudyPlan() {
+  const hrs = parseInt(document.getElementById('plan-hrs').value) || 3;
+  const days = parseInt(document.getElementById('plan-days').value) || 14;
+  const out = document.getElementById('plan-output');
+  const all = []; semesters.forEach(sem => sem.subjects.forEach(s => all.push(s)));
+  const withRem = all.filter(s => (s.exams || []).some(e => !e.taken));
+  if (!withRem.length) { out.innerHTML = '<div class="infobox">No remaining exams to plan for!</div>'; return; }
+
+  const totalHrs = hrs * days;
+  const examList = [];
+  withRem.forEach(s => {
+    const res = computeSubject(s);
+    res.remExams.forEach(ex => {
+      const bTarg = res.targets.find(t => t.l === 'B');
+      const nd = bTarg?.perExam.find(p => p.name === ex.name)?.needed || 75;
+      const urgency = nd > 100 ? 0.5 : nd > 80 ? 1.5 : nd > 60 ? 1.2 : 1.0;
+      const weight = ex.gf * urgency;
+      examList.push({ name: ex.name, subject: s.name, weight, gf: ex.gf });
+    });
+  });
+  const totalWeight = examList.reduce((a, e) => a + e.weight, 0);
+  const weeks = Math.ceil(days / 7);
+  let html = `<div class="infobox">📋 ${totalHrs}h total · ${days} days · ${examList.length} exams to cover</div>`;
+  for (let w = 0; w < weeks; w++) {
+    const weekDays = Math.min(7, days - w * 7);
+    const weekHrs = hrs * weekDays;
+    html += `<div style="margin-bottom:16px"><div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:13px;color:var(--accent);margin-bottom:8px">Week ${w + 1} — ${weekHrs}h</div>`;
+    examList.forEach(ex => {
+      const allocated = Math.round((ex.weight / totalWeight) * weekHrs * 10) / 10;
+      if (allocated < 0.5) return;
+      html += `<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px">
+        <span>${ex.name} <span style="color:var(--muted);font-size:11px">· ${ex.subject}</span></span>
+        <span style="color:var(--accent4);font-family:'Clash Display',sans-serif;font-weight:700">${allocated}h</span>
+      </div>`;
+    });
+    html += '</div>';
+  }
+  out.innerHTML = html;
 }
 
 // ══════════════════════════════════════════════════════════════
 // HISTORY
 // ══════════════════════════════════════════════════════════════
-function renderHistory(){
-  const list=document.getElementById('history-list');list.innerHTML='';
-  const tc=document.getElementById('sem-trend-card');
-  if(!semesters.length){list.innerHTML='<div style="text-align:center;padding:40px;color:var(--muted)">No semesters yet.</div>';tc.style.display='none';return;}
-  semesters.forEach(sem=>{
-    const cl=closestL(sem._gpa||0);const col=gCol(cl);
-    const card=document.createElement('div');card.className='sem-card';
-    card.innerHTML=`<div class="sem-gpa" style="color:${col}">${(sem._gpa||0).toFixed(2)}</div>
+function renderHistory() {
+  const list = document.getElementById('history-list'); list.innerHTML = '';
+  const tc = document.getElementById('sem-trend-card');
+  if (!semesters.length) { list.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted)">No semesters yet.</div>'; tc.style.display = 'none'; return; }
+  semesters.forEach(sem => {
+    const cl = closestL(sem._gpa || 0); const col = gCol(cl);
+    const card = document.createElement('div'); card.className = 'sem-card';
+    card.innerHTML = `<div class="sem-gpa" style="color:${col}">${(sem._gpa || 0).toFixed(2)}</div>
       <div class="sem-info"><div class="sem-name">${sem.name}</div>
-        <div class="sem-meta">${sem.date||''} · ${(sem.subjects||[]).length} subject${(sem.subjects||[]).length!==1?'s':''} · Cloud Synced ☁️</div></div>
+        <div class="sem-meta">${sem.date || ''} · ${(sem.subjects || []).length} subject${(sem.subjects || []).length !== 1 ? 's' : ''} · Cloud Synced ☁️</div></div>
       <button style="background:transparent;border:none;color:var(--red);cursor:pointer;font-size:16px;opacity:.5;transition:opacity .2s;padding:4px" onclick="deleteSem('${sem.id}');event.stopPropagation()">🗑️</button>`;
-    card.onclick=()=>toggleSemDetail(card,sem);
+    card.onclick = () => toggleSemDetail(card, sem);
     list.appendChild(card);
   });
-  if(semesters.length>1){tc.style.display='block';buildSemTrendChart();}else tc.style.display='none';
+  if (semesters.length > 1) { tc.style.display = 'block'; buildSemTrendChart(); } else tc.style.display = 'none';
 }
-function toggleSemDetail(card,sem){
-  const ex=card.nextElementSibling;
-  if(ex&&ex.classList.contains('semdet')){ex.remove();return;}
-  const d=document.createElement('div');d.className='semdet';
-  d.style.cssText='background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:14px 18px;margin-bottom:8px';
-  d.innerHTML=(sem.subjects||[]).map(s=>{const res=computeSubject(s);return`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px"><span>${s.name} (${s.credits} cr)</span><span style="color:${gCol(res.curG.l)}">${res.curG.l} · ${res.cur.toFixed(1)}%</span></div>`;}).join('');
+function toggleSemDetail(card, sem) {
+  const ex = card.nextElementSibling;
+  if (ex && ex.classList.contains('semdet')) { ex.remove(); return; }
+  const d = document.createElement('div'); d.className = 'semdet';
+  d.style.cssText = 'background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:14px 18px;margin-bottom:8px';
+  d.innerHTML = (sem.subjects || []).map(s => { const res = computeSubject(s); return `<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px"><span>${s.name} (${s.credits} cr)</span><span style="color:${gCol(res.curG.l)}">${res.curG.l} · ${res.cur.toFixed(1)}%</span></div>`; }).join('');
   card.after(d);
 }
-async function deleteSem(id){
-  if(!confirm('Delete this semester?'))return;
+async function deleteSem(id) {
+  if (!confirm('Delete this semester?')) return;
   await deleteSemesterFromDB(id);
-  updateStats();renderDashboard();renderCourses();renderHistory();renderWIFull();renderStudy();
+  updateStats(); renderDashboard(); renderCourses(); renderHistory(); renderWIFull(); renderStudy(); renderROI();
   showToast('Semester deleted.');
 }
 
 // ══════════════════════════════════════════════════════════════
 // CHARTS
 // ══════════════════════════════════════════════════════════════
-function buildGradeChart(){
-  if(chartInst){chartInst.destroy();chartInst=null;}
-  const ctx=document.getElementById('gradeChart');if(!ctx)return;
-  chartInst=new Chart(ctx.getContext('2d'),{type:'bar',
-    data:{labels:calcSubjs.map(s=>s.name),datasets:[{label:'Score (%)',data:calcRes.map(r=>r.cur.toFixed(1)),backgroundColor:calcRes.map(r=>gCol(r.curG.l)+'55'),borderColor:calcRes.map(r=>gCol(r.curG.l)),borderWidth:2,borderRadius:8,borderSkipped:false}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.parsed.y}% — ${pctToG(c.parsed.y).l}`}}},
-      scales:{y:{min:0,max:100,grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#6b7280',callback:v=>v+'%'}},x:{grid:{display:false},ticks:{color:'#6b7280'}}}}
+function buildGradeChart() {
+  if (chartInst) { chartInst.destroy(); chartInst = null; }
+  const ctx = document.getElementById('gradeChart'); if (!ctx) return;
+  chartInst = new Chart(ctx.getContext('2d'), { type: 'bar',
+    data: { labels: calcSubjs.map(s => s.name), datasets: [{ label: 'Score (%)', data: calcRes.map(r => r.cur.toFixed(1)), backgroundColor: calcRes.map(r => gCol(r.curG.l) + '55'), borderColor: calcRes.map(r => gCol(r.curG.l)), borderWidth: 2, borderRadius: 8, borderSkipped: false }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => `${c.parsed.y}% — ${pctToG(c.parsed.y).l}` } } },
+      scales: { y: { min: 0, max: 100, grid: { color: 'rgba(255,255,255,.05)' }, ticks: { color: '#6b7280', callback: v => v + '%' } }, x: { grid: { display: false }, ticks: { color: '#6b7280' } } } }
   });
 }
-function buildTrendChart(){
-  if(trendInst){trendInst.destroy();trendInst=null;}
-  const ctx=document.getElementById('trendChart');if(!ctx)return;
-  const pts=[];
-  if(profile.mode==='existing'&&profile.start_gpa>0) pts.push({x:'Before',y:profile.start_gpa});
-  semesters.forEach(s=>pts.push({x:s.name,y:parseFloat((s._gpa||0).toFixed(4))}));
-  if(pts.length<2){document.getElementById('dash-chart-card').style.display='none';return;}
-  trendInst=new Chart(ctx.getContext('2d'),{type:'line',
-    data:{labels:pts.map(p=>p.x),datasets:[{label:'GPA',data:pts.map(p=>p.y),borderColor:'#818cf8',backgroundColor:'rgba(129,140,248,.1)',tension:.4,pointBackgroundColor:'#818cf8',pointRadius:5,fill:true}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{y:{min:0,max:4,grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#6b7280'}},x:{grid:{display:false},ticks:{color:'#6b7280'}}}}
+function buildTrendChart() {
+  if (trendInst) { trendInst.destroy(); trendInst = null; }
+  const ctx = document.getElementById('trendChart'); if (!ctx) return;
+  const pts = [];
+  if (profile.mode === 'existing' && profile.start_gpa > 0) pts.push({ x: 'Before', y: profile.start_gpa });
+  semesters.forEach(s => pts.push({ x: s.name, y: parseFloat((s._gpa || 0).toFixed(4)) }));
+  if (pts.length < 2) { document.getElementById('dash-chart-card').style.display = 'none'; return; }
+  trendInst = new Chart(ctx.getContext('2d'), { type: 'line',
+    data: { labels: pts.map(p => p.x), datasets: [{ label: 'GPA', data: pts.map(p => p.y), borderColor: '#818cf8', backgroundColor: 'rgba(129,140,248,.1)', tension: .4, pointBackgroundColor: '#818cf8', pointRadius: 5, fill: true }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+      scales: { y: { min: 0, max: Math.max(...GPA.map(g=>g.p)), grid: { color: 'rgba(255,255,255,.05)' }, ticks: { color: '#6b7280' } }, x: { grid: { display: false }, ticks: { color: '#6b7280' } } } }
   });
 }
-function buildSemTrendChart(){
-  if(semTrendInst){semTrendInst.destroy();semTrendInst=null;}
-  const ctx=document.getElementById('semTrendChart');if(!ctx)return;
-  const pts=[];
-  if(profile.mode==='existing'&&profile.start_gpa>0) pts.push({x:'Before',y:profile.start_gpa});
-  semesters.forEach(s=>pts.push({x:s.name,y:parseFloat((s._gpa||0).toFixed(4))}));
-  semTrendInst=new Chart(ctx.getContext('2d'),{type:'line',
-    data:{labels:pts.map(p=>p.x),datasets:[{label:'GPA',data:pts.map(p=>p.y),borderColor:'#818cf8',backgroundColor:'rgba(129,140,248,.1)',tension:.4,pointBackgroundColor:'#818cf8',pointRadius:6,fill:true}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{y:{min:0,max:4,grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#6b7280'}},x:{grid:{display:false},ticks:{color:'#6b7280'}}}}
+function buildSemTrendChart() {
+  if (semTrendInst) { semTrendInst.destroy(); semTrendInst = null; }
+  const ctx = document.getElementById('semTrendChart'); if (!ctx) return;
+  const pts = [];
+  if (profile.mode === 'existing' && profile.start_gpa > 0) pts.push({ x: 'Before', y: profile.start_gpa });
+  semesters.forEach(s => pts.push({ x: s.name, y: parseFloat((s._gpa || 0).toFixed(4)) }));
+  semTrendInst = new Chart(ctx.getContext('2d'), { type: 'line',
+    data: { labels: pts.map(p => p.x), datasets: [{ label: 'GPA', data: pts.map(p => p.y), borderColor: '#818cf8', backgroundColor: 'rgba(129,140,248,.1)', tension: .4, pointBackgroundColor: '#818cf8', pointRadius: 6, fill: true }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+      scales: { y: { min: 0, max: Math.max(...GPA.map(g=>g.p)), grid: { color: 'rgba(255,255,255,.05)' }, ticks: { color: '#6b7280' } }, x: { grid: { display: false }, ticks: { color: '#6b7280' } } } }
   });
 }
 
 // ══════════════════════════════════════════════════════════════
-// SHARE + DOWNLOAD
+// EXPORT / IMPORT
 // ══════════════════════════════════════════════════════════════
-function buildShareCard(){
-  const el=document.getElementById('share-el');if(!el||!calcRes.length)return;
-  const s=calcSubjs[activeCalcIdx];const res=calcRes[activeCalcIdx];
-  const g=res.curG;const col=gCol(g.l);
-  const top=res.targets.filter(t=>t.avg!==null&&t.avg<=100&&t.avg>0).slice(0,3);
-  el.innerHTML=`<div class="sp-eye">Gradintel · ${new Date().toLocaleDateString()}</div>
+function exportJSON() {
+  const data = { version: '4.0', exported: new Date().toISOString(), profile, semesters, policies };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = `gradintel_backup_${new Date().toISOString().slice(0,10)}.json`; a.click();
+  showToast('📄 JSON backup downloaded!');
+}
+function exportCSV() {
+  let csv = 'Semester,Subject,Credits,Status,Score (%),Grade,GPA Points,Exams Taken,Exams Remaining\n';
+  semesters.forEach(sem => {
+    (sem.subjects || []).forEach(s => {
+      const res = computeSubject(s);
+      csv += `"${sem.name}","${s.name}",${s.credits},${s.status||'normal'},${res.cur.toFixed(2)},${res.curG.l},${res.curG.p.toFixed(4)},${res.takenExams.length},${res.remExams.length}\n`;
+    });
+  });
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = `gradintel_courses_${new Date().toISOString().slice(0,10)}.csv`; a.click();
+  showToast('📊 CSV exported!');
+}
+async function importJSON(input) {
+  const file = input.files[0]; if (!file) return;
+  try {
+    const text = await file.text();
+    const data = JSON.parse(text);
+    if (!data.semesters) { showToast('❌ Invalid backup file.'); return; }
+    let imported = 0;
+    for (const sem of data.semesters) {
+      const existing = semesters.find(s => s.id === sem.id);
+      if (!existing) {
+        await saveSemesterToDB({ ...sem, user_id: currentUser.id });
+        imported++;
+      }
+    }
+    updateStats(); renderDashboard(); renderCourses(); renderHistory(); renderWIFull(); renderStudy(); renderROI();
+    showToast(`✅ Imported ${imported} new semester${imported !== 1 ? 's' : ''}!`);
+  } catch(e) {
+    showToast('❌ Import failed: invalid JSON.');
+  }
+  input.value = '';
+}
+
+// ══════════════════════════════════════════════════════════════
+// SHARE + REPORT
+// ══════════════════════════════════════════════════════════════
+function buildShareCard() {
+  const el = document.getElementById('share-el'); if (!el || !calcRes.length) return;
+  const s = calcSubjs[activeCalcIdx]; const res = calcRes[activeCalcIdx];
+  const g = res.curG; const col = gCol(g.l);
+  const top = res.targets.filter(t => t.avg !== null && t.avg <= 100 && t.avg > 0).slice(0, 3);
+  el.innerHTML = `<div class="sp-eye">Gradintel · ${new Date().toLocaleDateString()}</div>
     <div class="sp-subj">${s.name}</div>
     <div class="sp-score" style="color:${col}">${res.cur.toFixed(1)}%</div>
     <div style="color:${col};font-size:15px;margin-top:5px">${g.l} · ${g.p.toFixed(4)} quality pts</div>
-    ${top.length?`<div class="sp-targets">${top.map(t=>`<div class="sp-ti"><div class="sp-tg" style="color:${gCol(t.l)}">${t.l}</div><div class="sp-ts">Need ${t.avg.toFixed(1)}%</div></div>`).join('')}</div>`:''}`;
+    ${top.length ? `<div class="sp-targets">${top.map(t => `<div class="sp-ti"><div class="sp-tg" style="color:${gCol(t.l)}">${t.l}</div><div class="sp-ts">Need ${t.avg.toFixed(1)}%</div></div>`).join('')}</div>` : ''}`;
 }
-function copyShare(){
-  if(!calcRes.length){showToast('No results yet!');return;}
-  const s=calcSubjs[activeCalcIdx];const res=calcRes[activeCalcIdx];
-  let txt=`📊 Gradintel — ${s.name}\nScore: ${res.cur.toFixed(1)}% (${res.curG.l})\n\nNeeded:\n`;
-  res.targets.filter(t=>t.avg!==null&&t.avg<=100&&t.avg>0).forEach(t=>{txt+=`  ${t.l}: ${t.avg.toFixed(1)}% avg\n`;});
-  navigator.clipboard.writeText(txt).then(()=>showToast('📋 Copied!')).catch(()=>showToast('Copy failed'));
+function copyShare() {
+  if (!calcRes.length) { showToast('No results yet!'); return; }
+  const s = calcSubjs[activeCalcIdx]; const res = calcRes[activeCalcIdx];
+  let txt = `📊 Gradintel — ${s.name}\nScore: ${res.cur.toFixed(1)}% (${res.curG.l})\n\nNeeded:\n`;
+  res.targets.filter(t => t.avg !== null && t.avg <= 100 && t.avg > 0).forEach(t => { txt += `  ${t.l}: ${t.avg.toFixed(1)}% avg\n`; });
+  navigator.clipboard.writeText(txt).then(() => showToast('📋 Copied!')).catch(() => showToast('Copy failed'));
 }
-function dlReport(){
-  if(!calcRes.length){showToast('No results!');return;}
-  const now=new Date();let txt='';const L=s=>txt+=s+'\n';
-  L('='.repeat(65));L('  GPA TRACKER PRO — REPORT');L(`  User: ${profile.full_name}${profile.university?' | '+profile.university:''}`);
-  L('  Generated: '+now.toLocaleString());L('='.repeat(65));L('');
-  calcSubjs.forEach((s,i)=>{
-    const res=calcRes[i];const g=res.curG;
-    L(`  SUBJECT: ${s.name.toUpperCase()} (${s.credits} cr)`);
-    L(`  Score: ${res.cur.toFixed(2)}% | Grade: ${g.l} (${g.p.toFixed(4)} pts)`);L('');
-    if(res.remExams.length){
-      L('  Needed (avg across remaining exams):');
-      res.targets.forEach(t=>{const a=t.avg;let x;if(a===null)x='N/A';else if(a>100)x='Not possible';else if(a<=0)x='Secured';else x=a.toFixed(1)+'%';L(`    ${t.l}: ${x}`);});
-    }
-    L('-'.repeat(55));L('');
+function dlReport() {
+  const now = new Date(); let txt = ''; const L = s => txt += s + '\n';
+  L('='.repeat(65)); L('  GRADINTEL — ACADEMIC REPORT'); L(`  User: ${profile?.full_name || ''}${profile?.university ? ' | ' + profile.university : ''}`);
+  L(`  GPA Scale: ${policies.scale} · Generated: ${now.toLocaleString()}`); L('='.repeat(65)); L('');
+  const { cumGPA, totalCR } = computeAllGPA();
+  L(`  CUMULATIVE GPA: ${cumGPA.toFixed(4)} (${closestL(cumGPA)}) · ${totalCR} credits`); L('');
+  semesters.forEach(sem => {
+    L(`  ── ${sem.name.toUpperCase()} (GPA: ${(sem._gpa||0).toFixed(4)}) ──`);
+    (sem.subjects||[]).forEach(s => {
+      const res = computeSubject(s); const g = res.curG;
+      L(`  ${s.name} (${s.credits} cr) | ${res.cur.toFixed(2)}% | ${g.l} (${g.p.toFixed(4)} pts)`);
+      if (res.remExams.length) {
+        L('    Needed for:');
+        res.targets.slice(0,5).forEach(t => { const a=t.avg; L(`      ${t.l}: ${a===null?'N/A':a>100?'Not possible':a<=0?'Secured':a.toFixed(1)+'%'}`); });
+      }
+    });
+    L('');
   });
-  const blob=new Blob([txt],{type:'text/plain'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
-  a.download='gpa_report_'+now.toISOString().replace(/[:.]/g,'-').slice(0,19)+'.txt';a.click();
+  L('-'.repeat(65));
+  const blob = new Blob([txt], { type: 'text/plain' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'gradintel_report_' + now.toISOString().replace(/[:.]/g, '-').slice(0, 19) + '.txt'; a.click();
   showToast('📥 Report downloaded!');
 }
 
 // ══════════════════════════════════════════════════════════════
 // USER MODAL
 // ══════════════════════════════════════════════════════════════
-function openUserModal(){
-  const{cumGPA}=computeAllGPA();const cl=closestL(cumGPA);
-  document.getElementById('user-modal-body').innerHTML=`
+function openUserModal() {
+  const { cumGPA } = computeAllGPA(); const cl = closestL(cumGPA);
+  document.getElementById('user-modal-body').innerHTML = `
     <div style="text-align:center;padding:14px 0 18px">
       <div style="width:56px;height:56px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-family:'Clash Display',sans-serif;font-weight:700;font-size:24px;color:#fff;margin:0 auto 12px">${(profile.full_name||'?')[0].toUpperCase()}</div>
       <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:18px">${profile.full_name}</div>
-      ${profile.university?`<div style="font-size:12px;color:var(--muted);margin-top:4px">${profile.university}</div>`:''}
+      ${profile.university ? `<div style="font-size:12px;color:var(--muted);margin-top:4px">${profile.university}</div>` : ''}
       <div style="font-size:12px;color:var(--muted);margin-top:4px">${currentUser.email}</div>
-      <div style="margin-top:14px;font-family:'Clash Display',sans-serif;font-weight:700;font-size:28px;color:${gCol(cl)}">${cumGPA>0?cumGPA.toFixed(4):'—'}</div>
-      <div style="font-size:12px;color:var(--muted)">Cumulative GPA · ${cl}</div>
-      <div style="margin-top:10px;font-size:11px;color:var(--green)">☁️ Cloud Synced · ${semesters.length} semester${semesters.length!==1?'s':''}</div>
+      <div style="margin-top:14px;font-family:'Clash Display',sans-serif;font-weight:700;font-size:28px;color:${gCol(cl)}">${cumGPA > 0 ? cumGPA.toFixed(4) : '—'}</div>
+      <div style="font-size:12px;color:var(--muted)">Cumulative GPA · ${cl} · ${policies.scale} scale</div>
+      <div style="margin-top:10px;font-size:11px;color:var(--green)">☁️ Cloud Synced · ${semesters.length} semester${semesters.length !== 1 ? 's' : ''}</div>
     </div>
     <div class="divider"></div>
-    <div style="font-size:12px;color:var(--muted)">Mode: ${profile.mode==='fresh'?'Starting fresh (first semester)':'Continuing student'}</div>
-    ${profile.mode==='existing'?`<div style="font-size:12px;color:var(--muted);margin-top:4px">Started with: GPA ${profile.start_gpa} (${profile.start_credits} credits)</div>`:''}`;
+    <div style="font-size:12px;color:var(--muted)">Mode: ${profile.mode === 'fresh' ? 'Starting fresh' : 'Continuing student'}</div>
+    ${profile.mode === 'existing' ? `<div style="font-size:12px;color:var(--muted);margin-top:4px">Started with: GPA ${profile.start_gpa} (${profile.start_credits} credits)</div>` : ''}
+    <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-secondary" style="font-size:12px;padding:8px 14px" onclick="exportJSON();document.getElementById('user-modal').classList.remove('show')">📄 Export Backup</button>
+    </div>`;
   document.getElementById('user-modal').classList.add('show');
 }
 
 // ══════════════════════════════════════════════════════════════
 // HELPERS
 // ══════════════════════════════════════════════════════════════
-function getMotiv(score){
-  if(score>=93)return{ico:'🏆',title:'Outstanding!',msg:"A level — keep this momentum!"};
-  if(score>=87)return{ico:'🌟',title:'Great work!',msg:'Solid B+. Small push gets you to A!'};
-  if(score>=80)return{ico:'💪',title:'Doing well!',msg:'B range. Focus on remaining exams.'};
-  if(score>=73)return{ico:'📚',title:'On track.',msg:'Consistent effort can push you to B.'};
-  if(score>=60)return{ico:'⚠️',title:'Needs work.',msg:'Every point matters now.'};
-  return{ico:'🚨',title:'Critical zone.',msg:'Make a study plan today.'};
+function getMotiv(score) {
+  if (score >= 93) return { ico: '🏆', title: 'Outstanding!', msg: "A level — keep this momentum!" };
+  if (score >= 87) return { ico: '🌟', title: 'Great work!', msg: 'Solid B+. Small push gets you to A!' };
+  if (score >= 80) return { ico: '💪', title: 'Doing well!', msg: 'B range. Focus on remaining exams.' };
+  if (score >= 73) return { ico: '📚', title: 'On track.', msg: 'Consistent effort can push you to B.' };
+  if (score >= 60) return { ico: '⚠️', title: 'Needs work.', msg: 'Every point matters now.' };
+  return { ico: '🚨', title: 'Critical zone.', msg: 'Make a study plan today.' };
 }
-function showTab(id){
-  document.querySelectorAll('[id^="tc-"]').forEach(el=>el.classList.add('hidden'));
-  document.querySelectorAll('.nav-tab').forEach(el=>el.classList.remove('active'));
-  document.getElementById('tc-'+id).classList.remove('hidden');
-  document.getElementById('tab-'+id).classList.add('active');
-  if(id==='history'){renderHistory();buildSemTrendChart();}
-  if(id==='whatif')renderWIFull();
-  if(id==='study')renderStudy();
-  if(id==='courses')renderCourses();
-  if(id==='dashboard'){renderDashboard();updateStats();}
+function showTab(id) {
+  document.querySelectorAll('[id^="tc-"]').forEach(el => el.classList.add('hidden'));
+  document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
+  document.getElementById('tc-' + id).classList.remove('hidden');
+  document.getElementById('tab-' + id).classList.add('active');
+  if (id === 'history') { renderHistory(); buildSemTrendChart(); }
+  if (id === 'whatif') renderWIFull();
+  if (id === 'study') { renderStudy(); renderCalendar(); }
+  if (id === 'courses') renderCourses();
+  if (id === 'dashboard') { renderDashboard(); updateStats(); }
+  if (id === 'ai') renderROI();
+  if (id === 'policies') renderPoliciesUI();
 }
-function toggleTheme(){
-  const t=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';
-  document.documentElement.setAttribute('data-theme',t);
-  document.getElementById('themeBtn').textContent=t==='dark'?'🌙':'☀️';
-  localStorage.setItem('gpa-theme',t);
+function toggleTheme() {
+  const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', t);
+  document.getElementById('themeBtn').textContent = t === 'dark' ? '🌙' : '☀️';
+  localStorage.setItem('gpa-theme', t);
 }
-function syncDataVal(){ document.querySelectorAll('.sh-num,.cum-num,[data-val]').forEach(el=>el.dataset.val=el.textContent.trim()); }
-let confettiRunning=false;
-function fireConfetti(){
-  if(confettiRunning)return;confettiRunning=true;
-  const cols=['#818cf8','#f472b6','#34d399','#fbbf24','#60a5fa','#f87171'];
-  for(let i=0;i<80;i++){
-    const p=document.createElement('div');p.className='confetti-piece';
-    const sz=6+Math.random()*8;
-    p.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}vw;background:${cols[Math.floor(Math.random()*cols.length)]};animation-duration:${1.5+Math.random()*2}s;animation-delay:${Math.random()*.5}s;border-radius:${Math.random()>.5?'50%':'2px'}`;
-    document.body.appendChild(p);setTimeout(()=>p.remove(),(2.5+Math.random()*2)*1000);
+function toggleMotion() {
+  const reduced = document.documentElement.hasAttribute('data-reduce-motion');
+  if (reduced) {
+    document.documentElement.removeAttribute('data-reduce-motion');
+    document.body.classList.remove('reduced-motion');
+    document.getElementById('motionBtn').style.opacity = '1';
+    localStorage.removeItem('gpa-reduce-motion');
+    showToast('✨ Animations on');
+  } else {
+    document.documentElement.setAttribute('data-reduce-motion', '');
+    document.body.classList.add('reduced-motion');
+    document.getElementById('motionBtn').style.opacity = '.4';
+    localStorage.setItem('gpa-reduce-motion', '1');
+    showToast('🔕 Reduced motion on');
   }
-  setTimeout(()=>confettiRunning=false,3000);
+}
+function syncDataVal() { document.querySelectorAll('.sh-num,.cum-num,[data-val]').forEach(el => el.dataset.val = el.textContent.trim()); }
+let confettiRunning = false;
+function fireConfetti() {
+  if (confettiRunning || document.body.classList.contains('reduced-motion')) return;
+  confettiRunning = true;
+  const cols = ['#818cf8','#f472b6','#34d399','#fbbf24','#60a5fa','#f87171'];
+  for (let i = 0; i < 80; i++) {
+    const p = document.createElement('div'); p.className = 'confetti-piece';
+    const sz = 6 + Math.random() * 8;
+    p.style.cssText = `width:${sz}px;height:${sz}px;left:${Math.random() * 100}vw;background:${cols[Math.floor(Math.random() * cols.length)]};animation-duration:${1.5 + Math.random() * 2}s;animation-delay:${Math.random() * .5}s;border-radius:${Math.random() > .5 ? '50%' : '2px'}`;
+    document.body.appendChild(p); setTimeout(() => p.remove(), (2.5 + Math.random() * 2) * 1000);
+  }
+  setTimeout(() => confettiRunning = false, 3000);
 }
 let toastTimer;
-function showToast(msg){
-  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
-  clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2800);
+function showToast(msg) {
+  const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
 }
 
 // ══════════════════════════════════════════════════════════════
 // ANIMATIONS
 // ══════════════════════════════════════════════════════════════
-function initAnimations(){
-  const cur=document.getElementById('cur');const ring=document.getElementById('cur-ring');
-  if(!cur||!ring)return;
-  let mx=0,my=0,rx=0,ry=0;
-  document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cur.style.transform=`translate(${mx-4}px,${my-4}px)`;},{passive:true});
-  document.querySelectorAll('button,a,input,select,.tgl-btn,.course-item,.card,.mode-card,.auth-btn').forEach(el=>{
-    el.addEventListener('mouseenter',()=>{cur.style.width='14px';cur.style.height='14px';cur.style.background='var(--accent2)';ring.style.width='48px';ring.style.height='48px';});
-    el.addEventListener('mouseleave',()=>{cur.style.width='8px';cur.style.height='8px';cur.style.background='var(--accent)';ring.style.width='32px';ring.style.height='32px';});
+function initAnimations() {
+  if (document.body.classList.contains('reduced-motion')) return;
+  const cur = document.getElementById('cur'); const ring = document.getElementById('cur-ring');
+  if (!cur || !ring) return;
+  let mx = 0, my = 0, rx = 0, ry = 0;
+  document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; cur.style.transform = `translate(${mx - 4}px,${my - 4}px)`; }, { passive: true });
+  document.querySelectorAll('button,a,input,select,.tgl-btn,.course-item,.card,.mode-card,.auth-btn').forEach(el => {
+    el.addEventListener('mouseenter', () => { cur.style.width = '14px'; cur.style.height = '14px'; cur.style.background = 'var(--accent2)'; ring.style.width = '48px'; ring.style.height = '48px'; });
+    el.addEventListener('mouseleave', () => { cur.style.width = '8px'; cur.style.height = '8px'; cur.style.background = 'var(--accent)'; ring.style.width = '32px'; ring.style.height = '32px'; });
   });
-  (function animRing(){rx+=(mx-rx)*.18;ry+=(my-ry)*.18;ring.style.transform=`translate(${rx-16}px,${ry-16}px)`;requestAnimationFrame(animRing);})();
-  const canvas=document.getElementById('bgCanvas');if(!canvas)return;
-  const ctx=canvas.getContext('2d');let W,H,particles=[];
-  function resize(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;}
-  resize();window.addEventListener('resize',resize);
-  class P{constructor(){this.reset(true);}reset(init){this.x=Math.random()*W;this.y=init?Math.random()*H:Math.random()*H;this.vx=(Math.random()-.5)*.25;this.vy=(Math.random()-.5)*.25;this.life=Math.random();this.maxLife=.6+Math.random()*.4;this.size=Math.random()*1.2+.3;this.color=Math.random()<.5?'129,140,248':'244,114,182';}update(){this.x+=this.vx;this.y+=this.vy;this.life+=.002;if(this.life>this.maxLife||this.x<0||this.x>W||this.y<0||this.y>H)this.reset(false);}draw(){const a=Math.sin((this.life/this.maxLife)*Math.PI)*.45;ctx.beginPath();ctx.arc(this.x,this.y,this.size,0,Math.PI*2);ctx.fillStyle=`rgba(${this.color},${a})`;ctx.fill();}}
-  for(let i=0;i<90;i++)particles.push(new P());
-  (function loop(){ctx.clearRect(0,0,W,H);for(let i=0;i<particles.length;i++){for(let j=i+1;j<particles.length;j++){const dx=particles[i].x-particles[j].x,dy=particles[i].y-particles[j].y,d=Math.sqrt(dx*dx+dy*dy);if(d<100){ctx.beginPath();ctx.moveTo(particles[i].x,particles[i].y);ctx.lineTo(particles[j].x,particles[j].y);ctx.strokeStyle=`rgba(129,140,248,${(1-d/100)*.07})`;ctx.lineWidth=.5;ctx.stroke();}}}particles.forEach(p=>{p.update();p.draw();});requestAnimationFrame(loop);})();
-  document.querySelectorAll('.card,.stat-card').forEach(card=>{
-    card.addEventListener('mousemove',e=>{const r=card.getBoundingClientRect();const x=(e.clientX-r.left)/r.width-.5;const y=(e.clientY-r.top)/r.height-.5;card.style.transform=`perspective(800px) rotateY(${x*5}deg) rotateX(${-y*5}deg) translateZ(4px)`;});
-    card.addEventListener('mouseleave',()=>{card.style.transform='';});
+  (function animRing() { rx += (mx - rx) * .18; ry += (my - ry) * .18; ring.style.transform = `translate(${rx - 16}px,${ry - 16}px)`; requestAnimationFrame(animRing); })();
+  const canvas = document.getElementById('bgCanvas'); if (!canvas) return;
+  const ctx = canvas.getContext('2d'); let W, H, particles = [];
+  function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+  resize(); window.addEventListener('resize', resize);
+  class P { constructor() { this.reset(true); } reset(init) { this.x = Math.random() * W; this.y = init ? Math.random() * H : Math.random() * H; this.vx = (Math.random() - .5) * .25; this.vy = (Math.random() - .5) * .25; this.life = Math.random(); this.maxLife = .6 + Math.random() * .4; this.size = Math.random() * 1.2 + .3; this.color = Math.random() < .5 ? '129,140,248' : '244,114,182'; } update() { this.x += this.vx; this.y += this.vy; this.life += .002; if (this.life > this.maxLife || this.x < 0 || this.x > W || this.y < 0 || this.y > H) this.reset(false); } draw() { const a = Math.sin((this.life / this.maxLife) * Math.PI) * .45; ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fillStyle = `rgba(${this.color},${a})`; ctx.fill(); } }
+  for (let i = 0; i < 90; i++) particles.push(new P());
+  (function loop() { ctx.clearRect(0, 0, W, H); for (let i = 0; i < particles.length; i++) { for (let j = i + 1; j < particles.length; j++) { const dx = particles[i].x - particles[j].x, dy = particles[i].y - particles[j].y, d = Math.sqrt(dx * dx + dy * dy); if (d < 100) { ctx.beginPath(); ctx.moveTo(particles[i].x, particles[i].y); ctx.lineTo(particles[j].x, particles[j].y); ctx.strokeStyle = `rgba(129,140,248,${(1 - d / 100) * .07})`; ctx.lineWidth = .5; ctx.stroke(); } } } particles.forEach(p => { p.update(); p.draw(); }); requestAnimationFrame(loop); })();
+  document.querySelectorAll('.card,.stat-card').forEach(card => {
+    card.addEventListener('mousemove', e => { const r = card.getBoundingClientRect(); const x = (e.clientX - r.left) / r.width - .5; const y = (e.clientY - r.top) / r.height - .5; card.style.transform = `perspective(800px) rotateY(${x * 5}deg) rotateX(${-y * 5}deg) translateZ(4px)`; });
+    card.addEventListener('mouseleave', () => { card.style.transform = ''; });
   });
-  const obs=new MutationObserver(syncDataVal);
-  obs.observe(document.body,{childList:true,subtree:true,characterData:true});
+  const obs = new MutationObserver(syncDataVal);
+  obs.observe(document.body, { childList: true, subtree: true, characterData: true });
 }
 
 // ══════════════════════════════════════════════════════════════
 // BOOT
 // ══════════════════════════════════════════════════════════════
-(async function boot(){
-  // Theme
-  const t=localStorage.getItem('gpa-theme');
-  if(t){document.documentElement.setAttribute('data-theme',t);const btn=document.getElementById('themeBtn');if(btn)btn.textContent=t==='dark'?'🌙':'☀️';}
-  // Start animations immediately (works on auth screen too)
-  initAnimations();
-  // Init Supabase
-  if(!initSupabase()) return; // shows config banner, stays on auth screen
-  // Check for existing session
-  const{data:{session}}=await sb.auth.getSession();
-  if(session){
-    currentUser=session.user;
-    await onAuthSuccess();
+(async function boot() {
+  const t = localStorage.getItem('gpa-theme');
+  if (t) { document.documentElement.setAttribute('data-theme', t); const btn = document.getElementById('themeBtn'); if (btn) btn.textContent = t === 'dark' ? '🌙' : '☀️'; }
+  if (localStorage.getItem('gpa-reduce-motion')) {
+    document.documentElement.setAttribute('data-reduce-motion', '');
+    document.body.classList.add('reduced-motion');
+    const btn = document.getElementById('motionBtn'); if (btn) btn.style.opacity = '.4';
   }
-  // Listen for auth state changes
-  sb.auth.onAuthStateChange(async(event,session)=>{
-    if(event==='SIGNED_IN'&&session&&!currentUser){
-      currentUser=session.user;
-      await onAuthSuccess();
-    }
+  if (!initSupabase()) return;
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) { currentUser = session.user; await onAuthSuccess(); }
+  sb.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'SIGNED_IN' && session && !currentUser) { currentUser = session.user; await onAuthSuccess(); }
   });
 })();
 </script>
