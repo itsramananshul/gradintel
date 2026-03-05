@@ -1,0 +1,1856 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Gradintel</title>
+<link href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@400;500;600;700&family=Cabinet+Grotesk:wght@300;400;500;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<!-- Supabase SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+/* ── PASTE YOUR SUPABASE KEYS AT THE TOP OF THE <script> SECTION BELOW ── */
+:root{
+  --bg:#07070e;--surface:#0f0f1a;--surface2:#161624;--surface3:#1e1e2e;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --accent:#818cf8;--accent2:#f472b6;--accent3:#34d399;--accent4:#fbbf24;
+  --text:#f1f0ff;--muted:#6b7280;--muted2:#9ca3af;
+  --red:#f87171;--green:#34d399;--yellow:#fbbf24;--blue:#60a5fa;
+  --r:14px;--r-sm:8px;--r-lg:20px;--r-xl:28px;
+  --shadow:0 4px 24px rgba(0,0,0,0.45);
+}
+[data-theme="light"]{
+  --bg:#f5f4ff;--surface:#fff;--surface2:#f0efff;--surface3:#e6e4ff;
+  --border:rgba(0,0,0,0.07);--border2:rgba(0,0,0,0.13);
+  --text:#1e1b4b;--muted:#6b7280;--muted2:#4b5563;
+  --shadow:0 4px 24px rgba(129,140,248,0.1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Cabinet Grotesk',sans-serif;
+  font-size:15px;min-height:100vh;overflow-x:hidden;transition:background .3s,color .3s;cursor:none}
+
+/* ── AMBIENT ── */
+.bg-layer{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.bg-blob{position:absolute;border-radius:50%;filter:blur(110px);opacity:.11;animation:blobFloat 14s ease-in-out infinite}
+.bb1{width:700px;height:700px;top:-200px;left:-200px;background:var(--accent)}
+.bb2{width:600px;height:600px;bottom:-200px;right:-100px;background:var(--accent2);animation-delay:-5s}
+.bb3{width:400px;height:400px;top:40%;left:40%;background:var(--accent3);animation-delay:-9s;opacity:.06}
+.bg-grid{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:linear-gradient(rgba(129,140,248,.03) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(129,140,248,.03) 1px,transparent 1px);
+  background-size:48px 48px}
+.fog{position:fixed;inset:0;z-index:1;pointer-events:none;
+  background:radial-gradient(ellipse 120% 60% at 50% 100%,rgba(7,7,12,.9) 0%,transparent 70%)}
+.fog2{position:fixed;inset:0;z-index:1;pointer-events:none;
+  background:radial-gradient(ellipse 60% 40% at 50% 0%,rgba(129,140,248,.04) 0%,transparent 60%)}
+.scanline{position:fixed;inset:0;z-index:2;pointer-events:none;overflow:hidden}
+.scanline::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:rgba(129,140,248,.04);animation:scanline 7s linear infinite}
+.anno{position:fixed;font-size:10px;color:var(--muted);font-family:'Space Mono',monospace;
+  letter-spacing:.06em;line-height:1.9;z-index:10;pointer-events:none;opacity:.5}
+.anno-bl{bottom:22px;left:22px}
+.anno-br{bottom:22px;right:22px;text-align:right}
+#cur{position:fixed;width:8px;height:8px;background:var(--accent);border-radius:50%;
+  pointer-events:none;z-index:9999;mix-blend-mode:difference;
+  transition:width .15s,height .15s,background .15s}
+#cur-ring{position:fixed;width:32px;height:32px;border:1px solid rgba(129,140,248,.45);
+  border-radius:50%;pointer-events:none;z-index:9998;
+  transition:width .15s,height .15s,border-color .15s}
+#bgCanvas{position:fixed;inset:0;z-index:0;pointer-events:none}
+[data-theme="light"] .fog,[data-theme="light"] .fog2,[data-theme="light"] .scanline,
+[data-theme="light"] .anno{display:none}
+[data-theme="light"] #bgCanvas{opacity:.25}
+
+/* ── CONFIG BANNER ── */
+.config-banner{position:fixed;top:0;left:0;right:0;z-index:500;
+  background:linear-gradient(90deg,rgba(251,191,36,.15),rgba(248,113,113,.15));
+  border-bottom:1px solid rgba(251,191,36,.3);
+  padding:10px 20px;font-size:12px;color:var(--yellow);
+  display:flex;align-items:center;gap:10px;font-family:'Space Mono',monospace}
+.config-banner.hidden{display:none}
+
+/* ── AUTH ── */
+.auth-wrap{position:fixed;inset:0;z-index:100;display:flex;align-items:center;
+  justify-content:center;padding:20px;
+  transition:opacity .4s,transform .4s}
+.auth-wrap.out{opacity:0;transform:scale(1.04);pointer-events:none}
+.auth-box{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r-xl);
+  padding:40px 36px;width:100%;max-width:420px;position:relative;overflow:hidden;
+  box-shadow:0 24px 80px rgba(0,0,0,.5),0 0 0 1px rgba(129,140,248,.12)}
+.auth-box::before{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;
+  background:radial-gradient(circle,rgba(129,140,248,.15),transparent 70%);pointer-events:none}
+.auth-logo{text-align:center;margin-bottom:28px}
+.auth-logo-ico{font-size:38px;display:block;margin-bottom:10px;animation:pop .5s ease both}
+.auth-logo-text{font-family:'Clash Display',sans-serif;font-weight:700;font-size:22px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.auth-logo-sub{font-size:12px;color:var(--muted);margin-top:4px}
+.auth-tabs{display:flex;gap:4px;background:var(--surface2);border-radius:var(--r);padding:4px;margin-bottom:24px}
+.auth-tab{flex:1;padding:9px;border-radius:var(--r-sm);border:none;background:transparent;
+  color:var(--muted);cursor:pointer;font-family:'Cabinet Grotesk',sans-serif;
+  font-size:13px;font-weight:600;transition:all .2s}
+.auth-tab.on{background:var(--accent);color:#fff;box-shadow:0 2px 12px rgba(129,140,248,.35)}
+.af{margin-bottom:16px}
+.af label{display:block;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
+.af input{width:100%;padding:12px 14px;background:var(--surface2);border:1px solid var(--border2);
+  border-radius:var(--r-sm);color:var(--text);font-family:'Cabinet Grotesk',sans-serif;
+  font-size:14px;outline:none;transition:border-color .2s,box-shadow .2s}
+.af input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(129,140,248,.15)}
+.af input::placeholder{color:var(--muted)}
+.auth-btn{width:100%;padding:13px;border-radius:var(--r-sm);border:none;
+  background:var(--accent);color:#fff;font-family:'Clash Display',sans-serif;
+  font-weight:700;font-size:15px;cursor:pointer;margin-top:6px;
+  box-shadow:0 4px 20px rgba(129,140,248,.3);transition:all .2s;
+  position:relative;overflow:hidden}
+.auth-btn:hover{transform:translateY(-1px);box-shadow:0 6px 28px rgba(129,140,248,.45)}
+.auth-btn:disabled{opacity:.6;cursor:not-allowed;transform:none}
+.auth-err{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.25);
+  border-radius:var(--r-sm);padding:10px 14px;font-size:12px;color:var(--red);
+  margin-bottom:14px;display:none}
+.auth-note{text-align:center;font-size:11px;color:var(--muted);margin-top:14px;line-height:1.7}
+.auth-note a{color:var(--accent);cursor:pointer;text-decoration:none}
+.auth-divider{display:flex;align-items:center;gap:12px;margin:14px 0;color:var(--muted);font-size:11px}
+.auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:var(--border2)}
+.loading-dots::after{content:'...';animation:ldots 1s infinite}
+@keyframes ldots{0%{content:'.'}33%{content:'..'}66%{content:'...'}100%{content:'.'}}
+
+/* ── ONBOARDING ── */
+.ob-wrap{position:fixed;inset:0;z-index:99;display:flex;align-items:center;
+  justify-content:center;padding:20px;background:rgba(7,7,14,.95);backdrop-filter:blur(12px)}
+.ob-box{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r-xl);
+  padding:40px 36px;width:100%;max-width:520px;box-shadow:0 24px 80px rgba(0,0,0,.5)}
+.ob-step{display:none}
+.ob-step.show{display:block;animation:fadeUp .4s ease both}
+.ob-title{font-family:'Clash Display',sans-serif;font-weight:700;font-size:26px;margin-bottom:8px}
+.ob-sub{color:var(--muted2);font-size:14px;margin-bottom:26px;line-height:1.6}
+.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:22px}
+.mode-card{background:var(--surface2);border:2px solid var(--border2);border-radius:var(--r);
+  padding:22px 16px;cursor:pointer;transition:all .2s;text-align:center}
+.mode-card:hover{border-color:rgba(129,140,248,.4);transform:translateY(-2px)}
+.mode-card.sel{border-color:var(--accent);background:rgba(129,140,248,.08)}
+.mc-ico{font-size:32px;display:block;margin-bottom:10px}
+.mc-title{font-family:'Clash Display',sans-serif;font-weight:700;font-size:15px;margin-bottom:5px}
+.mc-desc{font-size:12px;color:var(--muted);line-height:1.5}
+
+/* ── APP ── */
+.app{position:relative;z-index:10;max-width:920px;margin:0 auto;padding:0 20px 100px;display:none}
+
+/* TOPBAR */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:20px 0 8px}
+.logo{font-family:'Clash Display',sans-serif;font-weight:700;font-size:18px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.topbar-r{display:flex;align-items:center;gap:8px}
+.user-pill{display:flex;align-items:center;gap:8px;padding:6px 12px 6px 8px;
+  background:var(--surface);border:1px solid var(--border2);border-radius:100px;
+  font-size:12px;font-weight:600;cursor:pointer;transition:all .2s}
+.user-pill:hover{border-color:var(--accent)}
+.uav{width:24px;height:24px;border-radius:50%;background:var(--accent);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
+.icon-btn{width:36px;height:36px;border-radius:10px;border:1px solid var(--border2);
+  background:var(--surface);cursor:pointer;display:flex;align-items:center;
+  justify-content:center;font-size:16px;transition:all .2s;color:var(--text)}
+.icon-btn:hover{border-color:var(--accent);background:rgba(129,140,248,.1)}
+
+/* HERO */
+.hero{text-align:center;padding:42px 0 34px;animation:fadeDown .7s ease both}
+.hero-ey{font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--accent);margin-bottom:14px}
+.hero h1{font-family:'Clash Display',sans-serif;font-weight:700;
+  font-size:clamp(36px,7vw,66px);line-height:1;letter-spacing:-.03em;
+  background:linear-gradient(135deg,var(--text) 20%,var(--accent) 60%,var(--accent2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero p{margin-top:14px;color:var(--muted2);font-size:14px;letter-spacing:.03em}
+
+/* DASH STATS */
+.dash-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  padding:20px;transition:border-color .2s,transform .2s;animation:revealUp .5s ease both}
+.stat-card:hover{border-color:var(--border2);transform:translateY(-2px)}
+.stat-lbl{font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.stat-val{font-family:'Clash Display',sans-serif;font-weight:700;font-size:28px;line-height:1}
+.stat-sub{font-size:11px;color:var(--muted);margin-top:4px}
+
+/* NAV */
+.nav-tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r-lg);padding:5px;margin-bottom:22px;overflow-x:auto}
+.nav-tab{flex:1;min-width:fit-content;padding:9px 14px;border-radius:var(--r);border:none;
+  background:transparent;color:var(--muted);cursor:pointer;font-family:'Cabinet Grotesk',sans-serif;
+  font-size:13px;font-weight:500;transition:all .2s;white-space:nowrap}
+.nav-tab.active{background:var(--surface2);color:var(--text);font-weight:700;box-shadow:var(--shadow)}
+.nav-tab:hover:not(.active){color:var(--text)}
+
+/* CARD */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+  padding:26px;margin-bottom:16px;transition:border-color .2s,transform .2s,box-shadow .2s;
+  animation:revealUp .5s ease both}
+.card:hover{border-color:var(--border2)}
+.card-title{font-family:'Clash Display',sans-serif;font-weight:700;font-size:17px;
+  margin-bottom:18px;display:flex;align-items:center;gap:10px}
+.card-title .ico{font-size:20px}
+
+/* FORM */
+.field{margin-bottom:16px}
+.field label{display:block;font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:7px}
+input:not(.af input),select,textarea{width:100%;padding:11px 14px;background:var(--surface2);
+  border:1px solid var(--border2);border-radius:var(--r-sm);color:var(--text);
+  font-family:'Cabinet Grotesk',sans-serif;font-size:14px;outline:none;
+  transition:border-color .2s,box-shadow .2s;appearance:none}
+input:not(.af input):focus,select:focus{border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(129,140,248,.15),0 0 16px rgba(129,140,248,.07)}
+input:not(.af input)::placeholder{color:var(--muted)}
+select option{background:var(--surface2)}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.field-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+
+/* TOGGLE */
+.tgl-group{display:flex;gap:6px}
+.tgl-btn{flex:1;padding:10px;border:1px solid var(--border2);border-radius:var(--r-sm);
+  background:var(--surface2);color:var(--muted);cursor:pointer;font-family:'Cabinet Grotesk',sans-serif;
+  font-size:13px;font-weight:500;transition:all .2s;text-align:center}
+.tgl-btn.on{border-color:var(--accent);background:rgba(129,140,248,.1);color:var(--accent)}
+
+/* BUTTONS */
+.btn{padding:11px 24px;border-radius:var(--r-sm);border:none;font-family:'Clash Display',sans-serif;
+  font-weight:700;font-size:14px;cursor:pointer;transition:all .2s;letter-spacing:.02em;
+  position:relative;overflow:hidden}
+.btn::before{content:'';position:absolute;inset:0;background:rgba(255,255,255,.08);
+  transform:scaleX(0);transform-origin:left;transition:transform .3s;pointer-events:none}
+.btn:hover::before{transform:scaleX(1)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-primary{background:var(--accent);color:#fff;box-shadow:0 4px 18px rgba(129,140,248,.3)}
+.btn-primary:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 26px rgba(129,140,248,.45)}
+.btn-secondary{background:transparent;color:var(--text);border:1px solid var(--border2)}
+.btn-secondary:hover{border-color:var(--muted2)}
+.btn-ghost{background:transparent;color:var(--accent);border:1px dashed rgba(129,140,248,.35);font-size:13px;padding:9px 18px}
+.btn-ghost:hover{background:rgba(129,140,248,.07)}
+.btn-green{background:rgba(52,211,153,.12);color:var(--green);border:1px solid rgba(52,211,153,.28)}
+.btn-green:hover{background:rgba(52,211,153,.22)}
+.btn-red{background:rgba(248,113,113,.1);color:var(--red);border:1px solid rgba(248,113,113,.2);font-size:12px;padding:7px 14px}
+.btn-row{display:flex;gap:10px;justify-content:flex-end;margin-top:22px}
+
+/* INFOBOX */
+.infobox{background:rgba(129,140,248,.07);border:1px solid rgba(129,140,248,.17);
+  border-radius:var(--r-sm);padding:12px 14px;font-size:12px;color:var(--muted2);
+  margin-bottom:16px;line-height:1.6}
+.infobox strong{color:var(--accent)}
+.infobox.green{background:rgba(52,211,153,.07);border-color:rgba(52,211,153,.2);color:var(--green)}
+.infobox.yellow{background:rgba(251,191,36,.07);border-color:rgba(251,191,36,.2);color:var(--yellow)}
+
+/* COURSE ITEM */
+.course-item{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);
+  padding:15px 18px;margin-bottom:10px;display:flex;align-items:center;gap:14px;
+  cursor:pointer;transition:all .2s}
+.course-item:hover{transform:translateX(4px);box-shadow:-3px 0 0 var(--accent);border-color:rgba(129,140,248,.3)}
+.ci-ico{font-size:22px;flex-shrink:0}
+.ci-info{flex:1}
+.ci-name{font-family:'Clash Display',sans-serif;font-weight:700;font-size:15px;margin-bottom:3px}
+.ci-meta{font-size:12px;color:var(--muted)}
+.ci-grade{font-family:'Clash Display',sans-serif;font-weight:700;font-size:22px}
+.ci-actions{display:flex;gap:6px;opacity:0;transition:opacity .2s}
+.course-item:hover .ci-actions{opacity:1}
+.ca-btn{width:28px;height:28px;border-radius:6px;border:1px solid var(--border2);
+  background:var(--surface);cursor:pointer;display:flex;align-items:center;
+  justify-content:center;font-size:12px;transition:all .2s;color:var(--text)}
+.ca-btn:hover{border-color:var(--accent);background:rgba(129,140,248,.1)}
+
+/* SCORE HERO */
+.score-hero{background:linear-gradient(135deg,rgba(129,140,248,.1),rgba(244,114,182,.07));
+  border:1px solid rgba(129,140,248,.2);border-radius:var(--r-lg);padding:32px;
+  text-align:center;margin-bottom:18px;position:relative;overflow:hidden}
+.score-hero::before{content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 0%,rgba(129,140,248,.12),transparent 70%);pointer-events:none}
+.sh-lbl{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.sh-num{font-family:'Clash Display',sans-serif;font-weight:700;
+  font-size:clamp(52px,10vw,88px);line-height:1;letter-spacing:-.04em;
+  background:linear-gradient(135deg,var(--text),var(--accent));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  position:relative;display:inline-block}
+.sh-num::before{content:attr(data-val);position:absolute;inset:0;color:var(--accent2);
+  clip-path:inset(0 0 50% 0);transform:translate(-2px,0);opacity:.4;pointer-events:none}
+.sh-num::after{content:attr(data-val);position:absolute;inset:0;color:var(--accent3);
+  clip-path:inset(50% 0 0 0);transform:translate(2px,0);opacity:.4;pointer-events:none}
+.sh-num:hover::before{animation:caRed .2s steps(3) infinite}
+.sh-num:hover::after{animation:caGreen .2s steps(3) infinite}
+.sh-sub{margin-top:10px;font-size:13px;color:var(--muted)}
+.grade-pill{display:inline-block;padding:3px 12px;border-radius:100px;
+  font-family:'Clash Display',sans-serif;font-weight:700;font-size:14px;margin-left:8px}
+
+/* GPA TABLE */
+.gpa-tbl{width:100%;border-collapse:separate;border-spacing:0 5px}
+.gpa-tbl th{font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);
+  padding:0 12px 8px;text-align:left;font-weight:400}
+.gpa-tbl td{padding:11px 12px;background:var(--surface2);font-size:13px}
+.gpa-tbl td:first-child{border-radius:var(--r-sm) 0 0 var(--r-sm)}
+.gpa-tbl td:last-child{border-radius:0 var(--r-sm) var(--r-sm) 0}
+.gpa-row{transition:all .15s;cursor:pointer}
+.gpa-row:hover td{background:rgba(129,140,248,.08)}
+.gpa-row.hl td{background:rgba(52,211,153,.07)}
+.gpa-row.sel td{background:rgba(129,140,248,.12)}
+.gl-badge{display:inline-flex;align-items:center;justify-content:center;
+  width:34px;height:24px;border-radius:5px;font-family:'Clash Display',sans-serif;font-weight:700;font-size:11px}
+.bar-bg{height:5px;background:rgba(255,255,255,.06);border-radius:100px;width:80px;overflow:hidden}
+.bar-fg{height:100%;border-radius:100px;transition:width 1.1s cubic-bezier(.4,0,.2,1)}
+
+/* CHIPS */
+.chip-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.chip{padding:5px 12px;border-radius:100px;border:1px solid var(--border2);
+  background:var(--surface2);color:var(--muted);cursor:pointer;font-size:12px;
+  font-family:'Cabinet Grotesk',sans-serif;transition:all .2s}
+.chip.on{border-color:var(--accent);background:rgba(129,140,248,.12);color:var(--accent)}
+
+/* EXAM NEED */
+.eneed{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);
+  padding:15px 18px;margin-bottom:10px;display:flex;align-items:center;gap:14px;
+  transition:all .25s;animation:fadeUp .3s ease both}
+.eneed:hover{border-color:rgba(129,140,248,.3);transform:translateX(3px)}
+.eneed-ico{font-size:22px;flex-shrink:0}
+.eneed-info{flex:1}
+.eneed-name{font-family:'Clash Display',sans-serif;font-weight:700;font-size:14px;margin-bottom:3px}
+.eneed-meta{font-size:11px;color:var(--muted)}
+.eneed-score{font-family:'Clash Display',sans-serif;font-weight:700;font-size:24px}
+.eneed-range{font-size:11px;color:var(--muted);text-align:right;margin-top:2px}
+
+/* STEPS */
+.steps{display:flex;gap:0;justify-content:center;margin-bottom:28px}
+.sw{display:flex;align-items:center}
+.sw-node{display:flex;flex-direction:column;align-items:center;gap:5px}
+.sw-dot{width:32px;height:32px;border-radius:50%;border:2px solid var(--border2);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Clash Display',sans-serif;font-weight:700;font-size:12px;
+  color:var(--muted);background:var(--surface);transition:all .3s}
+.sw.active .sw-dot{border-color:var(--accent);color:var(--accent);
+  background:rgba(129,140,248,.1);animation:pulseDot 2s ease-in-out infinite}
+.sw.done .sw-dot{border-color:var(--accent);background:var(--accent);color:#fff}
+.sw-lbl{font-size:10px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase}
+.sw.active .sw-lbl,.sw.done .sw-lbl{color:var(--text)}
+.sw-line{width:55px;height:2px;background:var(--border);margin:0 4px;margin-bottom:18px;transition:background .4s}
+.sw.done .sw-line{background:var(--accent)}
+
+/* EXAM CARD */
+.exam-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);
+  padding:18px;margin-bottom:12px;transition:border-color .2s}
+.exam-card:hover{border-color:rgba(129,140,248,.3)}
+.exam-card-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.exam-badge{font-family:'Clash Display',sans-serif;font-size:10px;letter-spacing:.15em;
+  color:var(--accent);text-transform:uppercase;font-weight:700}
+
+/* SLIDER */
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:5px;
+  border-radius:100px;background:var(--surface3);outline:none;cursor:pointer;
+  border:none;box-shadow:none}
+input[type=range]:focus{box-shadow:none;border-color:transparent}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;
+  width:20px;height:20px;border-radius:50%;background:var(--accent);cursor:pointer;
+  box-shadow:0 0 10px rgba(129,140,248,.5);transition:transform .1s}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2)}
+.slider-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:5px}
+
+/* CHART */
+.chart-wrap{position:relative;height:220px;margin-top:8px}
+
+/* SUBJECT TABS */
+.subj-tabs{display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap}
+.subj-tab{padding:7px 15px;border-radius:100px;border:1px solid var(--border2);
+  background:var(--surface2);color:var(--muted);cursor:pointer;
+  font-family:'Clash Display',sans-serif;font-weight:700;font-size:12px;transition:all .2s}
+.subj-tab.on{border-color:var(--accent);background:rgba(129,140,248,.1);color:var(--accent)}
+
+/* CUMULATIVE */
+.cum-card{background:linear-gradient(135deg,rgba(52,211,153,.08),rgba(129,140,248,.08));
+  border:1px solid rgba(52,211,153,.2);border-radius:var(--r-lg);
+  padding:24px;display:flex;align-items:center;gap:22px;margin-bottom:18px}
+.cum-num{font-family:'Clash Display',sans-serif;font-weight:700;font-size:48px;
+  letter-spacing:-.04em;color:var(--accent3);white-space:nowrap;line-height:1}
+.cum-lbl{font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+.cum-letter{font-family:'Clash Display',sans-serif;font-weight:700;font-size:19px}
+
+/* MOTIVATIONAL */
+.motiv{border-radius:var(--r);padding:14px 18px;margin-bottom:18px;
+  display:flex;align-items:flex-start;gap:12px;animation:fadeUp .4s ease both}
+.motiv-ico{font-size:22px;flex-shrink:0}
+.motiv-title{font-family:'Clash Display',sans-serif;font-weight:700;font-size:14px;margin-bottom:2px}
+
+/* SEMESTER */
+.sem-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);
+  padding:15px 18px;margin-bottom:10px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:all .2s}
+.sem-card:hover{border-color:rgba(129,140,248,.3)}
+.sem-gpa{font-family:'Clash Display',sans-serif;font-weight:700;font-size:22px;width:56px;text-align:center}
+.sem-info{flex:1}
+.sem-name{font-family:'Clash Display',sans-serif;font-weight:700;font-size:14px}
+.sem-meta{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.75);
+  backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;
+  padding:20px;opacity:0;pointer-events:none;transition:opacity .3s}
+.modal-overlay.show{opacity:1;pointer-events:all}
+.modal-box{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r-xl);
+  padding:30px;width:100%;max-width:440px;max-height:85vh;overflow-y:auto;
+  transform:translateY(20px) scale(.97);transition:transform .3s;
+  box-shadow:0 24px 80px rgba(0,0,0,.5)}
+.modal-overlay.show .modal-box{transform:translateY(0) scale(1)}
+.modal-title{font-family:'Clash Display',sans-serif;font-weight:700;font-size:20px;margin-bottom:20px}
+
+/* SHARE */
+.share-preview{background:linear-gradient(135deg,#0f0f1a,#1a1a2e);
+  border:1px solid rgba(129,140,248,.3);border-radius:var(--r-lg);padding:24px;margin-bottom:14px}
+.sp-eye{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);margin-bottom:14px}
+.sp-subj{font-family:'Clash Display',sans-serif;font-weight:700;font-size:24px;margin-bottom:4px}
+.sp-score{font-family:'Clash Display',sans-serif;font-weight:700;font-size:50px;
+  letter-spacing:-.03em;line-height:1;
+  background:linear-gradient(135deg,#fff,var(--accent));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.sp-targets{margin-top:16px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.sp-ti{background:rgba(255,255,255,.05);border-radius:10px;padding:10px;text-align:center}
+.sp-tg{font-family:'Clash Display',sans-serif;font-weight:700;font-size:15px;margin-bottom:3px}
+.sp-ts{font-size:11px;color:#9ca3af}
+
+/* STUDY */
+.study-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;margin-bottom:10px}
+.study-h{font-family:'Clash Display',sans-serif;font-weight:700;font-size:30px;color:var(--accent4)}
+
+/* SYNC INDICATOR */
+.sync-badge{display:inline-flex;align-items:center;gap:5px;font-size:10px;
+  color:var(--green);letter-spacing:.08em;text-transform:uppercase}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulseDot 2s infinite}
+
+/* TOAST */
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);
+  padding:12px 20px;font-size:13px;box-shadow:var(--shadow);
+  z-index:9999;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* DIVIDER */
+.divider{height:1px;background:var(--border);margin:18px 0}
+
+/* CONFETTI */
+.confetti-piece{position:fixed;top:-10px;border-radius:3px;animation:confettiFall linear both;pointer-events:none;z-index:9999}
+
+/* ANIMATIONS */
+@keyframes fadeDown{from{opacity:0;transform:translateY(-16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes blobFloat{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(30px,-20px) scale(1.05)}66%{transform:translate(-20px,15px) scale(.97)}}
+@keyframes pop{0%{transform:scale(.85);opacity:0}60%{transform:scale(1.05)}100%{transform:scale(1);opacity:1}}
+@keyframes revealUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+@keyframes scanline{0%{transform:translateY(-100%)}100%{transform:translateY(100vh)}}
+@keyframes pulseDot{0%,100%{box-shadow:0 0 0 0 rgba(129,140,248,.4)}50%{box-shadow:0 0 0 6px rgba(129,140,248,0)}}
+@keyframes caRed{0%{transform:translate(-2px,0)}50%{transform:translate(-4px,1px)}100%{transform:translate(-2px,0)}}
+@keyframes caGreen{0%{transform:translate(2px,0)}50%{transform:translate(4px,-1px)}100%{transform:translate(2px,0)}}
+@keyframes confettiFall{0%{transform:translateY(0) rotate(0deg);opacity:1}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* PRINT */
+@media print{.bg-layer,.bg-grid,.fog,.fog2,.scanline,.anno,#cur,#cur-ring,#bgCanvas,.topbar-r,.btn-row,.nav-tabs,.steps,.modal-overlay,.config-banner{display:none!important}body{background:#fff;color:#000;cursor:auto}.card,.exam-card,.eneed,.score-hero{border:1px solid #ddd;background:#fff;box-shadow:none}}
+
+.hidden{display:none!important}
+@media(max-width:640px){
+  .field-row,.field-row-3{grid-template-columns:1fr}
+  .cum-card{flex-direction:column;text-align:center}
+  .dash-stats{grid-template-columns:1fr 1fr}
+  .mode-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- AMBIENT -->
+<canvas id="bgCanvas"></canvas>
+<div class="bg-layer"><div class="bg-blob bb1"></div><div class="bg-blob bb2"></div><div class="bg-blob bb3"></div></div>
+<div class="bg-grid"></div>
+<div class="fog"></div><div class="fog2"></div>
+<div class="scanline"></div>
+<div class="anno anno-bl">STUDENT_SYSTEM<br/>SUPABASE_CLOUD</div>
+<div class="anno anno-br" id="anno-br">GRADINTEL<br/>v3.0_LIVE</div>
+<div id="cur"></div><div id="cur-ring"></div>
+<div class="toast" id="toast"></div>
+
+<!-- CONFIG BANNER -->
+<div class="config-banner" id="config-banner">
+  ⚠️ &nbsp;SUPABASE NOT CONFIGURED — open this file and add your Project URL + Anon Key at the top of the &lt;script&gt; section. &nbsp;<a href="#" onclick="document.getElementById('config-banner').classList.add('hidden')" style="color:var(--yellow);text-decoration:underline">Dismiss</a>
+</div>
+
+<!-- ══ AUTH ══ -->
+<div class="auth-wrap" id="auth-wrap">
+  <div class="auth-box">
+    <div class="auth-logo">
+      <span class="auth-logo-ico">📊</span>
+      <div class="auth-logo-text">Gradintel</div>
+      <div class="auth-logo-sub">Cloud-synced · Works on any device</div>
+    </div>
+    <div class="auth-tabs">
+      <button class="auth-tab on" onclick="switchAuth('in')" id="at-in">Sign In</button>
+      <button class="auth-tab" onclick="switchAuth('up')" id="at-up">Create Account</button>
+    </div>
+    <div id="auth-err" class="auth-err"></div>
+
+    <div id="auth-in">
+      <div class="af"><label>Email</label><input type="email" id="in-email" placeholder="you@email.com" autocomplete="email"/></div>
+      <div class="af"><label>Password</label><input type="password" id="in-pass" placeholder="••••••••" autocomplete="current-password"/></div>
+      <button class="auth-btn" id="in-btn" onclick="doSignIn()">Sign In →</button>
+      <div class="auth-note">Forgot password? <a onclick="doReset()">Reset via email</a></div>
+    </div>
+
+    <div id="auth-up" class="hidden">
+      <div class="af"><label>Full Name</label><input type="text" id="up-name" placeholder="e.g. Sarah Ahmed"/></div>
+      <div class="af"><label>Email</label><input type="email" id="up-email" placeholder="you@email.com" autocomplete="email"/></div>
+      <div class="af"><label>Password (min 6 characters)</label><input type="password" id="up-pass" placeholder="••••••••" autocomplete="new-password"/></div>
+      <div class="af"><label>University / School (optional)</label><input type="text" id="up-uni" placeholder="e.g. MIT, Harvard..."/></div>
+      <button class="auth-btn" id="up-btn" onclick="doSignUp()">Create Account →</button>
+      <div class="auth-note">Already have an account? <a onclick="switchAuth('in')">Sign in</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ONBOARDING ══ -->
+<div class="ob-wrap hidden" id="ob-wrap">
+  <div class="ob-box">
+    <div class="ob-step show" id="ob-1">
+      <div class="ob-title">👋 One quick question!</div>
+      <div class="ob-sub">Are you starting your very first semester, or do you already have a GPA from previous semesters?</div>
+      <div class="mode-grid">
+        <div class="mode-card" id="mc-fresh" onclick="selectObMode('fresh')">
+          <span class="mc-ico">🌱</span>
+          <div class="mc-title">First Semester</div>
+          <div class="mc-desc">Starting out fresh. I'll track everything from zero.</div>
+        </div>
+        <div class="mode-card" id="mc-existing" onclick="selectObMode('existing')">
+          <span class="mc-ico">📈</span>
+          <div class="mc-title">I Have a GPA</div>
+          <div class="mc-desc">Already completed semesters. I'll enter my current GPA.</div>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="ob1-next" onclick="obNext()" disabled style="opacity:.4">Continue →</button>
+      </div>
+    </div>
+    <div class="ob-step" id="ob-2">
+      <div class="ob-title" id="ob2-title">Your Current GPA</div>
+      <div class="ob-sub" id="ob2-sub">Enter your current GPA and credits so we can factor them into your cumulative.</div>
+      <div id="ob2-fields">
+        <div class="field-row">
+          <div class="field"><label>Current Cumulative GPA</label><input type="number" id="ob-gpa" placeholder="e.g. 3.45" min="0" max="4" step="0.01"/></div>
+          <div class="field"><label>Total Credits Done</label><input type="number" id="ob-credits" placeholder="e.g. 45" min="0"/></div>
+        </div>
+        <div class="field"><label>Semesters Completed</label><input type="number" id="ob-sems" placeholder="e.g. 3" min="1"/></div>
+      </div>
+      <div id="ob2-fresh" class="infobox green hidden">✅ Perfect! We'll track everything from your first semester.</div>
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="obBack()">← Back</button>
+        <button class="btn btn-primary" id="ob2-finish" onclick="obFinish()">Start Tracking →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MAIN APP ══ -->
+<div class="app" id="app">
+  <div class="topbar">
+    <div class="logo">📊 Gradintel</div>
+    <div class="topbar-r">
+      <span class="sync-badge" id="sync-badge" style="display:none"><span class="sync-dot"></span>Synced</span>
+      <button class="icon-btn" onclick="toggleTheme()" id="themeBtn" title="Theme">🌙</button>
+      <button class="icon-btn" onclick="window.print()" title="Print">🖨️</button>
+      <div class="user-pill" onclick="openUserModal()">
+        <div class="uav" id="uav">?</div>
+        <span id="uname-display">User</span>
+        <span style="color:var(--muted);font-size:10px">▾</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero">
+    <div class="hero-ey">Academic Performance System</div>
+    <h1 id="hero-h">Welcome back!</h1>
+    <p id="hero-p">Your GPA dashboard · Track · Predict · Improve</p>
+  </div>
+
+  <div class="dash-stats">
+    <div class="stat-card" style="animation-delay:.05s">
+      <div class="stat-lbl">Cumulative GPA</div>
+      <div class="stat-val sh-num" id="ds-gpa" data-val="—">—</div>
+      <div class="stat-sub" id="ds-gpa-sub">No data yet</div>
+    </div>
+    <div class="stat-card" style="animation-delay:.1s">
+      <div class="stat-lbl">This Semester</div>
+      <div class="stat-val" id="ds-sem">—</div>
+      <div class="stat-sub" id="ds-sem-sub">No active semester</div>
+    </div>
+    <div class="stat-card" style="animation-delay:.15s">
+      <div class="stat-lbl">Subjects Tracked</div>
+      <div class="stat-val" id="ds-subjs">0</div>
+      <div class="stat-sub">total</div>
+    </div>
+    <div class="stat-card" style="animation-delay:.2s">
+      <div class="stat-lbl">Exams Logged</div>
+      <div class="stat-val" id="ds-exams">0</div>
+      <div class="stat-sub">scores entered</div>
+    </div>
+  </div>
+
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showTab('dashboard')" id="tab-dashboard">🏠 Dashboard</button>
+    <button class="nav-tab" onclick="showTab('tracker')" id="tab-tracker">📝 Add Subject</button>
+    <button class="nav-tab" onclick="showTab('courses')" id="tab-courses">📚 My Courses</button>
+    <button class="nav-tab" onclick="showTab('whatif')" id="tab-whatif">🔮 What-If</button>
+    <button class="nav-tab" onclick="showTab('study')" id="tab-study">⏱ Study Planner</button>
+    <button class="nav-tab" onclick="showTab('history')" id="tab-history">📅 Semesters</button>
+  </div>
+
+  <div id="tc-dashboard">
+    <div id="dash-banner"></div>
+    <div id="dash-list"></div>
+    <div class="card" id="dash-chart-card" style="display:none">
+      <div class="card-title"><span class="ico">📈</span>GPA Trend</div>
+      <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
+    </div>
+  </div>
+
+  <div id="tc-tracker" class="hidden">
+    <div class="steps">
+      <div class="sw active" id="sw1"><div class="sw-node"><div class="sw-dot">1</div><div class="sw-lbl">Setup</div></div></div>
+      <div class="sw-line"></div>
+      <div class="sw" id="sw2"><div class="sw-node"><div class="sw-dot">2</div><div class="sw-lbl">Subjects</div></div></div>
+      <div class="sw-line"></div>
+      <div class="sw" id="sw3"><div class="sw-node"><div class="sw-dot">3</div><div class="sw-lbl">Results</div></div></div>
+    </div>
+    <div id="pg-setup">
+      <div class="card">
+        <div class="card-title"><span class="ico">🎓</span>New Semester / Add Subjects</div>
+        <div class="infobox">Name your semester and add subjects. They'll be <strong>saved to the cloud</strong> and accessible from any device.</div>
+        <div class="field"><label>Semester Name</label><input type="text" id="sem-name-inp" placeholder="e.g. Fall 2024 / Semester 3"/></div>
+        <div class="field"><label>Mode</label>
+          <div class="tgl-group">
+            <div class="tgl-btn on" id="mode-s" onclick="setMode('single')">Single Subject</div>
+            <div class="tgl-btn" id="mode-m" onclick="setMode('multi')">Multiple Subjects</div>
+          </div>
+        </div>
+        <div class="field hidden" id="n-subj-f">
+          <label>Number of Subjects</label>
+          <input type="number" id="n-subjs" value="3" min="2" max="20"/>
+        </div>
+        <div class="btn-row"><button class="btn btn-primary" onclick="goStep2()">Continue →</button></div>
+      </div>
+    </div>
+    <div id="pg-subjects" class="hidden"><div id="subj-forms"></div>
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="goStep1()">← Back</button>
+        <button class="btn btn-primary" id="calc-save-btn" onclick="calcAndSave()">💾 Save & Calculate →</button>
+      </div>
+    </div>
+    <div id="pg-results" class="hidden">
+      <div id="results-wrap"></div>
+      <div class="card">
+        <div class="card-title"><span class="ico">🔮</span>Quick What-If</div>
+        <div id="wi-subj-sel" style="margin-bottom:12px"></div>
+        <label style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:7px">Score in remaining exams</label>
+        <input type="range" id="wi-slider" min="0" max="100" value="75" oninput="updateWI()"/>
+        <div class="slider-labels"><span>0%</span><span>50%</span><span>100%</span></div>
+        <div style="display:flex;gap:18px;margin-top:14px;flex-wrap:wrap">
+          <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px">If you score</div>
+            <div id="wi-val" style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:28px;color:var(--accent)">75%</div></div>
+          <div style="font-size:22px;color:var(--muted);display:flex;align-items:center">→</div>
+          <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px">Total becomes</div>
+            <div id="wi-tot" style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:28px;color:var(--accent3)">—</div></div>
+          <div style="font-size:22px;color:var(--muted);display:flex;align-items:center">→</div>
+          <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px">Grade</div>
+            <div id="wi-grade" style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:28px">—</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="ico">📊</span>Score Chart</div>
+        <div class="chart-wrap"><canvas id="gradeChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="ico">🔗</span>Share Card</div>
+        <div class="share-preview" id="share-el"></div>
+        <div class="btn-row">
+          <button class="btn btn-green" onclick="copyShare()">📋 Copy Text</button>
+          <button class="btn btn-primary" onclick="dlReport()">⬇ Download Report</button>
+        </div>
+      </div>
+      <div style="text-align:center;margin-top:10px">
+        <button class="btn btn-secondary" onclick="goStep1()" style="font-size:12px;padding:9px 18px">↩ Add More</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="tc-courses" class="hidden">
+    <div class="card">
+      <div class="card-title"><span class="ico">📚</span>My Courses</div>
+      <div class="infobox">All your saved subjects. Click ➕ to log a new exam score — it <strong>instantly updates</strong> your GPA everywhere.</div>
+      <div id="sem-filter"></div>
+      <div id="courses-list"></div>
+    </div>
+  </div>
+
+  <div id="tc-whatif" class="hidden">
+    <div class="card">
+      <div class="card-title"><span class="ico">🔮</span>What-If Simulator</div>
+      <div class="infobox">Drag sliders to simulate different exam scores and see projected grades live.</div>
+      <div id="wi-full"></div>
+    </div>
+  </div>
+
+  <div id="tc-study" class="hidden">
+    <div class="card">
+      <div class="card-title"><span class="ico">⏱</span>Study Time Estimator</div>
+      <div class="infobox">Estimated study hours based on what you need to score per exam.</div>
+      <div id="study-content"></div>
+    </div>
+  </div>
+
+  <div id="tc-history" class="hidden">
+    <div class="card">
+      <div class="card-title"><span class="ico">📅</span>Semester History</div>
+      <div class="infobox">Your full academic journey across all semesters. <strong>Synced to the cloud.</strong></div>
+      <div id="history-list"></div>
+    </div>
+    <div class="card" id="sem-trend-card" style="display:none">
+      <div class="card-title"><span class="ico">📈</span>GPA Trend Across Semesters</div>
+      <div class="chart-wrap"><canvas id="semTrendChart"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- SCORE MODAL -->
+<div class="modal-overlay" id="score-modal">
+  <div class="modal-box">
+    <div class="modal-title" id="modal-title">Update Exam Score</div>
+    <div id="modal-body"></div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="modal-save" onclick="saveModalScore()">Save Score</button>
+    </div>
+  </div>
+</div>
+
+<!-- USER MODAL -->
+<div class="modal-overlay" id="user-modal">
+  <div class="modal-box" style="max-width:340px">
+    <div class="modal-title">My Account</div>
+    <div id="user-modal-body"></div>
+    <div class="btn-row">
+      <button class="btn btn-red" onclick="doSignOut()">🚪 Sign Out</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('user-modal').classList.remove('show')">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+//  ⚙️  SUPABASE CONFIG — REPLACE THESE TWO VALUES
+//  Get them from: supabase.com → your project → Settings → API
+// ══════════════════════════════════════════════════════════════
+const SUPABASE_URL  = 'https://pbcahhkobxrrnqzeqhra.supabase.co';   // e.g. https://abcdefgh.supabase.co
+const SUPABASE_ANON = 'sb_publishable_JNjLBiahRGmxbY5pF9deeQ_PQ4dg8yl';      // long string starting with eyJ...
+
+// ══════════════════════════════════════════════════════════════
+// INIT SUPABASE
+// ══════════════════════════════════════════════════════════════
+let sb = null;
+function initSupabase() {
+  if (SUPABASE_URL === 'YOUR_SUPABASE_PROJECT_URL') return false;
+  try {
+    sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+    document.getElementById('config-banner').classList.add('hidden');
+    return true;
+  } catch(e) { return false; }
+}
+
+// ══════════════════════════════════════════════════════════════
+// GPA SCALE
+// ══════════════════════════════════════════════════════════════
+const GPA=[
+  {l:'A',p:4.0,m:93},{l:'A-',p:3.6667,m:90},
+  {l:'B+',p:3.3333,m:87},{l:'B',p:3.0,m:83},
+  {l:'B-',p:2.6667,m:80},{l:'C+',p:2.3333,m:77},
+  {l:'C',p:2.0,m:73},{l:'C-',p:1.6667,m:70},
+  {l:'D+',p:1.3333,m:67},{l:'D',p:1.0,m:63},
+  {l:'D-',p:0.6667,m:60},{l:'F',p:0.0,m:0}
+];
+const pctToG = s => GPA.find(g=>s>=g.m)||GPA[GPA.length-1];
+const gCol   = l => ({A:'#34d399','A-':'#6ee7b7','B+':'#818cf8',B:'#a78bfa','B-':'#c4b5fd','C+':'#fbbf24',C:'#fcd34d','C-':'#fde68a','D+':'#f87171',D:'#fca5a5','D-':'#fecaca',F:'#ef4444'}[l]||'#6b7280');
+const closestL = gpa => GPA.reduce((b,g)=>Math.abs(g.p-gpa)<Math.abs(b.p-gpa)?g:b).l;
+
+// ══════════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════════
+let currentUser = null;        // Supabase user object
+let profile     = null;        // row from gpa_profiles table
+let semesters   = [];          // cached from DB
+let appMode     = 'single';
+let calcSubjs   = [], calcRes  = [];
+let activeCalcIdx = 0;
+let modalCtx    = null;
+let chartInst   = null, trendInst = null, semTrendInst = null;
+
+// ══════════════════════════════════════════════════════════════
+// AUTH FLOW
+// ══════════════════════════════════════════════════════════════
+function switchAuth(tab) {
+  ['in','up'].forEach(t => {
+    document.getElementById('at-'+t).classList.toggle('on', t===tab);
+    document.getElementById('auth-'+t).classList.toggle('hidden', t!==tab);
+  });
+  document.getElementById('auth-err').style.display = 'none';
+}
+function showAuthErr(m) { const e=document.getElementById('auth-err'); e.textContent=m; e.style.display='block'; }
+function setAuthLoading(id, loading) {
+  const btn = document.getElementById(id);
+  btn.disabled = loading;
+  btn.textContent = loading ? '⏳ Please wait...' : (id==='in-btn' ? 'Sign In →' : 'Create Account →');
+}
+
+async function doSignIn() {
+  if (!sb) { showAuthErr('Supabase not configured. See setup instructions.'); return; }
+  const email = document.getElementById('in-email').value.trim();
+  const pass  = document.getElementById('in-pass').value;
+  if (!email||!pass) { showAuthErr('Fill in all fields.'); return; }
+  setAuthLoading('in-btn', true);
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+  setAuthLoading('in-btn', false);
+  if (error) { showAuthErr(error.message); return; }
+  currentUser = data.user;
+  await onAuthSuccess();
+}
+
+async function doSignUp() {
+  if (!sb) { showAuthErr('Supabase not configured. See setup instructions.'); return; }
+  const name  = document.getElementById('up-name').value.trim();
+  const email = document.getElementById('up-email').value.trim();
+  const pass  = document.getElementById('up-pass').value;
+  const uni   = document.getElementById('up-uni').value.trim();
+  if (!name||!email||!pass) { showAuthErr('Please fill in name, email and password.'); return; }
+  if (pass.length < 6) { showAuthErr('Password must be at least 6 characters.'); return; }
+  setAuthLoading('up-btn', true);
+  const { data, error } = await sb.auth.signUp({
+    email, password: pass,
+    options: { data: { full_name: name, university: uni } }
+  });
+  setAuthLoading('up-btn', false);
+  if (error) { showAuthErr(error.message); return; }
+  if (data.user && !data.session) {
+    showAuthErr('Check your email to confirm your account, then sign in.');
+    switchAuth('in'); return;
+  }
+  currentUser = data.user;
+  await onAuthSuccess();
+}
+
+async function doReset() {
+  if (!sb) return;
+  const email = document.getElementById('in-email').value.trim();
+  if (!email) { showAuthErr('Enter your email above first.'); return; }
+  const { error } = await sb.auth.resetPasswordForEmail(email);
+  if (error) showAuthErr(error.message);
+  else showAuthErr('✅ Password reset email sent! Check your inbox.');
+}
+
+async function doSignOut() {
+  if (sb) await sb.auth.signOut();
+  currentUser = null; profile = null; semesters = [];
+  calcSubjs = []; calcRes = [];
+  document.getElementById('user-modal').classList.remove('show');
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('auth-wrap').classList.remove('out');
+  document.getElementById('auth-wrap').style.display = 'flex';
+  document.getElementById('in-email').value = '';
+  document.getElementById('in-pass').value = '';
+  document.getElementById('auth-err').style.display = 'none';
+  showToast('Signed out.');
+}
+
+async function onAuthSuccess() {
+  // Hide auth
+  document.getElementById('auth-wrap').classList.add('out');
+  setTimeout(() => document.getElementById('auth-wrap').style.display = 'none', 400);
+  // Load or create profile
+  await loadProfile();
+}
+
+// ══════════════════════════════════════════════════════════════
+// PROFILE & DATA (Supabase DB)
+// ══════════════════════════════════════════════════════════════
+async function loadProfile() {
+  const { data, error } = await sb
+    .from('gpa_profiles')
+    .select('*')
+    .eq('user_id', currentUser.id)
+    .single();
+
+  if (error || !data) {
+    // No profile yet → show onboarding
+    document.getElementById('ob-wrap').classList.remove('hidden');
+  } else {
+    profile = data;
+    await loadSemesters();
+    launchApp();
+  }
+}
+
+async function loadSemesters() {
+  const { data, error } = await sb
+    .from('gpa_semesters')
+    .select('*')
+    .eq('user_id', currentUser.id)
+    .order('created_at', { ascending: true });
+  if (!error && data) semesters = data.map(s => ({ ...s, subjects: s.subjects || [] }));
+  else semesters = [];
+}
+
+async function saveSemesterToDB(sem) {
+  const { data, error } = await sb
+    .from('gpa_semesters')
+    .upsert({ ...sem, user_id: currentUser.id }, { onConflict: 'id' })
+    .select()
+    .single();
+  if (!error && data) {
+    const idx = semesters.findIndex(s => s.id === data.id);
+    if (idx >= 0) semesters[idx] = data;
+    else semesters.push(data);
+  }
+  showSyncBadge();
+}
+
+async function deleteSemesterFromDB(id) {
+  await sb.from('gpa_semesters').delete().eq('id', id);
+  semesters = semesters.filter(s => s.id !== id);
+  showSyncBadge();
+}
+
+function showSyncBadge() {
+  const b = document.getElementById('sync-badge');
+  b.style.display = 'inline-flex';
+  setTimeout(() => b.style.display = 'none', 3000);
+}
+
+// ══════════════════════════════════════════════════════════════
+// ONBOARDING
+// ══════════════════════════════════════════════════════════════
+let obMode = null;
+function selectObMode(m) {
+  obMode = m;
+  document.getElementById('mc-fresh').classList.toggle('sel', m==='fresh');
+  document.getElementById('mc-existing').classList.toggle('sel', m==='existing');
+  const btn = document.getElementById('ob1-next');
+  btn.disabled = false; btn.style.opacity = '1';
+}
+function obNext() {
+  document.getElementById('ob-1').classList.remove('show');
+  document.getElementById('ob-2').classList.add('show');
+  if (obMode === 'fresh') {
+    document.getElementById('ob2-title').textContent = "You're all set!";
+    document.getElementById('ob2-sub').textContent = 'Everything is ready. Start adding subjects when you\'re ready.';
+    document.getElementById('ob2-fields').classList.add('hidden');
+    document.getElementById('ob2-fresh').classList.remove('hidden');
+  } else {
+    document.getElementById('ob2-fields').classList.remove('hidden');
+    document.getElementById('ob2-fresh').classList.add('hidden');
+  }
+}
+function obBack() {
+  document.getElementById('ob-2').classList.remove('show');
+  document.getElementById('ob-1').classList.add('show');
+}
+async function obFinish() {
+  const btn = document.getElementById('ob2-finish');
+  btn.disabled = true; btn.textContent = '⏳ Saving...';
+  const meta = currentUser.user_metadata || {};
+  const profileData = {
+    user_id: currentUser.id,
+    full_name: meta.full_name || '',
+    university: meta.university || '',
+    mode: obMode,
+    start_gpa: obMode === 'existing' ? (parseFloat(document.getElementById('ob-gpa').value)||0) : 0,
+    start_credits: obMode === 'existing' ? (parseFloat(document.getElementById('ob-credits').value)||0) : 0,
+    start_sems: obMode === 'existing' ? (parseInt(document.getElementById('ob-sems').value)||0) : 0,
+  };
+  const { data, error } = await sb.from('gpa_profiles').insert(profileData).select().single();
+  if (error) { btn.disabled=false; btn.textContent='Start Tracking →'; showToast('Error saving profile: '+error.message); return; }
+  profile = data;
+  document.getElementById('ob-wrap').classList.add('hidden');
+  launchApp();
+}
+
+// ══════════════════════════════════════════════════════════════
+// LAUNCH
+// ══════════════════════════════════════════════════════════════
+function launchApp() {
+  document.getElementById('app').style.display = 'block';
+  const name = (profile.full_name||'').split(' ')[0] || 'Student';
+  document.getElementById('uav').textContent = (profile.full_name||'?')[0].toUpperCase();
+  document.getElementById('uname-display').textContent = name;
+  document.getElementById('hero-h').textContent = `Welcome back, ${name}! 👋`;
+  document.getElementById('hero-p').textContent = profile.university
+    ? `${profile.university} · GPA Dashboard`
+    : 'Your GPA Dashboard · Works on any device';
+  document.getElementById('anno-br').innerHTML = `GRADINTEL<br/>${name.toUpperCase()}_ONLINE`;
+  updateStats();
+  renderDashboard();
+  renderCourses();
+  renderWIFull();
+  renderStudy();
+  initAnimations();
+}
+
+// ══════════════════════════════════════════════════════════════
+// COMPUTE
+// ══════════════════════════════════════════════════════════════
+function computeSubject(s) {
+  const op=s.other_pct/100, os=s.other_score/100, ep=s.exam_pct/100;
+  let earned=op*os, remW=0;
+  (s.exams||[]).forEach(e => {
+    const wf=e.weight/100;
+    if (e.taken && e.score!==null) earned+=ep*wf*(e.score/100);
+    else remW+=wf;
+  });
+  const cur=earned*100;
+  const curG=pctToG(cur);
+  const remFrac=remW*ep;
+  const remExams=(s.exams||[]).filter(e=>!e.taken).map(e=>({name:e.name,weight:e.weight,gf:e.weight/100*ep,id:e.id}));
+  const takenExams=(s.exams||[]).filter(e=>e.taken).map(e=>({name:e.name,weight:e.weight,score:e.score,id:e.id}));
+  const targets=GPA.map(g=>{
+    const avg=remFrac<0.001?null:(g.m-cur)/(remFrac*100)*100;
+    const perExam=remExams.map(ex=>{
+      const of=remFrac-ex.gf;
+      const assumed=avg===null||avg>100?75:Math.max(0,Math.min(100,avg));
+      const oc=of*(assumed/100)*100;
+      const nd=ex.gf<0.001?null:(g.m-cur-oc)/(ex.gf*100)*100;
+      return{name:ex.name,gf:ex.gf,needed:nd,id:ex.id};
+    });
+    return{...g,avg,perExam};
+  });
+  return{cur,curG,remFrac,remExams,takenExams,targets};
+}
+
+function computeAllGPA() {
+  let totalCP=0, totalCR=0, totalSubjs=0, totalExams=0;
+  if (profile.mode==='existing' && profile.start_gpa>0) {
+    totalCP += profile.start_gpa * profile.start_credits;
+    totalCR += profile.start_credits;
+  }
+  semesters.forEach(sem => {
+    let semCP=0, semCR=0;
+    (sem.subjects||[]).forEach(s => {
+      const res=computeSubject(s);
+      totalCP+=s.credits*res.curG.p; totalCR+=s.credits;
+      semCP+=s.credits*res.curG.p; semCR+=s.credits;
+      totalSubjs++;
+      totalExams+=(s.exams||[]).filter(e=>e.taken).length;
+    });
+    sem._gpa = semCR ? semCP/semCR : 0;
+  });
+  return { cumGPA: totalCR?totalCP/totalCR:0, totalCR, totalSubjs, totalExams };
+}
+
+function updateStats() {
+  const{cumGPA,totalCR,totalSubjs,totalExams}=computeAllGPA();
+  const cl=closestL(cumGPA); const col=gCol(cl);
+  const gpaEl=document.getElementById('ds-gpa');
+  gpaEl.textContent=cumGPA>0?cumGPA.toFixed(4):'—';
+  gpaEl.dataset.val=gpaEl.textContent;
+  gpaEl.style.color=cumGPA>0?col:'var(--muted)';
+  document.getElementById('ds-gpa-sub').textContent=cumGPA>0?`${cl} · ${totalCR} credits`:'No data yet';
+  const sem=semesters[semesters.length-1];
+  if (sem) {
+    document.getElementById('ds-sem').textContent=(sem._gpa||0).toFixed(4);
+    document.getElementById('ds-sem').style.color=gCol(closestL(sem._gpa||0));
+    document.getElementById('ds-sem-sub').textContent=sem.name;
+  }
+  document.getElementById('ds-subjs').textContent=totalSubjs;
+  document.getElementById('ds-exams').textContent=totalExams;
+}
+
+// ══════════════════════════════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════════════════════════════
+function renderDashboard() {
+  const banner=document.getElementById('dash-banner');
+  const list=document.getElementById('dash-list');
+  banner.innerHTML=''; list.innerHTML='';
+  if (!semesters.length) {
+    list.innerHTML=`<div class="infobox" style="text-align:center;padding:24px">No subjects yet. Go to <strong>Add Subject</strong> to start! 🚀</div>`;
+    document.getElementById('dash-chart-card').style.display='none'; return;
+  }
+  const sem=semesters[semesters.length-1];
+  banner.innerHTML=`<div class="infobox" style="margin-bottom:16px">
+    📅 <strong>${sem.name}</strong> · ${(sem.subjects||[]).length} subject${(sem.subjects||[]).length!==1?'s':''} ·
+    <span style="color:var(--accent3)">${sem._gpa?sem._gpa.toFixed(4)+' GPA':''}</span>
+    &nbsp;<span class="sync-badge" style="display:inline-flex"><span class="sync-dot"></span>Cloud Synced</span>
+  </div>`;
+  (sem.subjects||[]).forEach(s => {
+    const res=computeSubject(s); const col=gCol(res.curG.l);
+    const rem=res.remExams.length;
+    const card=document.createElement('div'); card.className='course-item';
+    card.innerHTML=`<div class="ci-ico">📚</div>
+      <div class="ci-info">
+        <div class="ci-name">${s.name}</div>
+        <div class="ci-meta">${s.credits} cr · ${rem>0?`<span style="color:var(--yellow)">${rem} exam${rem!==1?'s':''} remaining</span>`:'<span style="color:var(--green)">All done ✓</span>'}</div>
+      </div>
+      <div class="ci-grade" style="color:${col}">${res.curG.l}</div>
+      <div class="ci-actions">
+        ${rem>0?`<button class="ca-btn" onclick="openAddScore('${sem.id}','${s.id}')" title="Add score">➕</button>`:''}
+        <button class="ca-btn" onclick="viewDetail('${sem.id}','${s.id}')" title="Details">👁</button>
+      </div>`;
+    list.appendChild(card);
+  });
+  buildTrendChart();
+  document.getElementById('dash-chart-card').style.display='block';
+}
+
+// ══════════════════════════════════════════════════════════════
+// COURSES TAB
+// ══════════════════════════════════════════════════════════════
+function renderCourses() {
+  const sf=document.getElementById('sem-filter');
+  const cl=document.getElementById('courses-list');
+  sf.innerHTML=''; cl.innerHTML='';
+  if (!semesters.length) { cl.innerHTML='<div style="text-align:center;padding:40px;color:var(--muted)">No courses yet.</div>'; return; }
+  const row=document.createElement('div'); row.className='chip-row';
+  semesters.forEach((sem,i) => {
+    const chip=document.createElement('div');
+    chip.className='chip'+(i===semesters.length-1?' on':'');
+    chip.textContent=sem.name;
+    chip.onclick=()=>{ row.querySelectorAll('.chip').forEach(c=>c.classList.remove('on')); chip.classList.add('on'); renderSemCourses(sem.id); };
+    row.appendChild(chip);
+  });
+  sf.appendChild(row);
+  renderSemCourses(semesters[semesters.length-1].id);
+}
+function renderSemCourses(semId) {
+  const sem=semesters.find(s=>s.id===semId);
+  const cl=document.getElementById('courses-list'); cl.innerHTML='';
+  if (!sem||(sem.subjects||[]).length===0) { cl.innerHTML='<div style="text-align:center;padding:30px;color:var(--muted)">No subjects in this semester.</div>'; return; }
+  sem.subjects.forEach(s => {
+    const res=computeSubject(s); const col=gCol(res.curG.l);
+    const card=document.createElement('div'); card.className='course-item';
+    card.innerHTML=`<div class="ci-ico">📚</div>
+      <div class="ci-info">
+        <div class="ci-name">${s.name}</div>
+        <div class="ci-meta">${s.credits} cr · ${res.cur.toFixed(1)}% · ${res.remExams.length>0?`${res.remExams.length} remaining`:'All exams taken'}</div>
+      </div>
+      <div class="ci-grade" style="color:${col}">${res.curG.l}</div>
+      <div class="ci-actions">
+        ${res.remExams.length>0?`<button class="ca-btn" onclick="openAddScore('${sem.id}','${s.id}')" title="Add score">➕</button>`:''}
+        <button class="ca-btn" onclick="viewDetail('${sem.id}','${s.id}')" title="Details">👁</button>
+        <button class="ca-btn" onclick="deleteCourse('${sem.id}','${s.id}')" title="Delete" style="color:var(--red)">🗑</button>
+      </div>`;
+    cl.appendChild(card);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+// COURSE DETAIL
+// ══════════════════════════════════════════════════════════════
+function viewDetail(semId, subjectId) {
+  const sem=semesters.find(s=>s.id===semId);
+  const s=sem.subjects.find(x=>x.id===subjectId);
+  const res=computeSubject(s);
+  const col=gCol(res.curG.l);
+  const motiv=getMotiv(res.cur);
+  const mBg=res.cur>=87?'rgba(52,211,153,.08)':res.cur>=73?'rgba(251,191,36,.08)':'rgba(248,113,113,.08)';
+  const mBd=res.cur>=87?'rgba(52,211,153,.25)':res.cur>=73?'rgba(251,191,36,.25)':'rgba(248,113,113,.25)';
+  document.getElementById('modal-title').textContent=s.name;
+  document.getElementById('modal-save').style.display='none';
+  document.getElementById('modal-body').innerHTML=`
+    <div class="score-hero" style="padding:22px;margin-bottom:14px">
+      <div class="sh-lbl">Current Score</div>
+      <div class="sh-num" data-val="${res.cur.toFixed(1)}%">${res.cur.toFixed(1)}<span style="font-size:.4em;opacity:.5">%</span></div>
+      <div class="sh-sub">Grade: <span class="grade-pill" style="background:${col}22;color:${col};border:1px solid ${col}44">${res.curG.l}</span> &nbsp; ${res.curG.p.toFixed(4)} pts</div>
+    </div>
+    <div class="motiv" style="background:${mBg};border:1px solid ${mBd};margin-bottom:14px">
+      <div class="motiv-ico">${motiv.ico}</div>
+      <div><div class="motiv-title">${motiv.title}</div><div style="font-size:12px;color:var(--muted2)">${motiv.msg}</div></div>
+    </div>
+    <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:12px;color:var(--muted2);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px">Exams</div>
+    ${(s.exams||[]).map(e=>`
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+        <div><div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:13px">${e.name}</div>
+          <div style="font-size:11px;color:var(--muted)">${e.weight.toFixed(0)}% of exam marks</div></div>
+        ${e.taken
+          ?`<div style="display:flex;align-items:center;gap:8px">
+              <span style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:18px;color:${gCol(pctToG(e.score).l)}">${e.score}%</span>
+              <button class="ca-btn" onclick="openEditScore('${semId}','${subjectId}','${e.id}');closeModal()" title="Edit">✏️</button>
+            </div>`
+          :`<div style="display:flex;align-items:center;gap:8px">
+              <span style="color:var(--muted);font-size:12px">Not taken</span>
+              <button class="ca-btn" onclick="openEditScore('${semId}','${subjectId}','${e.id}');closeModal()" title="Add" style="color:var(--accent)">➕</button>
+            </div>`}
+      </div>`).join('')}
+    ${res.remExams.length>0?`
+      <div class="divider"></div>
+      <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:12px;color:var(--muted2);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px">Scores needed</div>
+      <div class="chip-row" id="det-chips"></div>
+      <div id="det-ecards"></div>`:''}`;
+  if (res.remExams.length>0) {
+    const cc=document.getElementById('det-chips');
+    GPA.slice(0,7).forEach((g,i)=>{
+      const chip=document.createElement('div'); chip.className='chip'+(i===0?' on':'');
+      chip.textContent=`${g.l} (${g.p.toFixed(4)})`;
+      chip.onclick=()=>{ cc.querySelectorAll('.chip').forEach((c,j)=>c.classList.toggle('on',j===i)); renderDetCards(res,i); };
+      cc.appendChild(chip);
+    });
+    renderDetCards(res,0);
+  }
+  syncDataVal();
+  document.getElementById('score-modal').classList.add('show');
+}
+function renderDetCards(res,ti) {
+  const c=document.getElementById('det-ecards'); if(!c)return;
+  const t=res.targets[ti]; c.innerHTML='';
+  const icos=['📄','📝','📖','✏️','🧪','📊','📐','🔬'];
+  t.perExam.forEach((ex,i)=>{
+    const nd=ex.needed; let sc,rng,col;
+    if(nd===null){sc='N/A';rng='';col='var(--muted)'}
+    else if(nd>100){sc='Not possible';rng=`Need ${nd.toFixed(1)}%`;col='var(--red)'}
+    else if(nd<=0){sc='Any score';rng='Already on track';col='var(--green)'}
+    else{const lo=Math.max(0,nd-3-Math.random()*4).toFixed(1);const hi=Math.min(100,nd+3+Math.random()*4).toFixed(1);
+      sc=nd.toFixed(1)+'%';rng=`Safe: ${lo}%–${hi}%`;col=nd<60?'var(--green)':nd<80?'var(--yellow)':'var(--red)';}
+    const card=document.createElement('div'); card.className='eneed'; card.style.animationDelay=(i*.06)+'s';
+    card.innerHTML=`<div class="eneed-ico">${icos[i%icos.length]}</div>
+      <div class="eneed-info"><div class="eneed-name">${ex.name}</div><div class="eneed-meta">Worth ${(ex.gf*100).toFixed(1)}% of total</div></div>
+      <div><div class="eneed-score" style="color:${col}">${sc}</div><div class="eneed-range">${rng}</div></div>`;
+    c.appendChild(card);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+// ADD / EDIT SCORE
+// ══════════════════════════════════════════════════════════════
+function openAddScore(semId, subjectId) {
+  const sem=semesters.find(s=>s.id===semId);
+  const s=sem.subjects.find(x=>x.id===subjectId);
+  const rem=s.exams.filter(e=>!e.taken);
+  if (!rem.length) { showToast('All exams already scored!'); return; }
+  modalCtx={semId,subjectId,examId:null};
+  document.getElementById('modal-title').textContent=`Add Score — ${s.name}`;
+  document.getElementById('modal-save').style.display='';
+  document.getElementById('modal-body').innerHTML=`
+    <div class="infobox">Select the exam and enter your score. It will sync to cloud automatically.</div>
+    <div class="field"><label>Exam</label>
+      <select id="modal-exam-sel">${rem.map(e=>`<option value="${e.id}">${e.name} (${e.weight.toFixed(0)}% of exam marks)</option>`).join('')}</select>
+    </div>
+    <div class="field"><label>Your Score (out of 100)</label>
+      <input type="number" id="modal-score-inp" placeholder="e.g. 82" min="0" max="100"/>
+    </div>`;
+  document.getElementById('score-modal').classList.add('show');
+}
+function openEditScore(semId, subjectId, examId) {
+  const sem=semesters.find(s=>s.id===semId);
+  const s=sem.subjects.find(x=>x.id===subjectId);
+  const e=s.exams.find(x=>x.id===examId);
+  modalCtx={semId,subjectId,examId};
+  document.getElementById('modal-title').textContent=`${e.taken?'Edit':'Add'} Score — ${e.name}`;
+  document.getElementById('modal-save').style.display='';
+  document.getElementById('modal-body').innerHTML=`
+    <div class="infobox">Enter your score for <strong>${e.name}</strong>.</div>
+    <div class="field"><label>Your Score (out of 100)</label>
+      <input type="number" id="modal-score-inp" value="${e.taken?e.score:''}" placeholder="e.g. 82" min="0" max="100"/>
+    </div>`;
+  document.getElementById('score-modal').classList.add('show');
+}
+async function saveModalScore() {
+  const sem=semesters.find(s=>s.id===modalCtx.semId);
+  const s=sem.subjects.find(x=>x.id===modalCtx.subjectId);
+  let examId=modalCtx.examId;
+  if (!examId) { const sel=document.getElementById('modal-exam-sel'); if(!sel){showToast('Select an exam.');return;} examId=sel.value; }
+  const scoreRaw=document.getElementById('modal-score-inp').value;
+  if (scoreRaw==='') { showToast('Enter a score.'); return; }
+  const score=parseFloat(scoreRaw);
+  if (isNaN(score)||score<0||score>100) { showToast('Score must be 0–100.'); return; }
+  document.getElementById('modal-save').disabled=true;
+  document.getElementById('modal-save').textContent='Saving...';
+  const exam=s.exams.find(e=>e.id===examId);
+  exam.taken=true; exam.score=score;
+  // Recompute semester GPA
+  const semCP=sem.subjects.reduce((a,x)=>a+x.credits*computeSubject(x).curG.p,0);
+  const semCR=sem.subjects.reduce((a,x)=>a+x.credits,0);
+  sem._gpa=semCR?semCP/semCR:0;
+  await saveSemesterToDB(sem);
+  document.getElementById('modal-save').disabled=false;
+  document.getElementById('modal-save').textContent='Save Score';
+  closeModal();
+  const res=computeSubject(s);
+  updateStats(); renderDashboard(); renderCourses(); renderWIFull(); renderStudy();
+  showToast(`✅ Saved! ${s.name}: ${res.curG.l} (${res.cur.toFixed(1)}%)`);
+  if (res.curG.l==='A') fireConfetti();
+}
+function closeModal() {
+  document.getElementById('score-modal').classList.remove('show');
+  document.getElementById('modal-save').style.display='';
+  document.getElementById('modal-save').disabled=false;
+  document.getElementById('modal-save').textContent='Save Score';
+  modalCtx=null;
+}
+async function deleteCourse(semId, subjectId) {
+  if (!confirm('Delete this course and all its exam data?')) return;
+  const sem=semesters.find(s=>s.id===semId);
+  sem.subjects=sem.subjects.filter(s=>s.id!==subjectId);
+  if (!sem.subjects.length) { await deleteSemesterFromDB(semId); }
+  else { await saveSemesterToDB(sem); }
+  updateStats(); renderDashboard(); renderCourses(); renderHistory();
+  showToast('Course deleted.');
+}
+
+// ══════════════════════════════════════════════════════════════
+// TRACKER FLOW (Add Subject)
+// ══════════════════════════════════════════════════════════════
+function setMode(m) {
+  appMode=m;
+  document.getElementById('mode-s').classList.toggle('on',m==='single');
+  document.getElementById('mode-m').classList.toggle('on',m==='multi');
+  document.getElementById('n-subj-f').classList.toggle('hidden',m==='single');
+}
+function setStep(n) {
+  [1,2,3].forEach(i=>{
+    const el=document.getElementById('sw'+i); if(!el)return;
+    el.classList.remove('active','done');
+    if(i<n) el.classList.add('done');
+    if(i===n) el.classList.add('active');
+  });
+}
+function goStep1() {
+  setStep(1);
+  document.getElementById('pg-setup').classList.remove('hidden');
+  document.getElementById('pg-subjects').classList.add('hidden');
+  document.getElementById('pg-results').classList.add('hidden');
+}
+function goStep2() {
+  const n=appMode==='single'?1:parseInt(document.getElementById('n-subjs').value)||2;
+  setStep(2);
+  document.getElementById('pg-setup').classList.add('hidden');
+  document.getElementById('pg-subjects').classList.remove('hidden');
+  buildForms(n);
+}
+function uid() { return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+function buildForms(n) { const c=document.getElementById('subj-forms');c.innerHTML='';for(let i=0;i<n;i++)c.appendChild(makeForm(i,n)); }
+function makeForm(idx,total) {
+  const d=document.createElement('div');d.className='card';d.style.animationDelay=(idx*.08)+'s';d.id='sf-'+idx;
+  d.innerHTML=`<div class="card-title"><span class="ico">📚</span>${total>1?`Subject ${idx+1} of ${total}`:'Subject Details'}</div>
+    <div class="field-row">
+      <div class="field"><label>Subject Name</label><input type="text" id="s${idx}_nm" placeholder="e.g. Calculus"/></div>
+      <div class="field"><label>Credits</label><input type="number" id="s${idx}_cr" value="3" min=".5" max="12" step=".5"/></div>
+    </div>
+    <div class="divider"></div>
+    <div class="infobox">Split grade into <strong>Exams</strong> and <strong>Other stuff</strong> (assignments, attendance, quizzes).</div>
+    <div class="field-row">
+      <div class="field"><label>Other Stuff %</label><input type="number" id="s${idx}_op" value="40" min="0" max="100" oninput="updEP(${idx})"/></div>
+      <div class="field"><label>Exam % (auto)</label><input type="number" id="s${idx}_ep" value="60" readonly style="opacity:.4;cursor:not-allowed"/></div>
+    </div>
+    <div class="field"><label>Other Stuff Score (out of 100 · blank = assume 35)</label><input type="number" id="s${idx}_os" placeholder="e.g. 75" min="0" max="100"/></div>
+    <div class="divider"></div>
+    <div class="field" style="max-width:180px"><label>Number of Exams</label><input type="number" id="s${idx}_ne" value="2" min="1" max="15" oninput="rebuildEx(${idx})"/></div>
+    <div id="s${idx}_ex"></div>`;
+  setTimeout(()=>rebuildEx(idx),40);
+  return d;
+}
+function updEP(i){const v=parseFloat(document.getElementById(`s${i}_op`).value)||0;document.getElementById(`s${i}_ep`).value=Math.max(0,100-v).toFixed(0);}
+function rebuildEx(idx){
+  const n=parseInt(document.getElementById(`s${idx}_ne`).value)||1;
+  const c=document.getElementById(`s${idx}_ex`);
+  const prev=[];
+  c.querySelectorAll('.exam-card').forEach(card=>{
+    prev.push({nm:card.querySelector('[data-f="nm"]')?.value||'',wt:card.querySelector('[data-f="wt"]')?.value||'',tk:card.querySelector('[data-f="tk"]')?.value||'no',sc:card.querySelector('[data-f="sc"]')?.value||''});
+  });
+  c.innerHTML='';
+  const icos=['📄','📝','📖','✏️','🧪','📊','📐','🔬'];
+  for(let i=0;i<n;i++){
+    const e=prev[i]||{};
+    const card=document.createElement('div');card.className='exam-card';
+    card.innerHTML=`<div class="exam-card-hdr"><div class="exam-badge">${icos[i%icos.length]} Exam ${i+1}</div></div>
+      <div class="field-row-3">
+        <div class="field"><label>Name</label><input data-f="nm" type="text" value="${e.nm||''}" placeholder="e.g. Midterm"/></div>
+        <div class="field"><label>Weight (% of exam marks)</label><input data-f="wt" type="number" value="${e.wt||''}" placeholder="e.g. 40" min="0" max="100"/></div>
+        <div class="field"><label>Taken?</label><select data-f="tk" onchange="togSc(this,${idx},${i})">
+          <option value="no" ${e.tk!=='yes'?'selected':''}>Not yet</option>
+          <option value="yes" ${e.tk==='yes'?'selected':''}>Yes</option>
+        </select></div>
+      </div>
+      <div class="field" id="s${idx}_e${i}_sf" style="${e.tk==='yes'?'':'display:none'}">
+        <label>Score (out of 100)</label>
+        <input data-f="sc" type="number" value="${e.sc||''}" placeholder="e.g. 78" min="0" max="100"/>
+      </div>`;
+    c.appendChild(card);
+  }
+}
+function togSc(sel,si,ei){document.getElementById(`s${si}_e${ei}_sf`).style.display=sel.value==='yes'?'block':'none';}
+function readSubjFromForm(idx){
+  const nm=document.getElementById(`s${idx}_nm`)?.value.trim()||`Subject ${idx+1}`;
+  const cr=parseFloat(document.getElementById(`s${idx}_cr`)?.value)||3;
+  const op=parseFloat(document.getElementById(`s${idx}_op`)?.value)||40;
+  const ep=100-op;
+  const osRaw=document.getElementById(`s${idx}_os`)?.value;
+  const os=osRaw===''||osRaw==null?35:parseFloat(osRaw);
+  const cards=document.querySelectorAll(`#s${idx}_ex .exam-card`);
+  const exams=[];
+  cards.forEach((card,i)=>{
+    const ename=card.querySelector('[data-f="nm"]')?.value||`Exam ${i+1}`;
+    const wt=parseFloat(card.querySelector('[data-f="wt"]')?.value)||0;
+    const taken=card.querySelector('[data-f="tk"]')?.value==='yes';
+    const score=taken?(parseFloat(card.querySelector('[data-f="sc"]')?.value)||0):null;
+    exams.push({id:uid(),name:ename,weight:wt,taken,score});
+  });
+  const tw=exams.reduce((a,e)=>a+e.weight,0);
+  if(tw>0&&Math.abs(tw-100)>.01) exams.forEach(e=>e.weight=e.weight/tw*100);
+  return{id:uid(),name:nm,credits:cr,other_pct:op,other_score:os,exam_pct:ep,exams};
+}
+async function calcAndSave(){
+  const btn=document.getElementById('calc-save-btn');
+  btn.disabled=true; btn.textContent='💾 Saving to cloud...';
+  const semName=document.getElementById('sem-name-inp').value.trim()||`Semester ${semesters.length+1}`;
+  const forms=document.querySelectorAll('[id^="sf-"]');
+  calcSubjs=[]; calcRes=[];
+  forms.forEach((_,i)=>{
+    const s=readSubjFromForm(i);
+    calcSubjs.push(s); calcRes.push(computeSubject(s));
+  });
+  // Find or create semester
+  let sem=semesters.find(s=>s.name===semName);
+  if (sem) {
+    calcSubjs.forEach(s=>sem.subjects.push(s));
+  } else {
+    sem={id:uid(),name:semName,date:new Date().toLocaleDateString(),subjects:calcSubjs};
+  }
+  const semCP=sem.subjects.reduce((a,s,i)=>a+s.credits*computeSubject(s).curG.p,0);
+  const semCR=sem.subjects.reduce((a,s)=>a+s.credits,0);
+  sem._gpa=semCR?semCP/semCR:0;
+  await saveSemesterToDB(sem);
+  btn.disabled=false; btn.textContent='💾 Save & Calculate →';
+  activeCalcIdx=0;
+  updateStats(); renderDashboard(); renderCourses(); renderHistory(); renderWIFull(); renderStudy();
+  renderResults();
+  showToast(`✅ Saved to cloud! ${calcSubjs.length} subject${calcSubjs.length!==1?'s':''}`);
+}
+
+// ══════════════════════════════════════════════════════════════
+// RESULTS
+// ══════════════════════════════════════════════════════════════
+function renderResults(){
+  setStep(3);
+  document.getElementById('pg-subjects').classList.add('hidden');
+  document.getElementById('pg-results').classList.remove('hidden');
+  const wrap=document.getElementById('results-wrap'); wrap.innerHTML='';
+  if(calcSubjs.length>1){
+    const tcp=calcSubjs.reduce((a,s,i)=>a+s.credits*calcRes[i].curG.p,0);
+    const tcr=calcSubjs.reduce((a,s)=>a+s.credits,0);
+    const cum=tcp/tcr; const cl=closestL(cum); const col=gCol(cl);
+    const cd=document.createElement('div'); cd.className='cum-card';
+    cd.innerHTML=`<div><div class="cum-lbl">Session GPA</div>
+      <div class="cum-num" style="color:${col}">${cum.toFixed(4)}</div>
+      <div class="cum-letter" style="color:${col}">${cl} — ${cum.toFixed(2)}/4.0</div></div>
+      <div style="flex:1">${calcSubjs.map((s,i)=>`
+        <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px">
+          <span>${s.name}</span>
+          <span style="color:${gCol(calcRes[i].curG.l)}">${calcRes[i].curG.l} · ${calcRes[i].curG.p.toFixed(4)}</span>
+        </div>`).join('')}</div>`;
+    wrap.appendChild(cd);
+  }
+  if(calcSubjs.length>1){
+    const tabs=document.createElement('div'); tabs.className='subj-tabs';
+    calcSubjs.forEach((s,i)=>{const t=document.createElement('div');t.className='subj-tab'+(i===0?' on':'');t.textContent=s.name||`Subject ${i+1}`;t.onclick=()=>swCalcSubj(i);tabs.appendChild(t);});
+    wrap.appendChild(tabs);
+  }
+  calcSubjs.forEach((s,i)=>{ const p=buildPanel(s,calcRes[i],i); p.id=`rp-${i}`; if(i>0)p.style.display='none'; wrap.appendChild(p); });
+  buildWISubjSel(); updateWI(); buildGradeChart(); buildShareCard();
+}
+function swCalcSubj(i){
+  activeCalcIdx=i;
+  document.querySelectorAll('.subj-tab').forEach((t,j)=>t.classList.toggle('on',j===i));
+  document.querySelectorAll('[id^="rp-"]').forEach((p,j)=>p.style.display=j===i?'block':'none');
+  updateWI(); buildShareCard();
+}
+function buildPanel(s,res,idx){
+  const div=document.createElement('div');
+  const g=res.curG; const col=gCol(g.l);
+  const motiv=getMotiv(res.cur);
+  const mBg=res.cur>=87?'rgba(52,211,153,.08)':res.cur>=73?'rgba(251,191,36,.08)':'rgba(248,113,113,.08)';
+  const mBd=res.cur>=87?'rgba(52,211,153,.25)':res.cur>=73?'rgba(251,191,36,.25)':'rgba(248,113,113,.25)';
+  div.innerHTML=`
+    <div class="motiv" style="background:${mBg};border:1px solid ${mBd}">
+      <div class="motiv-ico">${motiv.ico}</div>
+      <div><div class="motiv-title">${motiv.title}</div><div style="font-size:12px;color:var(--muted2)">${motiv.msg}</div></div>
+    </div>
+    <div class="score-hero">
+      <div class="sh-lbl">Current Score — ${s.name}</div>
+      <div class="sh-num" data-val="${res.cur.toFixed(1)}%">${res.cur.toFixed(1)}<span style="font-size:.4em;opacity:.5">%</span></div>
+      <div class="sh-sub">Grade: <span class="grade-pill" style="background:${col}22;color:${col};border:1px solid ${col}44">${g.l}</span>&nbsp;<span style="color:var(--muted)">${g.p.toFixed(4)} quality pts</span></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="ico">🎯</span>Scores Needed in Remaining Exams</div>
+      ${res.remFrac<0.001
+        ?`<div class="infobox green">✅ All exams done!</div>`
+        :`<div class="infobox">Remaining exams worth <strong>${(res.remFrac*100).toFixed(1)}%</strong> of your total.</div>
+        <table class="gpa-tbl"><thead><tr><th>Grade</th><th>Quality Pts</th><th>Avg Needed</th><th>Feasibility</th></tr></thead>
+        <tbody id="tbl-${idx}">${res.targets.map((t,ti)=>{
+          const avg=t.avg;let txt,bp,bc,rc='';
+          if(avg===null){txt='N/A';bp=0;bc='var(--muted)'}
+          else if(avg>100){txt=`<span style="color:var(--red)">Not possible</span>`;bp=100;bc='var(--red)'}
+          else if(avg<=0){txt=`<span style="color:var(--green)">Secured 🎉</span>`;bp=100;bc='var(--green)';rc='hl'}
+          else{bp=Math.min(100,avg);bc=avg<60?'var(--green)':avg<80?'var(--yellow)':'var(--red)';txt=`<strong>${avg.toFixed(1)}%</strong>`}
+          const gc=gCol(t.l);
+          return`<tr class="gpa-row ${rc}" onclick="selTargRow(${idx},${ti})">
+            <td><span class="gl-badge" style="background:${gc}22;color:${gc}">${t.l}</span></td>
+            <td style="color:var(--muted)">${t.p.toFixed(4)}</td><td>${txt}</td>
+            <td><div class="bar-bg"><div class="bar-fg" style="width:0%;background:${bc}" data-target="${bp}"></div></div></td>
+          </tr>`;}).join('')}</tbody></table>`}
+    </div>
+    ${res.remExams.length>0?`<div class="card">
+      <div class="card-title"><span class="ico">📋</span>Per-Exam Breakdown</div>
+      <div class="chip-row" id="chips-${idx}">
+        ${res.targets.slice(0,9).map((t,ti)=>`<div class="chip ${ti===0?'on':''}" onclick="selTarg(${idx},${ti})" id="chip-${idx}-${ti}">${t.l} (${t.p.toFixed(4)})</div>`).join('')}
+      </div>
+      <div id="ec-${idx}"></div>
+    </div>`:''}`;
+  setTimeout(()=>{ div.querySelectorAll('.bar-fg[data-target]').forEach(b=>b.style.width=b.dataset.target+'%'); if(res.remExams.length>0)renderExamCards(idx,0); syncDataVal(); },120);
+  return div;
+}
+function selTargRow(si,ti){ document.querySelectorAll(`#tbl-${si} .gpa-row`).forEach((r,i)=>r.classList.toggle('sel',i===ti)); selTarg(si,ti); }
+function selTarg(si,ti){ document.querySelectorAll(`#chips-${si} .chip`).forEach((c,i)=>c.classList.toggle('on',i===ti)); renderExamCards(si,ti); }
+function renderExamCards(si,ti){
+  const c=document.getElementById(`ec-${si}`);if(!c)return;
+  const t=calcRes[si].targets[ti];c.innerHTML='';
+  const icos=['📄','📝','📖','✏️','🧪','📊','📐','🔬'];
+  t.perExam.forEach((ex,i)=>{
+    const nd=ex.needed;let sc,rng,col;
+    if(nd===null){sc='N/A';rng='';col='var(--muted)'}
+    else if(nd>100){sc='Not possible';rng=`Need ${nd.toFixed(1)}%`;col='var(--red)'}
+    else if(nd<=0){sc='Any score';rng='Already on track';col='var(--green)'}
+    else{const lo=Math.max(0,nd-3-Math.random()*4).toFixed(1);const hi=Math.min(100,nd+3+Math.random()*4).toFixed(1);sc=nd.toFixed(1)+'%';rng=`Safe: ${lo}%–${hi}%`;col=nd<60?'var(--green)':nd<80?'var(--yellow)':'var(--red)';}
+    const card=document.createElement('div');card.className='eneed';card.style.animationDelay=(i*.06)+'s';
+    card.innerHTML=`<div class="eneed-ico">${icos[i%icos.length]}</div>
+      <div class="eneed-info"><div class="eneed-name">${ex.name}</div><div class="eneed-meta">Worth ${(ex.gf*100).toFixed(1)}% of total</div></div>
+      <div><div class="eneed-score" style="color:${col}">${sc}</div><div class="eneed-range">${rng}</div></div>`;
+    c.appendChild(card);
+  });
+  if(ti===0&&t.perExam.every(e=>e.needed!==null&&e.needed<=100&&e.needed>=0)) fireConfetti();
+}
+
+// ══════════════════════════════════════════════════════════════
+// WHAT-IF
+// ══════════════════════════════════════════════════════════════
+function buildWISubjSel(){
+  const c=document.getElementById('wi-subj-sel');if(!c)return;
+  if(calcSubjs.length<=1){c.innerHTML='';return;}
+  c.innerHTML=`<div class="chip-row">${calcSubjs.map((s,i)=>`<div class="chip ${i===0?'on':''}" onclick="setWIS(${i},this)">${s.name}</div>`).join('')}</div>`;
+}
+function setWIS(i,el){activeCalcIdx=i;el.closest('.chip-row').querySelectorAll('.chip').forEach((c,j)=>c.classList.toggle('on',j===i));updateWI();}
+function updateWI(){
+  if(!calcRes.length)return;
+  const res=calcRes[activeCalcIdx];
+  const v=parseFloat(document.getElementById('wi-slider')?.value||75);
+  document.getElementById('wi-val').textContent=v.toFixed(0)+'%';
+  if(res.remFrac<0.001){document.getElementById('wi-tot').textContent=res.cur.toFixed(1)+'%';const g=res.curG;document.getElementById('wi-grade').textContent=g.l;document.getElementById('wi-grade').style.color=gCol(g.l);return;}
+  const proj=Math.min(100,res.cur+(res.remFrac*v));const g=pctToG(proj);
+  document.getElementById('wi-tot').textContent=proj.toFixed(1)+'%';
+  document.getElementById('wi-grade').textContent=g.l;document.getElementById('wi-grade').style.color=gCol(g.l);
+  if(g.l==='A'&&v>=90)fireConfetti();
+}
+function renderWIFull(){
+  const c=document.getElementById('wi-full');c.innerHTML='';
+  const all=[];semesters.forEach(sem=>sem.subjects.forEach(s=>all.push({s,sem})));
+  if(!all.length){c.innerHTML='<div style="text-align:center;padding:40px;color:var(--muted)">Add subjects first.</div>';return;}
+  all.forEach(({s,sem},si)=>{
+    const res=computeSubject(s);
+    const div=document.createElement('div');div.style.marginBottom='24px';
+    div.innerHTML=`<div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:16px;margin-bottom:10px">${s.name} <span style="font-size:12px;color:var(--muted);font-weight:400">· ${sem.name}</span></div>
+      <div class="infobox">Current: <strong>${res.cur.toFixed(1)}%</strong> (${res.curG.l}) · Remaining: <strong>${(res.remFrac*100).toFixed(1)}%</strong></div>
+      <input type="range" min="0" max="100" value="75" style="width:100%" oninput="wiUpd(this,${si})"/>
+      <div class="slider-labels"><span>0%</span><span>50%</span><span>100%</span></div>
+      <div style="display:flex;gap:18px;margin-top:12px;flex-wrap:wrap">
+        <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px">Score</div>
+          <div id="wi2v${si}" style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:26px;color:var(--accent)">75%</div></div>
+        <div style="font-size:22px;color:var(--muted);display:flex;align-items:center">→</div>
+        <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px">Total</div>
+          <div id="wi2t${si}" style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:26px;color:var(--accent3)">—</div></div>
+        <div style="font-size:22px;color:var(--muted);display:flex;align-items:center">→</div>
+        <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px">Grade</div>
+          <div id="wi2g${si}" style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:26px">—</div></div>
+      </div><div class="divider"></div>`;
+    c.appendChild(div);
+    div._res=res;
+    setTimeout(()=>{ const sl=div.querySelector('input[type=range]'); wiUpd(sl,si,res); },50);
+  });
+}
+function wiUpd(sl,si,resOv){
+  const v=parseFloat(sl.value);
+  const all=[];semesters.forEach(sem=>sem.subjects.forEach(s=>all.push(s)));
+  const res=resOv||computeSubject(all[si]);
+  document.getElementById(`wi2v${si}`).textContent=v.toFixed(0)+'%';
+  const proj=Math.min(100,res.cur+(res.remFrac*v));const g=pctToG(proj);
+  document.getElementById(`wi2t${si}`).textContent=proj.toFixed(1)+'%';
+  document.getElementById(`wi2g${si}`).textContent=g.l;document.getElementById(`wi2g${si}`).style.color=gCol(g.l);
+}
+
+// ══════════════════════════════════════════════════════════════
+// STUDY PLANNER
+// ══════════════════════════════════════════════════════════════
+function renderStudy(){
+  const c=document.getElementById('study-content');c.innerHTML='';
+  const all=[];semesters.forEach(sem=>sem.subjects.forEach(s=>all.push({s,sem})));
+  const withRem=all.filter(({s})=>(s.exams||[]).some(e=>!e.taken));
+  if(!withRem.length){c.innerHTML='<div style="text-align:center;padding:40px;color:var(--muted)">No remaining exams to plan for.</div>';return;}
+  withRem.forEach(({s,sem})=>{
+    const res=computeSubject(s);
+    const bTarg=res.targets.find(t=>t.l==='B')||res.targets[3];
+    const sec=document.createElement('div');sec.style.marginBottom='22px';
+    sec.innerHTML=`<div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:15px;margin-bottom:10px">${s.name} <span style="font-size:12px;font-weight:400;color:var(--muted)">· ${sem.name}</span></div>`;
+    res.remExams.forEach(ex=>{
+      const nd=bTarg.perExam.find(p=>p.name===ex.name)?.needed||75;
+      let hrs;
+      if(nd<=0)hrs=2;else if(nd>100)hrs=20;
+      else if(nd<60)hrs=Math.round(4+nd*.05);else if(nd<80)hrs=Math.round(8+nd*.08);else hrs=Math.round(12+nd*.12);
+      const card=document.createElement('div');card.className='study-card';
+      card.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div><div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:14px;margin-bottom:3px">${ex.name}</div>
+          <div style="font-size:11px;color:var(--muted)">Target B: ${nd>100?'Not achievable':nd<=0?'Secured':nd.toFixed(1)+'%'}</div></div>
+        <div style="text-align:right"><div class="study-h">${hrs}h</div><div style="font-size:11px;color:var(--muted)">Recommended</div></div>
+      </div>
+      <div style="margin-top:10px;font-size:12px;color:var(--muted2)">${hrs<=4?'✅ Light review — go over notes.':hrs<=8?'📚 Medium prep — practice questions.':hrs<=14?'🔥 Heavy prep — daily sessions!':'🚨 Intensive prep — get a study group!'}</div>`;
+      sec.appendChild(card);
+    });
+    c.appendChild(sec);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+// HISTORY
+// ══════════════════════════════════════════════════════════════
+function renderHistory(){
+  const list=document.getElementById('history-list');list.innerHTML='';
+  const tc=document.getElementById('sem-trend-card');
+  if(!semesters.length){list.innerHTML='<div style="text-align:center;padding:40px;color:var(--muted)">No semesters yet.</div>';tc.style.display='none';return;}
+  semesters.forEach(sem=>{
+    const cl=closestL(sem._gpa||0);const col=gCol(cl);
+    const card=document.createElement('div');card.className='sem-card';
+    card.innerHTML=`<div class="sem-gpa" style="color:${col}">${(sem._gpa||0).toFixed(2)}</div>
+      <div class="sem-info"><div class="sem-name">${sem.name}</div>
+        <div class="sem-meta">${sem.date||''} · ${(sem.subjects||[]).length} subject${(sem.subjects||[]).length!==1?'s':''} · Cloud Synced ☁️</div></div>
+      <button style="background:transparent;border:none;color:var(--red);cursor:pointer;font-size:16px;opacity:.5;transition:opacity .2s;padding:4px" onclick="deleteSem('${sem.id}');event.stopPropagation()">🗑️</button>`;
+    card.onclick=()=>toggleSemDetail(card,sem);
+    list.appendChild(card);
+  });
+  if(semesters.length>1){tc.style.display='block';buildSemTrendChart();}else tc.style.display='none';
+}
+function toggleSemDetail(card,sem){
+  const ex=card.nextElementSibling;
+  if(ex&&ex.classList.contains('semdet')){ex.remove();return;}
+  const d=document.createElement('div');d.className='semdet';
+  d.style.cssText='background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:14px 18px;margin-bottom:8px';
+  d.innerHTML=(sem.subjects||[]).map(s=>{const res=computeSubject(s);return`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px"><span>${s.name} (${s.credits} cr)</span><span style="color:${gCol(res.curG.l)}">${res.curG.l} · ${res.cur.toFixed(1)}%</span></div>`;}).join('');
+  card.after(d);
+}
+async function deleteSem(id){
+  if(!confirm('Delete this semester?'))return;
+  await deleteSemesterFromDB(id);
+  updateStats();renderDashboard();renderCourses();renderHistory();renderWIFull();renderStudy();
+  showToast('Semester deleted.');
+}
+
+// ══════════════════════════════════════════════════════════════
+// CHARTS
+// ══════════════════════════════════════════════════════════════
+function buildGradeChart(){
+  if(chartInst){chartInst.destroy();chartInst=null;}
+  const ctx=document.getElementById('gradeChart');if(!ctx)return;
+  chartInst=new Chart(ctx.getContext('2d'),{type:'bar',
+    data:{labels:calcSubjs.map(s=>s.name),datasets:[{label:'Score (%)',data:calcRes.map(r=>r.cur.toFixed(1)),backgroundColor:calcRes.map(r=>gCol(r.curG.l)+'55'),borderColor:calcRes.map(r=>gCol(r.curG.l)),borderWidth:2,borderRadius:8,borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.parsed.y}% — ${pctToG(c.parsed.y).l}`}}},
+      scales:{y:{min:0,max:100,grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#6b7280',callback:v=>v+'%'}},x:{grid:{display:false},ticks:{color:'#6b7280'}}}}
+  });
+}
+function buildTrendChart(){
+  if(trendInst){trendInst.destroy();trendInst=null;}
+  const ctx=document.getElementById('trendChart');if(!ctx)return;
+  const pts=[];
+  if(profile.mode==='existing'&&profile.start_gpa>0) pts.push({x:'Before',y:profile.start_gpa});
+  semesters.forEach(s=>pts.push({x:s.name,y:parseFloat((s._gpa||0).toFixed(4))}));
+  if(pts.length<2){document.getElementById('dash-chart-card').style.display='none';return;}
+  trendInst=new Chart(ctx.getContext('2d'),{type:'line',
+    data:{labels:pts.map(p=>p.x),datasets:[{label:'GPA',data:pts.map(p=>p.y),borderColor:'#818cf8',backgroundColor:'rgba(129,140,248,.1)',tension:.4,pointBackgroundColor:'#818cf8',pointRadius:5,fill:true}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{y:{min:0,max:4,grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#6b7280'}},x:{grid:{display:false},ticks:{color:'#6b7280'}}}}
+  });
+}
+function buildSemTrendChart(){
+  if(semTrendInst){semTrendInst.destroy();semTrendInst=null;}
+  const ctx=document.getElementById('semTrendChart');if(!ctx)return;
+  const pts=[];
+  if(profile.mode==='existing'&&profile.start_gpa>0) pts.push({x:'Before',y:profile.start_gpa});
+  semesters.forEach(s=>pts.push({x:s.name,y:parseFloat((s._gpa||0).toFixed(4))}));
+  semTrendInst=new Chart(ctx.getContext('2d'),{type:'line',
+    data:{labels:pts.map(p=>p.x),datasets:[{label:'GPA',data:pts.map(p=>p.y),borderColor:'#818cf8',backgroundColor:'rgba(129,140,248,.1)',tension:.4,pointBackgroundColor:'#818cf8',pointRadius:6,fill:true}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{y:{min:0,max:4,grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#6b7280'}},x:{grid:{display:false},ticks:{color:'#6b7280'}}}}
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+// SHARE + DOWNLOAD
+// ══════════════════════════════════════════════════════════════
+function buildShareCard(){
+  const el=document.getElementById('share-el');if(!el||!calcRes.length)return;
+  const s=calcSubjs[activeCalcIdx];const res=calcRes[activeCalcIdx];
+  const g=res.curG;const col=gCol(g.l);
+  const top=res.targets.filter(t=>t.avg!==null&&t.avg<=100&&t.avg>0).slice(0,3);
+  el.innerHTML=`<div class="sp-eye">Gradintel · ${new Date().toLocaleDateString()}</div>
+    <div class="sp-subj">${s.name}</div>
+    <div class="sp-score" style="color:${col}">${res.cur.toFixed(1)}%</div>
+    <div style="color:${col};font-size:15px;margin-top:5px">${g.l} · ${g.p.toFixed(4)} quality pts</div>
+    ${top.length?`<div class="sp-targets">${top.map(t=>`<div class="sp-ti"><div class="sp-tg" style="color:${gCol(t.l)}">${t.l}</div><div class="sp-ts">Need ${t.avg.toFixed(1)}%</div></div>`).join('')}</div>`:''}`;
+}
+function copyShare(){
+  if(!calcRes.length){showToast('No results yet!');return;}
+  const s=calcSubjs[activeCalcIdx];const res=calcRes[activeCalcIdx];
+  let txt=`📊 Gradintel — ${s.name}\nScore: ${res.cur.toFixed(1)}% (${res.curG.l})\n\nNeeded:\n`;
+  res.targets.filter(t=>t.avg!==null&&t.avg<=100&&t.avg>0).forEach(t=>{txt+=`  ${t.l}: ${t.avg.toFixed(1)}% avg\n`;});
+  navigator.clipboard.writeText(txt).then(()=>showToast('📋 Copied!')).catch(()=>showToast('Copy failed'));
+}
+function dlReport(){
+  if(!calcRes.length){showToast('No results!');return;}
+  const now=new Date();let txt='';const L=s=>txt+=s+'\n';
+  L('='.repeat(65));L('  GPA TRACKER PRO — REPORT');L(`  User: ${profile.full_name}${profile.university?' | '+profile.university:''}`);
+  L('  Generated: '+now.toLocaleString());L('='.repeat(65));L('');
+  calcSubjs.forEach((s,i)=>{
+    const res=calcRes[i];const g=res.curG;
+    L(`  SUBJECT: ${s.name.toUpperCase()} (${s.credits} cr)`);
+    L(`  Score: ${res.cur.toFixed(2)}% | Grade: ${g.l} (${g.p.toFixed(4)} pts)`);L('');
+    if(res.remExams.length){
+      L('  Needed (avg across remaining exams):');
+      res.targets.forEach(t=>{const a=t.avg;let x;if(a===null)x='N/A';else if(a>100)x='Not possible';else if(a<=0)x='Secured';else x=a.toFixed(1)+'%';L(`    ${t.l}: ${x}`);});
+    }
+    L('-'.repeat(55));L('');
+  });
+  const blob=new Blob([txt],{type:'text/plain'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='gpa_report_'+now.toISOString().replace(/[:.]/g,'-').slice(0,19)+'.txt';a.click();
+  showToast('📥 Report downloaded!');
+}
+
+// ══════════════════════════════════════════════════════════════
+// USER MODAL
+// ══════════════════════════════════════════════════════════════
+function openUserModal(){
+  const{cumGPA}=computeAllGPA();const cl=closestL(cumGPA);
+  document.getElementById('user-modal-body').innerHTML=`
+    <div style="text-align:center;padding:14px 0 18px">
+      <div style="width:56px;height:56px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-family:'Clash Display',sans-serif;font-weight:700;font-size:24px;color:#fff;margin:0 auto 12px">${(profile.full_name||'?')[0].toUpperCase()}</div>
+      <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:18px">${profile.full_name}</div>
+      ${profile.university?`<div style="font-size:12px;color:var(--muted);margin-top:4px">${profile.university}</div>`:''}
+      <div style="font-size:12px;color:var(--muted);margin-top:4px">${currentUser.email}</div>
+      <div style="margin-top:14px;font-family:'Clash Display',sans-serif;font-weight:700;font-size:28px;color:${gCol(cl)}">${cumGPA>0?cumGPA.toFixed(4):'—'}</div>
+      <div style="font-size:12px;color:var(--muted)">Cumulative GPA · ${cl}</div>
+      <div style="margin-top:10px;font-size:11px;color:var(--green)">☁️ Cloud Synced · ${semesters.length} semester${semesters.length!==1?'s':''}</div>
+    </div>
+    <div class="divider"></div>
+    <div style="font-size:12px;color:var(--muted)">Mode: ${profile.mode==='fresh'?'Starting fresh (first semester)':'Continuing student'}</div>
+    ${profile.mode==='existing'?`<div style="font-size:12px;color:var(--muted);margin-top:4px">Started with: GPA ${profile.start_gpa} (${profile.start_credits} credits)</div>`:''}`;
+  document.getElementById('user-modal').classList.add('show');
+}
+
+// ══════════════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════════════
+function getMotiv(score){
+  if(score>=93)return{ico:'🏆',title:'Outstanding!',msg:"A level — keep this momentum!"};
+  if(score>=87)return{ico:'🌟',title:'Great work!',msg:'Solid B+. Small push gets you to A!'};
+  if(score>=80)return{ico:'💪',title:'Doing well!',msg:'B range. Focus on remaining exams.'};
+  if(score>=73)return{ico:'📚',title:'On track.',msg:'Consistent effort can push you to B.'};
+  if(score>=60)return{ico:'⚠️',title:'Needs work.',msg:'Every point matters now.'};
+  return{ico:'🚨',title:'Critical zone.',msg:'Make a study plan today.'};
+}
+function showTab(id){
+  document.querySelectorAll('[id^="tc-"]').forEach(el=>el.classList.add('hidden'));
+  document.querySelectorAll('.nav-tab').forEach(el=>el.classList.remove('active'));
+  document.getElementById('tc-'+id).classList.remove('hidden');
+  document.getElementById('tab-'+id).classList.add('active');
+  if(id==='history'){renderHistory();buildSemTrendChart();}
+  if(id==='whatif')renderWIFull();
+  if(id==='study')renderStudy();
+  if(id==='courses')renderCourses();
+  if(id==='dashboard'){renderDashboard();updateStats();}
+}
+function toggleTheme(){
+  const t=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';
+  document.documentElement.setAttribute('data-theme',t);
+  document.getElementById('themeBtn').textContent=t==='dark'?'🌙':'☀️';
+  localStorage.setItem('gpa-theme',t);
+}
+function syncDataVal(){ document.querySelectorAll('.sh-num,.cum-num,[data-val]').forEach(el=>el.dataset.val=el.textContent.trim()); }
+let confettiRunning=false;
+function fireConfetti(){
+  if(confettiRunning)return;confettiRunning=true;
+  const cols=['#818cf8','#f472b6','#34d399','#fbbf24','#60a5fa','#f87171'];
+  for(let i=0;i<80;i++){
+    const p=document.createElement('div');p.className='confetti-piece';
+    const sz=6+Math.random()*8;
+    p.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}vw;background:${cols[Math.floor(Math.random()*cols.length)]};animation-duration:${1.5+Math.random()*2}s;animation-delay:${Math.random()*.5}s;border-radius:${Math.random()>.5?'50%':'2px'}`;
+    document.body.appendChild(p);setTimeout(()=>p.remove(),(2.5+Math.random()*2)*1000);
+  }
+  setTimeout(()=>confettiRunning=false,3000);
+}
+let toastTimer;
+function showToast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+// ══════════════════════════════════════════════════════════════
+// ANIMATIONS
+// ══════════════════════════════════════════════════════════════
+function initAnimations(){
+  const cur=document.getElementById('cur');const ring=document.getElementById('cur-ring');
+  if(!cur||!ring)return;
+  let mx=0,my=0,rx=0,ry=0;
+  document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cur.style.transform=`translate(${mx-4}px,${my-4}px)`;},{passive:true});
+  document.querySelectorAll('button,a,input,select,.tgl-btn,.course-item,.card,.mode-card,.auth-btn').forEach(el=>{
+    el.addEventListener('mouseenter',()=>{cur.style.width='14px';cur.style.height='14px';cur.style.background='var(--accent2)';ring.style.width='48px';ring.style.height='48px';});
+    el.addEventListener('mouseleave',()=>{cur.style.width='8px';cur.style.height='8px';cur.style.background='var(--accent)';ring.style.width='32px';ring.style.height='32px';});
+  });
+  (function animRing(){rx+=(mx-rx)*.18;ry+=(my-ry)*.18;ring.style.transform=`translate(${rx-16}px,${ry-16}px)`;requestAnimationFrame(animRing);})();
+  const canvas=document.getElementById('bgCanvas');if(!canvas)return;
+  const ctx=canvas.getContext('2d');let W,H,particles=[];
+  function resize(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;}
+  resize();window.addEventListener('resize',resize);
+  class P{constructor(){this.reset(true);}reset(init){this.x=Math.random()*W;this.y=init?Math.random()*H:Math.random()*H;this.vx=(Math.random()-.5)*.25;this.vy=(Math.random()-.5)*.25;this.life=Math.random();this.maxLife=.6+Math.random()*.4;this.size=Math.random()*1.2+.3;this.color=Math.random()<.5?'129,140,248':'244,114,182';}update(){this.x+=this.vx;this.y+=this.vy;this.life+=.002;if(this.life>this.maxLife||this.x<0||this.x>W||this.y<0||this.y>H)this.reset(false);}draw(){const a=Math.sin((this.life/this.maxLife)*Math.PI)*.45;ctx.beginPath();ctx.arc(this.x,this.y,this.size,0,Math.PI*2);ctx.fillStyle=`rgba(${this.color},${a})`;ctx.fill();}}
+  for(let i=0;i<90;i++)particles.push(new P());
+  (function loop(){ctx.clearRect(0,0,W,H);for(let i=0;i<particles.length;i++){for(let j=i+1;j<particles.length;j++){const dx=particles[i].x-particles[j].x,dy=particles[i].y-particles[j].y,d=Math.sqrt(dx*dx+dy*dy);if(d<100){ctx.beginPath();ctx.moveTo(particles[i].x,particles[i].y);ctx.lineTo(particles[j].x,particles[j].y);ctx.strokeStyle=`rgba(129,140,248,${(1-d/100)*.07})`;ctx.lineWidth=.5;ctx.stroke();}}}particles.forEach(p=>{p.update();p.draw();});requestAnimationFrame(loop);})();
+  document.querySelectorAll('.card,.stat-card').forEach(card=>{
+    card.addEventListener('mousemove',e=>{const r=card.getBoundingClientRect();const x=(e.clientX-r.left)/r.width-.5;const y=(e.clientY-r.top)/r.height-.5;card.style.transform=`perspective(800px) rotateY(${x*5}deg) rotateX(${-y*5}deg) translateZ(4px)`;});
+    card.addEventListener('mouseleave',()=>{card.style.transform='';});
+  });
+  const obs=new MutationObserver(syncDataVal);
+  obs.observe(document.body,{childList:true,subtree:true,characterData:true});
+}
+
+// ══════════════════════════════════════════════════════════════
+// BOOT
+// ══════════════════════════════════════════════════════════════
+(async function boot(){
+  // Theme
+  const t=localStorage.getItem('gpa-theme');
+  if(t){document.documentElement.setAttribute('data-theme',t);const btn=document.getElementById('themeBtn');if(btn)btn.textContent=t==='dark'?'🌙':'☀️';}
+  // Start animations immediately (works on auth screen too)
+  initAnimations();
+  // Init Supabase
+  if(!initSupabase()) return; // shows config banner, stays on auth screen
+  // Check for existing session
+  const{data:{session}}=await sb.auth.getSession();
+  if(session){
+    currentUser=session.user;
+    await onAuthSuccess();
+  }
+  // Listen for auth state changes
+  sb.auth.onAuthStateChange(async(event,session)=>{
+    if(event==='SIGNED_IN'&&session&&!currentUser){
+      currentUser=session.user;
+      await onAuthSuccess();
+    }
+  });
+})();
+</script>
+</body>
+</html>
