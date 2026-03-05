@@ -58,10 +58,12 @@ body.reduced-motion #cur,body.reduced-motion #cur-ring{display:none}
 .anno-br{bottom:22px;right:22px;text-align:right}
 #cur{position:fixed;width:8px;height:8px;background:var(--accent);border-radius:50%;
   pointer-events:none;z-index:9999;mix-blend-mode:difference;
-  transition:width .15s,height .15s,background .15s}
+  transition:width .15s,height .15s,background .15s;
+  will-change:transform;transform:translate(-100px,-100px)}
 #cur-ring{position:fixed;width:32px;height:32px;border:1px solid rgba(129,140,248,.45);
   border-radius:50%;pointer-events:none;z-index:9998;
-  transition:width .15s,height .15s,border-color .15s}
+  transition:width .15s,height .15s,border-color .15s;
+  will-change:transform;transform:translate(-100px,-100px)}
 #bgCanvas{position:fixed;inset:0;z-index:0;pointer-events:none}
 [data-theme="light"] .fog,[data-theme="light"] .fog2,[data-theme="light"] .scanline,
 [data-theme="light"] .anno{display:none}
@@ -974,6 +976,12 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2)}
 // ══════════════════════════════════════════════════════════════
 const SUPABASE_URL  = 'https://pbcahhkobxrrnqzeqhra.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_JNjLBiahRGmxbY5pF9deeQ_PQ4dg8yl';
+
+// ══════════════════════════════════════════════════════════════
+//  🤖  GEMINI API KEY — paste yours here
+//  Get it free at: aistudio.google.com → Get API Key
+// ══════════════════════════════════════════════════════════════
+const AI_WORKER_URL = 'https://gradintel-ai.akanshul20062008.workers.dev';
 
 // ══════════════════════════════════════════════════════════════
 // INIT
@@ -2185,42 +2193,35 @@ function exportICS() {
 async function runAI() {
   const inp = document.getElementById('ai-input').value.trim();
   if (!inp) { showToast('Type a question first!'); return; }
+
   const btn = document.getElementById('ai-send-btn');
   btn.disabled = true; btn.textContent = 'Thinking...';
   const resp = document.getElementById('ai-resp');
   resp.className = 'ai-resp show ai-typing';
   resp.textContent = 'Analysing your situation';
 
-  // Build context from current data
   const { cumGPA } = computeAllGPA();
   const subjectSummary = semesters.flatMap(sem => sem.subjects.map(s => {
     const res = computeSubject(s);
-    return `${s.name}: ${res.cur.toFixed(1)}% (${res.curG.l}), ${res.remExams.length} exams left`;
+    return s.name + ': ' + res.cur.toFixed(1) + '% (' + res.curG.l + '), ' + res.remExams.length + ' exams left';
   })).join('; ');
 
-  const systemPrompt = `You are Gradintel's AI academic advisor. Be concise, specific and practical. The user's GPA scale is ${policies.scale}.
-Current cumulative GPA: ${cumGPA.toFixed(4)}.
-${subjectSummary ? `Their subjects: ${subjectSummary}` : ''}
-Answer in 3-5 sentences max. Give numbers. Be direct. If they describe exams/weights, calculate needed scores.`;
+  const prompt = 'You are Gradintel AI academic advisor. Be concise and practical. GPA scale: ' + policies.scale + '. Cumulative GPA: ' + cumGPA.toFixed(4) + '. ' + (subjectSummary ? 'Subjects: ' + subjectSummary + '.' : '') + ' Answer in 3-5 sentences max. Give numbers. Be direct.\n\nQuestion: ' + inp;
 
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const response = await fetch(AI_WORKER_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        system: systemPrompt,
-        messages: [{ role: 'user', content: inp }]
-      })
+      body: JSON.stringify({ prompt })
     });
     const data = await response.json();
-    const text = data.content?.map(b => b.text || '').join('') || 'Sorry, I could not generate a response.';
+    if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response generated.';
     resp.className = 'ai-resp show';
-    resp.innerHTML = text.replace(/\n/g, '<br/>');
+    resp.innerHTML = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br/>');
   } catch(e) {
     resp.className = 'ai-resp show';
-    resp.innerHTML = `<span style="color:var(--red)">AI request failed. Make sure you're using this via Claude.ai which handles the API key automatically.</span>`;
+    resp.innerHTML = '<span style="color:var(--red)">❌ Error: ' + e.message + '<br/>Make sure your Cloudflare Worker is deployed and the GEMINI_KEY secret is set.</span>';
   }
   btn.disabled = false; btn.textContent = 'Ask AI →';
 }
@@ -2526,12 +2527,18 @@ function initAnimations() {
   const cur = document.getElementById('cur'); const ring = document.getElementById('cur-ring');
   if (!cur || !ring) return;
   let mx = 0, my = 0, rx = 0, ry = 0;
-  document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; cur.style.transform = `translate(${mx - 4}px,${my - 4}px)`; }, { passive: true });
+  // Smooth cursor — uses RAF + will-change for zero lag
+  document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; }, { passive: true });
   document.querySelectorAll('button,a,input,select,.tgl-btn,.course-item,.card,.mode-card,.auth-btn').forEach(el => {
     el.addEventListener('mouseenter', () => { cur.style.width = '14px'; cur.style.height = '14px'; cur.style.background = 'var(--accent2)'; ring.style.width = '48px'; ring.style.height = '48px'; });
     el.addEventListener('mouseleave', () => { cur.style.width = '8px'; cur.style.height = '8px'; cur.style.background = 'var(--accent)'; ring.style.width = '32px'; ring.style.height = '32px'; });
   });
-  (function animRing() { rx += (mx - rx) * .18; ry += (my - ry) * .18; ring.style.transform = `translate(${rx - 16}px,${ry - 16}px)`; requestAnimationFrame(animRing); })();
+  (function animCursor() {
+    cur.style.transform = 'translate(' + (mx - 4) + 'px,' + (my - 4) + 'px)';
+    rx += (mx - rx) * .12; ry += (my - ry) * .12;
+    ring.style.transform = 'translate(' + (rx - 16) + 'px,' + (ry - 16) + 'px)';
+    requestAnimationFrame(animCursor);
+  })();
   const canvas = document.getElementById('bgCanvas'); if (!canvas) return;
   const ctx = canvas.getContext('2d'); let W, H, particles = [];
   function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
