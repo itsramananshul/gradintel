@@ -2524,33 +2524,37 @@ async function handleSyllabusUpload(input) {
 Return ONLY valid JSON — no markdown, no explanation, no code fences. Just the raw JSON object.
 
 Return this exact structure:
-{"subjects":[{"name":"Subject or Course Name","credits":null,"other_pct":80,"exam_pct":20,"exams":[{"name":"Midterm","weight":50},{"name":"Final","weight":50}],"missing":["credits"]}],"confidence":"high|medium|low","warnings":[]}
+{"subjects":[{"name":"Subject Name","credits":null,"other_pct":80,"exam_pct":20,"exams":[{"name":"Midterm","weight":50},{"name":"Final","weight":50}],"missing":["credits"]}],"confidence":"high|medium|low","warnings":[]}
 
-STEP 1 — Identify EXAMS (worth exam_pct):
-Only these count as exams: "test", "tests", "exam", "exams", "midterm", "final", "end-term", "mid-term".
-Add up the % weights of ALL items with those keywords. That total = exam_pct.
-Example: "Tests 20%" → exam_pct = 20.
-Example: "Midterm 30%, Final 30%" → exam_pct = 60, two exams each worth 50% of exam portion.
+=== WHAT COUNTS AS AN EXAM (goes into exam_pct) ===
+ONLY these words mean exam: test, tests, exam, exams, midterm, mid-term, final, finals, end-term.
+"Test" and "Tests" ARE exams. Not quizzes. Not labs. Tests = exams.
 
-STEP 2 — Calculate OTHER (worth other_pct):
-Everything that is NOT an exam: quizzes, assignments, labs, reading, attendance, participation, projects, homework.
-other_pct = 100 - exam_pct. Always. No exceptions.
-Example: exam_pct=20 → other_pct=80 automatically.
+=== WHAT COUNTS AS OTHER (goes into other_pct) ===
+Everything else: quiz, quizzes, assignment, assignments, lab, labs, reading, homework, participation, attendance, project, projects.
 
-STEP 3 — Exam weights inside "exams" array:
-Each exam's "weight" = its % share of the exam portion (not of total grade).
-Example: exam_pct=20, two tests each 10% of total → each test = 50% of exam portion → weight: 50.
-Formula: exam_weight = (exam_item_total_pct / exam_pct) * 100.
-All exam weights must add up to exactly 100.
+=== WORKED EXAMPLE (this is how you must think) ===
+Syllabus says:
+  Reading Assignments 25%
+  Quizzes 15%
+  Tests 20%
+  Labs 40%
 
-STEP 4 — Credits:
-Only set if explicitly stated (e.g. "3 credit hours", "4 credits"). Otherwise set null.
+Step 1: Find exam items → "Tests 20%" → exam_pct = 20
+Step 2: other_pct = 100 - 20 = 80
+Step 3: Exam names → the syllabus mentions "midterm" and "final" as the two tests → exams: [{name:"Midterm",weight:50},{name:"Final",weight:50}]
+  (each is 50% of the exam portion because 10%+10% = 20% total, so each is 10/20*100 = 50%)
+Step 4: credits → not mentioned → null, add "credits" to missing array
 
-STEP 5 — "missing" array:
-List only fields that are genuinely missing: "credits" if not mentioned, "exam weights" if individual exam % not given.
-Do NOT list other_pct or exam_pct as missing — you always calculate those from the data.
+Result: {"subjects":[{"name":"Computer Science I","credits":null,"other_pct":80,"exam_pct":20,"exams":[{"name":"Midterm","weight":50},{"name":"Final","weight":50}],"missing":["credits"]}],"confidence":"high","warnings":[]}
 
-CRITICAL: Never return null for other_pct or exam_pct if you found any grade weights at all. Always do the math.`;
+=== RULES ===
+- other_pct = 100 - exam_pct. ALWAYS. Never put exam items into other_pct.
+- All exam weights must add up to 100 (they are % of the exam portion, not of total grade).
+- If individual exam % not given but count is known, split equally (e.g. 2 exams → 50/50).
+- Credits: only set if explicitly stated. Otherwise null.
+- "missing": only list "credits" if not found, and "exam weights" if you had to guess them equally.
+- NEVER list other_pct, exam_pct, or exams as missing — always calculate them.`;
 
   try {
     let rawText = '';
