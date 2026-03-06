@@ -2518,130 +2518,174 @@ async function handleSyllabusUpload(input) {
   labelEl.classList.add('loading');
   labelEl.textContent = '⏳ Reading syllabus...';
   statusEl.style.display = 'block';
-  statusEl.innerHTML = `<div class="infobox" style="display:flex;align-items:center;gap:10px"><span style="animation:spin 1s linear infinite;display:inline-block;font-size:18px">⚙️</span><span>AI is reading your syllabus...</span></div>`;
-
-  const systemPrompt = `You are an academic syllabus parser. Extract course/subject grading information.
-Return ONLY valid JSON — no markdown, no explanation, no code fences. Just the raw JSON object.
-
-Return this exact structure:
-{"subjects":[{"name":"Subject Name","credits":null,"other_pct":80,"exam_pct":20,"exams":[{"name":"Midterm","weight":50},{"name":"Final","weight":50}],"missing":["credits"]}],"confidence":"high|medium|low","warnings":[]}
-
-=== WHAT COUNTS AS AN EXAM (goes into exam_pct) ===
-ONLY these words mean exam: test, tests, exam, exams, midterm, mid-term, final, finals, end-term.
-"Test" and "Tests" ARE exams. Not quizzes. Not labs. Tests = exams.
-
-=== WHAT COUNTS AS OTHER (goes into other_pct) ===
-Everything else: quiz, quizzes, assignment, assignments, lab, labs, reading, homework, participation, attendance, project, projects.
-
-=== WORKED EXAMPLE (this is how you must think) ===
-Syllabus says:
-  Reading Assignments 25%
-  Quizzes 15%
-  Tests 20%
-  Labs 40%
-
-Step 1: Find exam items → "Tests 20%" → exam_pct = 20
-Step 2: other_pct = 100 - 20 = 80
-Step 3: Exam names → the syllabus mentions "midterm" and "final" as the two tests → exams: [{name:"Midterm",weight:50},{name:"Final",weight:50}]
-  (each is 50% of the exam portion because 10%+10% = 20% total, so each is 10/20*100 = 50%)
-Step 4: credits → not mentioned → null, add "credits" to missing array
-
-Result: {"subjects":[{"name":"Computer Science I","credits":null,"other_pct":80,"exam_pct":20,"exams":[{"name":"Midterm","weight":50},{"name":"Final","weight":50}],"missing":["credits"]}],"confidence":"high","warnings":[]}
-
-=== RULES ===
-- other_pct = 100 - exam_pct. ALWAYS. Never put exam items into other_pct.
-- All exam weights must add up to 100 (they are % of the exam portion, not of total grade).
-- If individual exam % not given but count is known, split equally (e.g. 2 exams → 50/50).
-- Credits: only set if explicitly stated. Otherwise null.
-- "missing": only list "credits" if not found, and "exam weights" if you had to guess them equally.
-- NEVER list other_pct, exam_pct, or exams as missing — always calculate them.`;
+  statusEl.innerHTML = `<div class="infobox" style="display:flex;align-items:center;gap:10px"><span style="animation:spin 1s linear infinite;display:inline-block;font-size:18px">⚙️</span><span>Reading syllabus...</span></div>`;
 
   try {
-    let rawText = '';
+    let syllabusText = '';
 
     if (isPDF) {
-      // Extract text from PDF using PDF.js — completely free, runs in browser
       statusEl.innerHTML = `<div class="infobox" style="display:flex;align-items:center;gap:10px"><span style="animation:spin 1s linear infinite;display:inline-block;font-size:18px">⚙️</span><span>Extracting text from PDF...</span></div>`;
-      const pdfText = await extractPDFText(file);
-      if (!pdfText || pdfText.trim().length < 50) {
-        // Scanned/image-based PDF — needs Claude vision
+      syllabusText = await extractPDFText(file);
+      if (!syllabusText || syllabusText.trim().length < 50) {
         if (key && prov === 'claude') {
+          // Scanned PDF — fall through to Claude vision below
           const base64 = await fileToBase64(file);
-          const response = await fetch('https://api.anthropic.com/v1/messages', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
-            body: JSON.stringify({ model: 'claude-opus-4-6', max_tokens: 2000, system: systemPrompt,
-              messages: [{ role: 'user', content: [
-                { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64 } },
-                { type: 'text', text: 'Extract subject info. Return only JSON.' }
-              ]}]
-            })
-          });
-          const data = await response.json();
-          if (data.error) throw new Error(data.error.message);
-          rawText = data.content?.[0]?.text || '';
+          const parsed = await parseWithClaude(base64, 'application/pdf', key);
+          syllabusExtracted = parsed.subjects;
+          showSyllabusPreview(parsed); return;
         } else {
-          throw new Error('This PDF appears to be a scanned image and has no readable text. Please either: (1) use a text-based PDF, or (2) set up a Claude API key for image reading.');
+          throw new Error('This PDF has no readable text (it may be scanned). Please use a text-based PDF.');
         }
-      } else {
-        // Has text — send to free Pollinations AI
-        statusEl.innerHTML = `<div class="infobox" style="display:flex;align-items:center;gap:10px"><span style="animation:spin 1s linear infinite;display:inline-block;font-size:18px">⚙️</span><span>Analysing syllabus content...</span></div>`;
-        const res = await fetch('https://text.pollinations.ai/openai', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ model: 'openai', messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: 'Parse this syllabus:\n\n' + pdfText.slice(0, 8000) }
-          ]})
-        });
-        const d = await res.json();
-        rawText = d.choices?.[0]?.message?.content || '';
       }
     } else if (isImage) {
       if (key && prov === 'claude') {
         const base64 = await fileToBase64(file);
-        const response = await fetch('https://api.anthropic.com/v1/messages', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
-          body: JSON.stringify({ model: 'claude-opus-4-6', max_tokens: 2000, system: systemPrompt,
-            messages: [{ role: 'user', content: [
-              { type: 'image', source: { type: 'base64', media_type: file.type, data: base64 } },
-              { type: 'text', text: 'Extract subject info. Return only JSON.' }
-            ]}]
-          })
-        });
-        const data = await response.json();
-        if (data.error) throw new Error(data.error.message);
-        rawText = data.content?.[0]?.text || '';
+        const parsed = await parseWithClaude(base64, file.type, key);
+        syllabusExtracted = parsed.subjects;
+        showSyllabusPreview(parsed); return;
       } else {
-        throw new Error('Image syllabuses require a Claude API key. Please upload a PDF or .txt file instead — those work for free!');
+        throw new Error('Image files require a Claude API key. Please upload a PDF instead.');
       }
     } else {
-      // Plain text file — free
-      const fileText = await file.text();
+      syllabusText = await file.text();
+    }
+
+    // ── JAVASCRIPT-FIRST PARSING: extract grades with regex, no AI math needed ──
+    statusEl.innerHTML = `<div class="infobox" style="display:flex;align-items:center;gap:10px"><span style="animation:spin 1s linear infinite;display:inline-block;font-size:18px">⚙️</span><span>Analysing grade structure...</span></div>`;
+
+    const parsed = parseGradesFromText(syllabusText);
+
+    // ── Use AI only to get subject name (cheap, reliable task) ──
+    try {
       const res = await fetch('https://text.pollinations.ai/openai', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ model: 'openai', messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: 'Parse this syllabus:\n\n' + fileText.slice(0, 8000) }
+          { role: 'system', content: 'Extract only the course/subject name from this syllabus text. Reply with ONLY the course name, nothing else. Examples: "Calculus II", "Computer Science I", "Introduction to Psychology".' },
+          { role: 'user', content: syllabusText.slice(0, 2000) }
         ]})
       });
       const d = await res.json();
-      rawText = d.choices?.[0]?.message?.content || '';
-    }
+      const name = (d.choices?.[0]?.message?.content || '').trim().replace(/['"]/g, '');
+      if (name && name.length < 80) parsed.subjects[0].name = name;
+    } catch(e) { /* name extraction failed, keep default */ }
 
-    if (!rawText) throw new Error('No response from AI. Please try again.');
-    let parsed;
-    try { parsed = JSON.parse(rawText.replace(/```json|```/g, '').trim()); }
-    catch(e) { throw new Error('Could not parse AI response. Please try again.'); }
-    if (!parsed.subjects || !parsed.subjects.length) throw new Error('No subject info found in this file.');
+    if (!parsed.subjects || !parsed.subjects.length) throw new Error('Could not find grade breakdown in this syllabus.');
     syllabusExtracted = parsed.subjects;
     showSyllabusPreview(parsed);
+
   } catch(e) {
     statusEl.innerHTML = `<div class="syl-no-key">❌ <strong>Could not read syllabus:</strong> ${e.message}</div>`;
   }
   labelEl.classList.remove('loading');
   labelEl.innerHTML = '📄 Upload Syllabus<input type="file" id="syllabus-file-inp" accept=".pdf,.png,.jpg,.jpeg,.webp,.txt" style="display:none" onchange="handleSyllabusUpload(this)"/>';
   input.value = '';
+}
+
+// ── Pure JavaScript grade parser — breakdown-aware, always correct math ──
+function parseGradesFromText(text) {
+  const EXAM_KW = /\b(test\s*#?\d*|tests|exam\s*#?\d*|exams|midterm|mid-term|final\s*exam|final\s*#?\d*|finals?)\b/i;
+  const SKIP_KW = /\b(gpa|cutoff|minimum|letter\s*grade|grade\s*range|earn|below|above|overall|refund|penalty|drop|makeup|make.up|weighted|average|based\s*on|practice)\b/i;
+  const missing = [];
+
+  // Step 1: Extract all label+% pairs, preserving character positions in text
+  const allItems = [];
+  const lineRe = /^[ \t]*(.{2,60}?)\s{1,}(\d{1,3}(?:\.\d+)?)\s*%[ \t]*$/gm;
+  let m;
+  while ((m = lineRe.exec(text)) !== null) {
+    const label = m[1].trim().replace(/:$/, '').replace(/\s+/g, ' ');
+    const pct   = parseFloat(m[2]);
+    if (!pct || pct <= 0) continue;
+    if (/^\d/.test(label)) continue;
+    if (SKIP_KW.test(label)) continue;
+    allItems.push({ label, pct, pos: m.index });
+  }
+
+  // Step 2: Remove sub-items after "breakdown" headers
+  const breakdownRe = /^.*(breakdown|point\s*breakdown|consists\s*of|comprised\s*of).*/gim;
+  const breakdownPositions = [];
+  while ((m = breakdownRe.exec(text)) !== null) breakdownPositions.push(m.index);
+
+  const toRemove = new Set();
+  breakdownPositions.forEach(bPos => {
+    const parentCandidates = allItems.filter(x => x.pos < bPos);
+    if (!parentCandidates.length) return;
+    const parent = parentCandidates[parentCandidates.length - 1];
+    let runningSum = 0;
+    allItems.filter(x => x.pos > bPos).forEach(x => {
+      if (runningSum < parent.pct + 0.5) {
+        runningSum += x.pct;
+        toRemove.add(allItems.indexOf(x));
+      }
+    });
+  });
+
+  const items      = allItems.filter((_, i) => !toRemove.has(i));
+  const examItems  = items.filter(x =>  EXAM_KW.test(x.label));
+  const otherItems = items.filter(x => !EXAM_KW.test(x.label));
+  const examTotal  = examItems.reduce((s, x) => s + x.pct, 0);
+  const otherTotal = otherItems.reduce((s, x) => s + x.pct, 0);
+  const grandTotal = examTotal + otherTotal;
+
+  let exam_pct, other_pct;
+  if (examTotal > 0) {
+    exam_pct  = Math.abs(grandTotal - 100) < 5
+      ? Math.round(examTotal)
+      : Math.round(examTotal / grandTotal * 100);
+    other_pct = 100 - exam_pct;
+  } else {
+    exam_pct = other_pct = null;
+    missing.push('Exam % and Other %');
+  }
+
+  let exams = [];
+  if (examItems.length > 0 && examTotal > 0) {
+    exams = examItems.map(e => ({ name: cleanExamName(e.label), weight: Math.round(e.pct / examTotal * 100) }));
+    const drift = 100 - exams.reduce((s, e) => s + e.weight, 0);
+    if (drift !== 0) exams[exams.length - 1].weight += drift;
+  } else if (exam_pct) {
+    exams = [{ name: 'Exam', weight: 100 }];
+    missing.push('Individual exam names & weights');
+  }
+
+  const creditsMatch = text.match(/(\d+(?:\.\d+)?)\s*credit(?:\s*hours?)?/i);
+  const credits = creditsMatch ? parseFloat(creditsMatch[1]) : null;
+  if (!credits) missing.push('Credits');
+
+  return {
+    subjects: [{ name: 'Course', credits, other_pct, exam_pct, exams, missing }],
+    confidence: examItems.length > 0 ? 'high' : 'low',
+    warnings: grandTotal > 0 && Math.abs(grandTotal - 100) > 10
+      ? [`Weights summed to ${grandTotal.toFixed(0)}% — please verify`] : []
+  };
+}
+function cleanExamName(raw) {
+  // Prettify extracted names: "Test 1  16" → "Test 1", "Final Exam" → "Final Exam"
+  return raw.replace(/\s+\d+$/, '').replace(/\s{2,}/g, ' ').trim()
+    .split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ')
+    .replace(/\bExam\b/i, 'Exam').replace(/\bTest\b/i, 'Test').replace(/\bFinal\b/i, 'Final').replace(/\bMidterm\b/i, 'Midterm');
+}
+
+async function parseWithClaude(base64, mediaType, key) {
+  const isPDF = mediaType === 'application/pdf';
+  const prompt = `You are an academic syllabus parser. Extract course/subject grading information.
+Return ONLY valid JSON. Structure: {"subjects":[{"name":"Course Name","credits":null,"other_pct":80,"exam_pct":20,"exams":[{"name":"Test 1","weight":50},{"name":"Final","weight":50}],"missing":["credits"]}],"confidence":"high","warnings":[]}
+EXAM keywords (→ exam_pct): test, tests, exam, exams, midterm, final. Everything else → other_pct.
+other_pct = 100 - exam_pct always. Exam weights are % of the exam portion (must sum to 100).`;
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+    body: JSON.stringify({ model: 'claude-opus-4-6', max_tokens: 2000, system: prompt,
+      messages: [{ role: 'user', content: [
+        { type: isPDF ? 'document' : 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
+        { type: 'text', text: 'Extract subject info. Return only JSON.' }
+      ]}]
+    })
+  });
+  const data = await response.json();
+  if (data.error) throw new Error(data.error.message);
+  const rawText = data.content?.[0]?.text || '';
+  try { return JSON.parse(rawText.replace(/```json|```/g, '').trim()); }
+  catch(e) { throw new Error('Could not parse Claude response.'); }
 }
 
 async function extractPDFText(file) {
