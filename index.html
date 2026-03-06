@@ -2216,7 +2216,8 @@ async function runAI() {
     });
     const data = await response.json();
     if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response generated.';
+    // OpenAI response format
+    const text = data.choices?.[0]?.message?.content || 'No response generated.';
     resp.className = 'ai-resp show';
     resp.innerHTML = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br/>');
   } catch(e) {
