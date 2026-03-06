@@ -464,6 +464,29 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2)}
 .ai-resp.show{display:block;animation:fadeUp .3s ease both}
 .ai-typing::after{content:'▋';animation:blink .7s infinite}
 @keyframes blink{0%,50%{opacity:1}51%,100%{opacity:0}}
+/* SYLLABUS UPLOAD */
+.syllabus-upload-btn{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;
+  border-radius:var(--r-sm);border:2px dashed rgba(129,140,248,.4);
+  background:rgba(129,140,248,.06);color:var(--accent);
+  font-family:'Clash Display',sans-serif;font-weight:700;font-size:13px;
+  cursor:pointer;transition:all .2s;letter-spacing:.02em}
+.syllabus-upload-btn:hover{border-color:var(--accent);background:rgba(129,140,248,.12);transform:translateY(-1px)}
+.syllabus-upload-btn.loading{opacity:.7;cursor:not-allowed;pointer-events:none}
+.syl-preview{background:var(--surface2);border:1px solid rgba(52,211,153,.3);
+  border-radius:var(--r);padding:16px 18px;animation:fadeUp .3s ease both}
+.syl-preview-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.syl-preview-title{font-family:'Clash Display',sans-serif;font-weight:700;font-size:15px;color:var(--green)}
+.syl-subj-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;
+  border-radius:100px;background:rgba(129,140,248,.1);border:1px solid rgba(129,140,248,.25);
+  font-size:12px;margin:3px;cursor:pointer;transition:all .2s;color:var(--text)}
+.syl-subj-chip:hover{border-color:var(--accent);background:rgba(129,140,248,.18)}
+.syl-subj-chip.sel{border-color:var(--accent);background:rgba(129,140,248,.2);font-weight:700}
+.syl-field-preview{font-size:11px;color:var(--muted);margin-top:3px;line-height:1.6}
+.syl-warning{background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.2);
+  border-radius:var(--r-sm);padding:10px 14px;font-size:12px;color:var(--yellow);
+  margin-top:10px;line-height:1.6}
+.syl-no-key{background:rgba(248,113,113,.07);border:1px solid rgba(248,113,113,.2);
+  border-radius:var(--r-sm);padding:12px 14px;font-size:13px;color:var(--red);margin-top:12px}
 /* AI PROVIDER CARDS */
 .ai-prov-card{background:var(--surface2);border:2px solid var(--border2);border-radius:var(--r);
   padding:18px 12px;text-align:center;cursor:pointer;transition:all .2s}
@@ -737,6 +760,15 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2)}
           <label>Number of Subjects</label>
           <input type="number" id="n-subjs" value="3" min="2" max="20"/>
         </div>
+        <div class="divider"></div>
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:13px;color:var(--muted2)">OR — let AI read your syllabus</div>
+          <label class="syllabus-upload-btn" id="syllabus-upload-label" title="Upload a syllabus PDF or image">
+            📄 Upload Syllabus
+            <input type="file" id="syllabus-file-inp" accept=".pdf,.png,.jpg,.jpeg,.webp" style="display:none" onchange="handleSyllabusUpload(this)"/>
+          </label>
+        </div>
+        <div id="syllabus-status" style="display:none;margin-top:12px"></div>
         <div class="btn-row"><button class="btn btn-primary" onclick="goStep2()">Continue →</button></div>
       </div>
     </div>
@@ -1088,12 +1120,11 @@ const AI_WORKER_URL = 'https://gradintel-ai.akanshul20062008.workers.dev';
 let sb = null;
 function initSupabase() {
   if (!SUPABASE_URL || SUPABASE_URL === 'YOUR_SUPABASE_PROJECT_URL') return false;
-  // Hide the banner since credentials are configured
-  document.getElementById('config-banner').classList.add('hidden');
   try {
     sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+    document.getElementById('config-banner').classList.add('hidden');
     return true;
-  } catch(e) { console.error('Supabase init error:', e); return false; }
+  } catch(e) { return false; }
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1986,6 +2017,292 @@ function readSubjFromForm(idx) {
   if (tw > 0 && Math.abs(tw - 100) > .01) exams.forEach(e => e.weight = e.weight / tw * 100);
   return { id: uid(), name: nm, credits: cr, other_pct: op, other_score: os, exam_pct: ep, exams, status: 'normal' };
 }
+// ══════════════════════════════════════════════════════════════
+// SYLLABUS UPLOAD — AI EXTRACTION
+// ══════════════════════════════════════════════════════════════
+let syllabusExtracted = []; // array of extracted subjects
+
+async function handleSyllabusUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const key  = getStoredAIKey();
+  const prov = getStoredAIProvider();
+  const statusEl = document.getElementById('syllabus-status');
+  const labelEl  = document.getElementById('syllabus-upload-label');
+
+  // Must have Claude key — it's the only one that does vision well for PDFs
+  if (!key || prov !== 'claude') {
+    statusEl.style.display = 'block';
+    statusEl.innerHTML = `<div class="syl-no-key">
+      🔒 <strong>Syllabus upload requires Claude AI.</strong><br/>
+      Go to the <strong>AI Assistant</strong> tab → set your AI key → choose <strong>Claude</strong>.<br/>
+      <span style="font-size:11px;color:var(--muted2)">Claude is the only provider here that can accurately read PDFs and images.</span><br/>
+      <button class="btn btn-primary" style="margin-top:10px;font-size:12px;padding:7px 16px" onclick="showTab('ai');openAIKeyModal()">Set Up Claude Key →</button>
+    </div>`;
+    input.value = '';
+    return;
+  }
+
+  // Show loading state
+  labelEl.classList.add('loading');
+  labelEl.textContent = '⏳ Reading syllabus...';
+  statusEl.style.display = 'block';
+  statusEl.innerHTML = `<div class="infobox" style="display:flex;align-items:center;gap:10px">
+    <span style="animation:spin 1s linear infinite;display:inline-block;font-size:18px">⚙️</span>
+    <span>AI is reading your syllabus — extracting subject names, exam weights, and grade breakdown...</span>
+  </div>`;
+
+  try {
+    // Convert file to base64
+    const base64 = await fileToBase64(file);
+    const isPDF  = file.type === 'application/pdf';
+    const mediaType = isPDF ? 'application/pdf' : file.type;
+
+    const systemPrompt = `You are an academic syllabus parser. Extract course/subject information from the uploaded file.
+Return ONLY valid JSON — no markdown, no explanation, no code fences. Just the raw JSON object.
+
+Return this exact structure:
+{
+  "subjects": [
+    {
+      "name": "Subject or Course Name",
+      "credits": 3,
+      "other_pct": 40,
+      "exam_pct": 60,
+      "exams": [
+        { "name": "Midterm", "weight": 40 },
+        { "name": "Final", "weight": 60 }
+      ],
+      "notes": "any important notes about grading"
+    }
+  ],
+  "confidence": "high|medium|low",
+  "warnings": ["any warnings about unclear info"]
+}
+
+Rules:
+- exam weights must add up to 100 (they are % of the exam portion, not total marks)
+- other_pct = assignments + attendance + quizzes + participation etc combined
+- exam_pct = 100 - other_pct
+- credits: extract if mentioned, otherwise use 3 as default
+- if the syllabus has multiple subjects/courses, include all of them
+- if weights are given as total marks (e.g. 30/100), convert to percentages
+- Do NOT include "Other Stuff Score" — that's personal to the student
+- If you cannot find clear exam structure, set confidence to "low" and explain in warnings`;
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-opus-4-6',
+        max_tokens: 2000,
+        system: systemPrompt,
+        messages: [{
+          role: 'user',
+          content: [
+            {
+              type: isPDF ? 'document' : 'image',
+              source: { type: 'base64', media_type: mediaType, data: base64 }
+            },
+            { type: 'text', text: 'Extract all subject/course information from this syllabus. Return only the JSON.' }
+          ]
+        }]
+      })
+    });
+
+    const data = await response.json();
+    if (data.error) throw new Error(data.error.message);
+    const rawText = data.content?.[0]?.text || '';
+
+    // Parse JSON — strip any accidental markdown fences
+    let parsed;
+    try {
+      const clean = rawText.replace(/```json|```/g, '').trim();
+      parsed = JSON.parse(clean);
+    } catch(e) {
+      throw new Error('AI returned unexpected format. Try a clearer PDF or image.');
+    }
+
+    if (!parsed.subjects || !parsed.subjects.length) {
+      throw new Error('No subject/course information found in this file. Make sure it's a syllabus.');
+    }
+
+    syllabusExtracted = parsed.subjects;
+    showSyllabusPreview(parsed);
+
+  } catch(e) {
+    statusEl.innerHTML = `<div class="syl-no-key">
+      ❌ <strong>Could not read syllabus:</strong> ${e.message}<br/>
+      <span style="font-size:11px;color:var(--muted2);margin-top:4px;display:block">Tips: Make sure the file is a clear PDF or image. Scanned documents work too — just make sure the text is readable.</span>
+    </div>`;
+  }
+
+  labelEl.classList.remove('loading');
+  labelEl.innerHTML = '📄 Upload Syllabus<input type="file" id="syllabus-file-inp" accept=".pdf,.png,.jpg,.jpeg,.webp" style="display:none" onchange="handleSyllabusUpload(this)"/>';
+  input.value = '';
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload  = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = () => reject(new Error('Could not read file'));
+    reader.readAsDataURL(file);
+  });
+}
+
+function showSyllabusPreview(parsed) {
+  const statusEl = document.getElementById('syllabus-status');
+  const subjects = parsed.subjects;
+  const hasWarnings = parsed.warnings && parsed.warnings.length;
+  const isLow = parsed.confidence === 'low';
+
+  let html = `<div class="syl-preview">
+    <div class="syl-preview-hdr">
+      <div class="syl-preview-title">✅ Found ${subjects.length} subject${subjects.length!==1?'s':''} — review & confirm</div>
+      <button class="btn btn-secondary" style="font-size:11px;padding:5px 12px" onclick="clearSyllabusUpload()">✕ Clear</button>
+    </div>`;
+
+  if (hasWarnings || isLow) {
+    html += `<div class="syl-warning">⚠️ ${isLow ? 'Low confidence — ' : ''}${(parsed.warnings||[]).join(' · ') || 'Some details may be inaccurate. Please review before filling.'}</div>`;
+  }
+
+  html += `<div style="font-size:12px;color:var(--muted2);margin-bottom:10px;margin-top:${hasWarnings?'10px':'0'}">
+    Click subjects to select which ones to add. Then click <strong>"Fill Forms with Selected"</strong>.
+    <br/>You'll still need to enter your <strong>Other Stuff score</strong> and mark <strong>which exams you've already taken</strong>.
+  </div>
+  <div id="syl-chips" style="margin-bottom:14px">`;
+
+  subjects.forEach((s, i) => {
+    const examSummary = (s.exams||[]).map(e => `${e.name} ${e.weight}%`).join(' · ');
+    html += `<div class="syl-subj-chip sel" id="sylchip-${i}" onclick="toggleSylChip(${i})">
+      <span id="sylchip-ico-${i}">✓</span>
+      <span><strong>${s.name}</strong>
+        <div class="syl-field-preview">${s.credits} cr · Exams ${s.exam_pct}% · Other ${s.other_pct}%${examSummary ? '<br/>'+examSummary : ''}</div>
+      </span>
+    </div>`;
+  });
+
+  html += `</div>
+    <div class="btn-row" style="margin-top:0">
+      <button class="btn btn-ghost" onclick="selectAllSylChips()">Select All</button>
+      <button class="btn btn-primary" onclick="fillFormsFromSyllabus()">✨ Fill Forms with Selected →</button>
+    </div>
+  </div>`;
+
+  statusEl.innerHTML = html;
+}
+
+function toggleSylChip(i) {
+  const chip = document.getElementById('sylchip-' + i);
+  const ico  = document.getElementById('sylchip-ico-' + i);
+  const isSel = chip.classList.toggle('sel');
+  ico.textContent = isSel ? '✓' : '○';
+}
+
+function selectAllSylChips() {
+  syllabusExtracted.forEach((_, i) => {
+    const chip = document.getElementById('sylchip-' + i);
+    const ico  = document.getElementById('sylchip-ico-' + i);
+    if (chip && !chip.classList.contains('sel')) {
+      chip.classList.add('sel');
+      ico.textContent = '✓';
+    }
+  });
+}
+
+function clearSyllabusUpload() {
+  syllabusExtracted = [];
+  document.getElementById('syllabus-status').style.display = 'none';
+  document.getElementById('syllabus-status').innerHTML = '';
+}
+
+function fillFormsFromSyllabus() {
+  const selected = syllabusExtracted.filter((_, i) => {
+    const chip = document.getElementById('sylchip-' + i);
+    return chip && chip.classList.contains('sel');
+  });
+
+  if (!selected.length) { showToast('Select at least one subject!'); return; }
+
+  // Set mode based on count
+  if (selected.length === 1) {
+    setMode('single');
+  } else {
+    setMode('multi');
+    document.getElementById('n-subjs').value = selected.length;
+  }
+
+  // Go to step 2 and build forms
+  setStep(2);
+  document.getElementById('pg-setup').classList.add('hidden');
+  document.getElementById('pg-subjects').classList.remove('hidden');
+  buildForms(selected.length);
+
+  // Fill each form with extracted data after DOM settles
+  setTimeout(() => {
+    selected.forEach((s, idx) => {
+      // Subject name
+      const nmEl = document.getElementById(`s${idx}_nm`);
+      if (nmEl) nmEl.value = s.name || '';
+
+      // Credits
+      const crEl = document.getElementById(`s${idx}_cr`);
+      if (crEl) crEl.value = s.credits || 3;
+
+      // Other % and Exam %
+      const opEl = document.getElementById(`s${idx}_op`);
+      const epEl = document.getElementById(`s${idx}_ep`);
+      if (opEl) { opEl.value = s.other_pct || 40; updEP(idx); }
+
+      // Rebuild exam cards with extracted count
+      const neEl = document.getElementById(`s${idx}_ne`);
+      if (neEl && s.exams && s.exams.length) {
+        neEl.value = s.exams.length;
+        rebuildEx(idx);
+
+        // Fill exam names and weights after rebuild
+        setTimeout(() => {
+          const examCards = document.querySelectorAll(`#s${idx}_ex .exam-card`);
+          examCards.forEach((card, ei) => {
+            const exam = s.exams[ei];
+            if (!exam) return;
+            const nmInput = card.querySelector('[data-f="nm"]');
+            const wtInput = card.querySelector('[data-f="wt"]');
+            if (nmInput) nmInput.value = exam.name || '';
+            if (wtInput) wtInput.value = exam.weight || '';
+          });
+        }, 80);
+      }
+    });
+
+    showToast(`✨ ${selected.length} subject${selected.length!==1?'s':''} pre-filled! Add your scores and save.`);
+
+    // Scroll to forms
+    document.getElementById('pg-subjects').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    // Add a reminder banner above the forms
+    const existingBanner = document.getElementById('syl-fill-banner');
+    if (!existingBanner) {
+      const banner = document.createElement('div');
+      banner.id = 'syl-fill-banner';
+      banner.className = 'infobox';
+      banner.style.cssText = 'border-color:rgba(52,211,153,.3);background:rgba(52,211,153,.05);margin-bottom:16px';
+      banner.innerHTML = `✅ <strong>Pre-filled from syllabus!</strong> Review the details below.
+        You still need to:<br/>
+        &nbsp;&nbsp;1. Enter your <strong>Other Stuff score</strong> (attendance, assignments, quizzes) for each subject<br/>
+        &nbsp;&nbsp;2. Mark any exams you've <strong>already taken</strong> and enter your score`;
+      document.getElementById('subj-forms').prepend(banner);
+    }
+  }, 120);
+}
+
 async function calcAndSave() {
   const btn = document.getElementById('calc-save-btn');
   btn.disabled = true; btn.textContent = '💾 Saving to cloud...';
