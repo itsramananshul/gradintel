@@ -886,21 +886,12 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2)}
       <div id="ks-step-1">
         <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:16px;margin-bottom:6px">Which AI do you want to use?</div>
         <div style="font-size:12px;color:var(--muted2);margin-bottom:18px;line-height:1.6">Your key is stored <strong>only in your browser</strong> — never shared with anyone. <span style="color:var(--green)">🟢 = completely free</span></div>
-        <div style="background:rgba(52,211,153,.07);border:1px solid rgba(52,211,153,.25);border-radius:var(--r-sm);padding:10px 14px;font-size:12px;color:var(--green);margin-bottom:14px;line-height:1.6">
-          🌸 <strong>No API key? No problem!</strong> Use <strong>Pollinations AI</strong> — completely free, no signup, no credit card. If you don't have a paid API key, always choose Pollinations.
-        </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
-          <div class="ai-prov-card" id="prov-pollinations" onclick="selectProvider('pollinations')" style="border-color:rgba(52,211,153,.4);background:rgba(52,211,153,.04)">
-            <div style="font-size:26px;margin-bottom:6px">🌸</div>
-            <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:13px;margin-bottom:3px">Pollinations</div>
-            <div style="font-size:11px;color:var(--muted)">No key needed ever</div>
-            <div style="margin-top:8px;padding:2px 8px;border-radius:100px;background:rgba(52,211,153,.2);color:var(--green);font-size:10px;font-weight:700;display:inline-block">🟢 TOTALLY FREE</div>
-          </div>
           <div class="ai-prov-card" id="prov-groq" onclick="selectProvider('groq')">
             <div style="font-size:26px;margin-bottom:6px">⚡</div>
             <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:13px;margin-bottom:3px">Groq</div>
             <div style="font-size:11px;color:var(--muted)">Llama 3.3 · Ultra fast</div>
-            <div style="margin-top:8px;padding:2px 8px;border-radius:100px;background:rgba(52,211,153,.15);color:var(--green);font-size:10px;font-weight:700;display:inline-block">🟢 FREE (key needed)</div>
+            <div style="margin-top:8px;padding:2px 8px;border-radius:100px;background:rgba(52,211,153,.15);color:var(--green);font-size:10px;font-weight:700;display:inline-block">🟢 100% FREE</div>
           </div>
           <div class="ai-prov-card" id="prov-gemini" onclick="selectProvider('gemini')">
             <div style="font-size:26px;margin-bottom:6px">✨</div>
@@ -912,7 +903,7 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2)}
             <div style="font-size:26px;margin-bottom:6px">🧠</div>
             <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:13px;margin-bottom:3px">Claude</div>
             <div style="font-size:11px;color:var(--muted)">by Anthropic</div>
-            <div style="margin-top:8px;padding:2px 8px;border-radius:100px;background:rgba(129,140,248,.15);color:var(--accent);font-size:10px;font-weight:700;display:inline-block">PAID</div>
+            <div style="margin-top:8px;padding:2px 8px;border-radius:100px;background:rgba(129,140,248,.15);color:var(--accent);font-size:10px;font-weight:700;display:inline-block">PAID (best for PDF)</div>
           </div>
           <div class="ai-prov-card" id="prov-openai" onclick="selectProvider('openai')">
             <div style="font-size:26px;margin-bottom:6px">🤖</div>
@@ -2346,7 +2337,7 @@ function renderAIKeyStatusBar() {
   const prov = getStoredAIProvider();
   const provLabels = { groq: '⚡ Groq', gemini: '✨ Gemini', claude: '🧠 Claude', openai: '🤖 ChatGPT' };
   if (key && prov) {
-    const masked = (prov === 'pollinations') ? 'No key needed 🌸' : key.slice(0,6) + '••••••••' + key.slice(-4);
+    const masked = key.slice(0,6) + '••••••••' + key.slice(-4);
     bar.innerHTML = `<div class="ai-key-bar configured">
       <div style="display:flex;align-items:center;gap:10px">
         <span style="color:var(--green);font-weight:700">${provLabels[prov] || prov}</span>
@@ -2426,14 +2417,6 @@ function ksGoStep2() {
   document.getElementById('ks-step-3').classList.add('hidden');
   ksSetStepUI(2);
   const instructions = {
-    pollinations: { title: '🌸 Pollinations AI — No key needed!', badge: 'TOTALLY FREE · No signup', badgeColor: 'var(--green)',
-      steps: [
-        { text: '🎉 <strong>Good news — you don't need to do anything!</strong> Pollinations AI is completely free and requires no API key, no signup, and no credit card.' },
-        { text: 'Just click <strong>"I have my key →"</strong> below and then <strong>"Use Pollinations (No Key)"</strong> on the next screen.' },
-        { text: '<strong>What Pollinations can do:</strong> Answer academic questions, analyse syllabuses (PDF text + images), generate study plans — everything the AI assistant does.' },
-        { text: '💡 <strong>Tip:</strong> If Pollinations ever feels slow, you can always upgrade to Groq (also free, just needs a quick signup) or any other provider later.' }
-      ]
-    },
     groq: { title: '⚡ Getting your free Groq API key', badge: '100% FREE — No credit card ever', badgeColor: 'var(--green)',
       steps: [
         { text: 'Go to <a href="https://console.groq.com" target="_blank">console.groq.com</a>' },
@@ -2492,15 +2475,6 @@ function ksGoStep3() {
   document.getElementById('ks-step-2').classList.add('hidden');
   document.getElementById('ks-step-3').classList.remove('hidden');
   ksSetStepUI(3);
-  // Pollinations needs no key — skip to save directly
-  if (selectedProvider === 'pollinations') {
-    localStorage.setItem(AI_KEY_STORAGE, 'pollinations-no-key');
-    localStorage.setItem(AI_PROV_STORAGE, 'pollinations');
-    closeAIKeyModal();
-    renderAIKeyStatusBar();
-    showToast('🌸 Pollinations AI ready — no key needed!');
-    return;
-  }
   const labels = { groq: 'Groq API Key (starts with gsk_...)', gemini: 'Gemini API Key (starts with AIzaSy...)', claude: 'Claude API Key (starts with sk-ant-...)', openai: 'OpenAI API Key (starts with sk-...)' };
   document.getElementById('ks-key-label').textContent = labels[selectedProvider] || 'API Key';
   const existing = getStoredAIKey();
@@ -2514,7 +2488,6 @@ function ksSaveKey() {
   const errEl = document.getElementById('ks-err');
   errEl.style.display = 'none';
   if (!key) { errEl.textContent = 'Please paste your API key first.'; errEl.style.display='block'; return; }
-  if (selectedProvider === 'pollinations') { localStorage.setItem(AI_KEY_STORAGE, 'pollinations-no-key'); localStorage.setItem(AI_PROV_STORAGE, 'pollinations'); closeAIKeyModal(); renderAIKeyStatusBar(); showToast('🌸 Pollinations AI ready!'); return; }
   const formats = { groq: { prefix:'gsk_', hint:'Groq keys start with "gsk_"' }, gemini: { prefix:'AIza', hint:'Gemini keys start with "AIzaSy"' }, claude: { prefix:'sk-ant', hint:'Claude keys start with "sk-ant-"' }, openai: { prefix:'sk-', hint:'OpenAI keys start with "sk-"' } };
   const fmt = formats[selectedProvider];
   if (fmt && !key.startsWith(fmt.prefix)) { errEl.textContent = '⚠️ That doesn\'t look right. ' + fmt.hint + '. Make sure you copied the full key.'; errEl.style.display='block'; return; }
@@ -2591,9 +2564,25 @@ Result: {"subjects":[{"name":"Computer Science I","credits":null,"other_pct":80,
       statusEl.innerHTML = `<div class="infobox" style="display:flex;align-items:center;gap:10px"><span style="animation:spin 1s linear infinite;display:inline-block;font-size:18px">⚙️</span><span>Extracting text from PDF...</span></div>`;
       const pdfText = await extractPDFText(file);
       if (!pdfText || pdfText.trim().length < 50) {
-        // Scanned/image-based PDF — use Pollinations vision (free, no key)
-        statusEl.innerHTML = `<div class="infobox" style="display:flex;align-items:center;gap:10px"><span style="animation:spin 1s linear infinite;display:inline-block;font-size:18px">⚙️</span><span>Scanned PDF detected — using Pollinations AI vision (free)...</span></div>`;
-        rawText = await pollinationsVision(file, systemPrompt);
+        // Scanned/image-based PDF — needs Claude vision
+        if (key && prov === 'claude') {
+          const base64 = await fileToBase64(file);
+          const response = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+            body: JSON.stringify({ model: 'claude-opus-4-6', max_tokens: 2000, system: systemPrompt,
+              messages: [{ role: 'user', content: [
+                { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64 } },
+                { type: 'text', text: 'Extract subject info. Return only JSON.' }
+              ]}]
+            })
+          });
+          const data = await response.json();
+          if (data.error) throw new Error(data.error.message);
+          rawText = data.content?.[0]?.text || '';
+        } else {
+          throw new Error('This PDF appears to be a scanned image and has no readable text. Please either: (1) use a text-based PDF, or (2) set up a Claude API key for image reading.');
+        }
       } else {
         // Has text — send to free Pollinations AI
         statusEl.innerHTML = `<div class="infobox" style="display:flex;align-items:center;gap:10px"><span style="animation:spin 1s linear infinite;display:inline-block;font-size:18px">⚙️</span><span>Analysing syllabus content...</span></div>`;
@@ -2608,9 +2597,24 @@ Result: {"subjects":[{"name":"Computer Science I","credits":null,"other_pct":80,
         rawText = d.choices?.[0]?.message?.content || '';
       }
     } else if (isImage) {
-      // Use Pollinations vision — free, no key needed
-      statusEl.innerHTML = `<div class="infobox" style="display:flex;align-items:center;gap:10px"><span style="animation:spin 1s linear infinite;display:inline-block;font-size:18px">⚙️</span><span>Reading image with Pollinations AI (free)...</span></div>`;
-      rawText = await pollinationsVision(file, 'Extract subject info from this syllabus image. Return only JSON as instructed. ' + systemPrompt);
+      if (key && prov === 'claude') {
+        const base64 = await fileToBase64(file);
+        const response = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+          body: JSON.stringify({ model: 'claude-opus-4-6', max_tokens: 2000, system: systemPrompt,
+            messages: [{ role: 'user', content: [
+              { type: 'image', source: { type: 'base64', media_type: file.type, data: base64 } },
+              { type: 'text', text: 'Extract subject info. Return only JSON.' }
+            ]}]
+          })
+        });
+        const data = await response.json();
+        if (data.error) throw new Error(data.error.message);
+        rawText = data.content?.[0]?.text || '';
+      } else {
+        throw new Error('Image syllabuses require a Claude API key. Please upload a PDF or .txt file instead — those work for free!');
+      }
     } else {
       // Plain text file — free
       const fileText = await file.text();
@@ -2660,39 +2664,6 @@ async function extractPDFText(file) {
     fullText += content.items.map(item => item.str).join(' ') + '\n';
   }
   return fullText;
-}
-
-// ── POLLINATIONS VISION — free image reading, no key
-async function pollinationsVision(fileOrBase64, prompt) {
-  // Accept a File object or already-encoded base64 string
-  let base64, mediaType;
-  if (fileOrBase64 instanceof File) {
-    base64    = await fileToBase64(fileOrBase64);
-    mediaType = fileOrBase64.type || 'image/jpeg';
-  } else {
-    base64    = fileOrBase64;
-    mediaType = 'image/jpeg';
-  }
-  // Pollinations vision via openai-compatible endpoint
-  const res = await fetch('https://text.pollinations.ai/openai', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: 'openai-large',
-      messages: [{
-        role: 'user',
-        content: [
-          { type: 'image_url', image_url: { url: `data:${mediaType};base64,${base64}` } },
-          { type: 'text', text: prompt }
-        ]
-      }]
-    })
-  });
-  if (!res.ok) throw new Error(`Pollinations vision error: ${res.status}`);
-  const d = await res.json();
-  const text = d.choices?.[0]?.message?.content || '';
-  if (!text) throw new Error('No response from Pollinations vision. Try again or use a clearer image.');
-  return text;
 }
 
 function fileToBase64(file) {
@@ -2852,15 +2823,15 @@ async function runAI() {
   try {
     let text = '';
 
-    if (!key || !prov || prov === 'pollinations') {
-      // Pollinations.AI — free, no key, no signup, always works
+    if (!key || !prov) {
+      // FREE built-in: Pollinations.AI — no key, no signup, always works
       const res = await fetch('https://text.pollinations.ai/openai', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'openai-large', messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: inp }] })
+        body: JSON.stringify({ model: 'openai', messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: inp }] })
       });
       const d = await res.json();
       text = d.choices?.[0]?.message?.content || '';
-      if (!text) throw new Error('No response from Pollinations. Please try again in a moment.');
+      if (!text) throw new Error('No response. Please try again in a moment.');
     } else if (prov === 'groq') {
       const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
