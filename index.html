@@ -885,25 +885,31 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2)}
       </div>
       <div id="ks-step-1">
         <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:16px;margin-bottom:6px">Which AI do you want to use?</div>
-        <div style="font-size:12px;color:var(--muted2);margin-bottom:18px;line-height:1.6">All have free tiers. Your key is stored <strong>only in your browser</strong> — never shared with anyone.</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px">
+        <div style="font-size:12px;color:var(--muted2);margin-bottom:18px;line-height:1.6">Your key is stored <strong>only in your browser</strong> — never shared with anyone. <span style="color:var(--green)">🟢 = completely free</span></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
+          <div class="ai-prov-card" id="prov-groq" onclick="selectProvider('groq')">
+            <div style="font-size:26px;margin-bottom:6px">⚡</div>
+            <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:13px;margin-bottom:3px">Groq</div>
+            <div style="font-size:11px;color:var(--muted)">Llama 3.3 · Ultra fast</div>
+            <div style="margin-top:8px;padding:2px 8px;border-radius:100px;background:rgba(52,211,153,.15);color:var(--green);font-size:10px;font-weight:700;display:inline-block">🟢 100% FREE</div>
+          </div>
           <div class="ai-prov-card" id="prov-gemini" onclick="selectProvider('gemini')">
             <div style="font-size:26px;margin-bottom:6px">✨</div>
             <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:13px;margin-bottom:3px">Gemini</div>
             <div style="font-size:11px;color:var(--muted)">by Google</div>
-            <div style="margin-top:8px;padding:2px 8px;border-radius:100px;background:rgba(52,211,153,.15);color:var(--green);font-size:10px;font-weight:700;display:inline-block">FREE TIER</div>
+            <div style="margin-top:8px;padding:2px 8px;border-radius:100px;background:rgba(52,211,153,.15);color:var(--green);font-size:10px;font-weight:700;display:inline-block">🟢 FREE TIER</div>
           </div>
           <div class="ai-prov-card" id="prov-claude" onclick="selectProvider('claude')">
             <div style="font-size:26px;margin-bottom:6px">🧠</div>
             <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:13px;margin-bottom:3px">Claude</div>
             <div style="font-size:11px;color:var(--muted)">by Anthropic</div>
-            <div style="margin-top:8px;padding:2px 8px;border-radius:100px;background:rgba(129,140,248,.15);color:var(--accent);font-size:10px;font-weight:700;display:inline-block">RECOMMENDED</div>
+            <div style="margin-top:8px;padding:2px 8px;border-radius:100px;background:rgba(129,140,248,.15);color:var(--accent);font-size:10px;font-weight:700;display:inline-block">PAID (best for PDF)</div>
           </div>
           <div class="ai-prov-card" id="prov-openai" onclick="selectProvider('openai')">
-            <div style="font-size:26px;margin-bottom:6px">⚡</div>
+            <div style="font-size:26px;margin-bottom:6px">🤖</div>
             <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:13px;margin-bottom:3px">ChatGPT</div>
             <div style="font-size:11px;color:var(--muted)">by OpenAI</div>
-            <div style="margin-top:8px;padding:2px 8px;border-radius:100px;background:rgba(251,191,36,.15);color:var(--yellow);font-size:10px;font-weight:700;display:inline-block">POPULAR</div>
+            <div style="margin-top:8px;padding:2px 8px;border-radius:100px;background:rgba(251,191,36,.15);color:var(--yellow);font-size:10px;font-weight:700;display:inline-block">PAID</div>
           </div>
         </div>
         <div class="btn-row">
@@ -2329,7 +2335,7 @@ function renderAIKeyStatusBar() {
   if (!bar) return;
   const key  = getStoredAIKey();
   const prov = getStoredAIProvider();
-  const provLabels = { gemini: '✨ Gemini', claude: '🧠 Claude', openai: '⚡ ChatGPT' };
+  const provLabels = { groq: '⚡ Groq', gemini: '✨ Gemini', claude: '🧠 Claude', openai: '🤖 ChatGPT' };
   if (key && prov) {
     const masked = key.slice(0,6) + '••••••••' + key.slice(-4);
     bar.innerHTML = `<div class="ai-key-bar configured">
@@ -2411,30 +2417,40 @@ function ksGoStep2() {
   document.getElementById('ks-step-3').classList.add('hidden');
   ksSetStepUI(2);
   const instructions = {
+    groq: { title: '⚡ Getting your free Groq API key', badge: '100% FREE — No credit card ever', badgeColor: 'var(--green)',
+      steps: [
+        { text: 'Go to <a href="https://console.groq.com" target="_blank">console.groq.com</a>' },
+        { text: 'Click <strong>"Sign Up"</strong> — use your Google or GitHub account (fastest)' },
+        { text: 'Once logged in, click <strong>"API Keys"</strong> in the left sidebar' },
+        { text: 'Click <strong>"Create API Key"</strong> → give it any name' },
+        { text: 'Copy the key — it starts with: <code>gsk_...</code>' },
+        { text: 'Paste it in the next step. Groq is <strong>completely free</strong> — runs Llama 3.3 (very smart) at lightning speed!' }
+      ]
+    },
     gemini: { title: '✨ Getting your free Gemini API key', badge: 'FREE — No credit card needed', badgeColor: 'var(--green)',
       steps: [
         { text: 'Go to <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a>' },
         { text: 'Sign in with your <strong>Google account</strong>' },
         { text: 'Click <strong>"Create API key"</strong> → then <strong>"Create API key in new project"</strong>' },
         { text: 'Copy the key — it looks like: <code>AIzaSy...</code>' },
-        { text: 'Paste it in the next step. You get <strong>free requests per day</strong> on the free tier!' }
+        { text: 'Paste it in the next step. Free tier gives you plenty of daily requests!' }
       ]
     },
-    claude: { title: '🧠 Getting your Claude API key', badge: 'Free credits on signup', badgeColor: 'var(--accent)',
+    claude: { title: '🧠 Getting your Claude API key', badge: 'Paid (best for syllabus PDF)', badgeColor: 'var(--accent)',
       steps: [
         { text: 'Go to <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>' },
-        { text: 'Click <strong>"Sign up"</strong> → enter your email and create an account' },
-        { text: 'You\'ll get <strong>free credits</strong> automatically when you sign up' },
+        { text: 'Click <strong>"Sign up"</strong> → create an account' },
+        { text: '<strong>Add a payment method</strong> and purchase at least $5 in credits' },
         { text: 'Go to <strong>"API Keys"</strong> in the left sidebar → click <strong>"Create Key"</strong>' },
         { text: 'Copy the key — it starts with: <code>sk-ant-...</code>' },
-        { text: 'Paste it in the next step. Claude is the smartest AI for academic questions!' }
+        { text: '💡 Claude is the <strong>only option for syllabus PDF upload</strong> — worth it if you use that feature!' }
       ]
     },
-    openai: { title: '⚡ Getting your OpenAI API key', badge: 'Free trial credits', badgeColor: 'var(--yellow)',
+    openai: { title: '🤖 Getting your OpenAI API key', badge: 'Paid', badgeColor: 'var(--yellow)',
       steps: [
         { text: 'Go to <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com/api-keys</a>' },
         { text: 'Click <strong>"Sign up"</strong> if you don\'t have an account' },
-        { text: 'You\'ll get <strong>free trial credits</strong> that last a few months' },
+        { text: '<strong>Add a payment method</strong> — requires a minimum top-up' },
         { text: 'Click <strong>"Create new secret key"</strong> → give it any name' },
         { text: 'Copy the key — it starts with: <code>sk-proj-...</code> or <code>sk-...</code>' },
         { text: 'Paste it in the next step.' }
@@ -2459,7 +2475,7 @@ function ksGoStep3() {
   document.getElementById('ks-step-2').classList.add('hidden');
   document.getElementById('ks-step-3').classList.remove('hidden');
   ksSetStepUI(3);
-  const labels = { gemini: 'Gemini API Key (starts with AIzaSy...)', claude: 'Claude API Key (starts with sk-ant-...)', openai: 'OpenAI API Key (starts with sk-...)' };
+  const labels = { groq: 'Groq API Key (starts with gsk_...)', gemini: 'Gemini API Key (starts with AIzaSy...)', claude: 'Claude API Key (starts with sk-ant-...)', openai: 'OpenAI API Key (starts with sk-...)' };
   document.getElementById('ks-key-label').textContent = labels[selectedProvider] || 'API Key';
   const existing = getStoredAIKey();
   document.getElementById('ks-key-input').value = (existing && getStoredAIProvider() === selectedProvider) ? existing : '';
@@ -2472,7 +2488,7 @@ function ksSaveKey() {
   const errEl = document.getElementById('ks-err');
   errEl.style.display = 'none';
   if (!key) { errEl.textContent = 'Please paste your API key first.'; errEl.style.display='block'; return; }
-  const formats = { gemini: { prefix:'AIza', hint:'Gemini keys start with "AIzaSy"' }, claude: { prefix:'sk-ant', hint:'Claude keys start with "sk-ant-"' }, openai: { prefix:'sk-', hint:'OpenAI keys start with "sk-"' } };
+  const formats = { groq: { prefix:'gsk_', hint:'Groq keys start with "gsk_"' }, gemini: { prefix:'AIza', hint:'Gemini keys start with "AIzaSy"' }, claude: { prefix:'sk-ant', hint:'Claude keys start with "sk-ant-"' }, openai: { prefix:'sk-', hint:'OpenAI keys start with "sk-"' } };
   const fmt = formats[selectedProvider];
   if (fmt && !key.startsWith(fmt.prefix)) { errEl.textContent = '⚠️ That doesn\'t look right. ' + fmt.hint + '. Make sure you copied the full key.'; errEl.style.display='block'; return; }
   localStorage.setItem(AI_KEY_STORAGE, key);
@@ -2662,8 +2678,17 @@ async function runAI() {
 
   try {
     let text = '';
-    if (prov === 'gemini') {
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`, {
+    if (prov === 'groq') {
+      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
+        body: JSON.stringify({ model: 'llama-3.3-70b-versatile', max_tokens: 400, messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: inp }] })
+      });
+      const d = await res.json();
+      if (d.error) throw new Error(d.error.message);
+      text = d.choices?.[0]?.message?.content || '';
+      if (!text) throw new Error('Empty response from Groq. Check your key is valid.');
+    } else if (prov === 'gemini') {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ contents: [{ parts: [{ text: systemPrompt + '\n\nStudent question: ' + inp }] }] })
       });
@@ -2694,7 +2719,7 @@ async function runAI() {
     resp.className = 'ai-resp show';
     resp.innerHTML = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>').replace(/\n/g, '<br/>');
   } catch(e) {
-    const tips = { gemini: 'Check your key at <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--accent)">aistudio.google.com/apikey</a>', claude: 'Check your key at <a href="https://console.anthropic.com" target="_blank" style="color:var(--accent)">console.anthropic.com</a>', openai: 'Check your key at <a href="https://platform.openai.com/api-keys" target="_blank" style="color:var(--accent)">platform.openai.com</a>' };
+    const tips = { groq: 'Check your key at <a href="https://console.groq.com" target="_blank" style="color:var(--accent)">console.groq.com</a>', gemini: 'Check your key at <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--accent)">aistudio.google.com/apikey</a>', claude: 'Check your key at <a href="https://console.anthropic.com" target="_blank" style="color:var(--accent)">console.anthropic.com</a>', openai: 'Check your key at <a href="https://platform.openai.com/api-keys" target="_blank" style="color:var(--accent)">platform.openai.com</a>' };
     resp.className = 'ai-resp show';
     resp.innerHTML = `<span style="color:var(--red)">❌ <strong>Error:</strong> ${e.message}</span><br/><br/><span style="color:var(--muted2);font-size:12px">${tips[prov]||'Check your API key and try again.'}</span><br/><br/><button class="btn btn-secondary" style="font-size:12px;padding:7px 14px" onclick="openAIKeyModal()">Update Key</button>`;
   }
