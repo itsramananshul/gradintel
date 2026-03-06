@@ -2520,21 +2520,37 @@ async function handleSyllabusUpload(input) {
   statusEl.style.display = 'block';
   statusEl.innerHTML = `<div class="infobox" style="display:flex;align-items:center;gap:10px"><span style="animation:spin 1s linear infinite;display:inline-block;font-size:18px">⚙️</span><span>AI is reading your syllabus...</span></div>`;
 
-  const systemPrompt = `You are an academic syllabus parser. Extract course/subject information from the provided content.
+  const systemPrompt = `You are an academic syllabus parser. Extract course/subject grading information.
 Return ONLY valid JSON — no markdown, no explanation, no code fences. Just the raw JSON object.
-Return this exact structure:
-{"subjects":[{"name":"Subject or Course Name","credits":null,"other_pct":null,"exam_pct":null,"exams":[{"name":"Midterm","weight":40},{"name":"Final","weight":60}],"missing":["credits","other_pct"]}],"confidence":"high|medium|low","warnings":["any warnings"]}
 
-Rules:
-- "exams" means ONLY items explicitly called: exam, test, midterm, final, end-term, mid-term. Do NOT include quizzes, assignments, lab work, projects, presentations, attendance — those go into other_pct.
-- exam weights must add up to 100 (they are % of the EXAM PORTION only, not of total marks)
-- other_pct = everything that is NOT an exam: quizzes + assignments + attendance + participation + projects combined
-- exam_pct = 100 - other_pct. If only exam % is stated, other_pct = 100 - exam_pct
-- If exam total % is stated (e.g. "exams = 60%"), set exam_pct = 60, other_pct = 40 automatically
-- credits: set to the number if explicitly mentioned. If NOT mentioned, set to null — do not guess
-- other_pct: set to number if you can calculate it. If not enough info, set to null
-- "missing" array: list field names that are null or could not be found (e.g. "credits", "other_pct", "exam weights")
-- Do NOT invent or assume values. Only extract what is clearly stated.`;
+Return this exact structure:
+{"subjects":[{"name":"Subject or Course Name","credits":null,"other_pct":80,"exam_pct":20,"exams":[{"name":"Midterm","weight":50},{"name":"Final","weight":50}],"missing":["credits"]}],"confidence":"high|medium|low","warnings":[]}
+
+STEP 1 — Identify EXAMS (worth exam_pct):
+Only these count as exams: "test", "tests", "exam", "exams", "midterm", "final", "end-term", "mid-term".
+Add up the % weights of ALL items with those keywords. That total = exam_pct.
+Example: "Tests 20%" → exam_pct = 20.
+Example: "Midterm 30%, Final 30%" → exam_pct = 60, two exams each worth 50% of exam portion.
+
+STEP 2 — Calculate OTHER (worth other_pct):
+Everything that is NOT an exam: quizzes, assignments, labs, reading, attendance, participation, projects, homework.
+other_pct = 100 - exam_pct. Always. No exceptions.
+Example: exam_pct=20 → other_pct=80 automatically.
+
+STEP 3 — Exam weights inside "exams" array:
+Each exam's "weight" = its % share of the exam portion (not of total grade).
+Example: exam_pct=20, two tests each 10% of total → each test = 50% of exam portion → weight: 50.
+Formula: exam_weight = (exam_item_total_pct / exam_pct) * 100.
+All exam weights must add up to exactly 100.
+
+STEP 4 — Credits:
+Only set if explicitly stated (e.g. "3 credit hours", "4 credits"). Otherwise set null.
+
+STEP 5 — "missing" array:
+List only fields that are genuinely missing: "credits" if not mentioned, "exam weights" if individual exam % not given.
+Do NOT list other_pct or exam_pct as missing — you always calculate those from the data.
+
+CRITICAL: Never return null for other_pct or exam_pct if you found any grade weights at all. Always do the math.`;
 
   try {
     let rawText = '';
@@ -2745,9 +2761,10 @@ function fillFormsFromSyllabus() {
         allMissing.add('Exam names & weights');
       }
 
-      // Collect any "missing" fields the AI flagged
+      // Collect any "missing" fields the AI flagged — filter out internal names already handled above
+      const skipFields = new Set(['other_pct','exam_pct','exams']); // these are handled by the form itself
       if (s.missing && s.missing.length) {
-        s.missing.forEach(m => allMissing.add(m));
+        s.missing.filter(m => !skipFields.has(m)).forEach(m => allMissing.add(m));
       }
     });
 
