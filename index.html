@@ -2349,12 +2349,12 @@ function renderAIKeyStatusBar() {
       </div>
     </div>`;
   } else {
-    bar.innerHTML = `<div class="ai-key-bar missing">
+    bar.innerHTML = `<div class="ai-key-bar configured" style="border-color:rgba(52,211,153,.3);background:rgba(52,211,153,.05)">
       <div style="display:flex;align-items:center;gap:10px">
-        <span style="color:var(--yellow);font-weight:700">⚠️ No AI key set</span>
-        <span style="color:var(--muted);font-size:12px">Add your own free key to enable the AI assistant</span>
+        <span style="color:var(--green);font-weight:700">🟢 AI Ready</span>
+        <span style="color:var(--muted);font-size:12px">Using free built-in AI — no setup needed</span>
       </div>
-      <button class="btn btn-primary" style="font-size:12px;padding:7px 16px" onclick="openAIKeyModal()">Set Up Key →</button>
+      <button class="btn btn-secondary" style="font-size:11px;padding:5px 12px" onclick="openAIKeyModal()">Use own key</button>
     </div>`;
   }
 }
@@ -2661,7 +2661,6 @@ async function runAI() {
   if (!inp) { showToast('Type a question first!'); return; }
   const key  = getStoredAIKey();
   const prov = getStoredAIProvider();
-  if (!key || !prov) { openAIKeyModal(); return; }
 
   const btn = document.getElementById('ai-send-btn');
   btn.disabled = true; btn.textContent = 'Thinking...';
@@ -2678,7 +2677,17 @@ async function runAI() {
 
   try {
     let text = '';
-    if (prov === 'groq') {
+
+    if (!key || !prov) {
+      // FREE built-in: Pollinations.AI — no key, no signup, always works
+      const res = await fetch('https://text.pollinations.ai/openai', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'openai', messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: inp }] })
+      });
+      const d = await res.json();
+      text = d.choices?.[0]?.message?.content || '';
+      if (!text) throw new Error('No response. Please try again in a moment.');
+    } else if (prov === 'groq') {
       const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
         body: JSON.stringify({ model: 'llama-3.3-70b-versatile', max_tokens: 400, messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: inp }] })
@@ -2686,7 +2695,6 @@ async function runAI() {
       const d = await res.json();
       if (d.error) throw new Error(d.error.message);
       text = d.choices?.[0]?.message?.content || '';
-      if (!text) throw new Error('Empty response from Groq. Check your key is valid.');
     } else if (prov === 'gemini') {
       const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -2695,7 +2703,6 @@ async function runAI() {
       const d = await res.json();
       if (d.error) throw new Error(d.error.message);
       text = d.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      if (!text) throw new Error('Empty response from Gemini. Check your key is valid.');
     } else if (prov === 'claude') {
       const res = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
@@ -2705,7 +2712,6 @@ async function runAI() {
       const d = await res.json();
       if (d.error) throw new Error(d.error.message);
       text = d.content?.[0]?.text || '';
-      if (!text) throw new Error('Empty response from Claude. Check your key is valid.');
     } else if (prov === 'openai') {
       const res = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
@@ -2714,14 +2720,18 @@ async function runAI() {
       const d = await res.json();
       if (d.error) throw new Error(d.error.message);
       text = d.choices?.[0]?.message?.content || '';
-      if (!text) throw new Error('Empty response from OpenAI. Check your key is valid.');
     }
+    if (!text) throw new Error('Empty response. Please try again.');
     resp.className = 'ai-resp show';
     resp.innerHTML = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>').replace(/\n/g, '<br/>');
   } catch(e) {
     const tips = { groq: 'Check your key at <a href="https://console.groq.com" target="_blank" style="color:var(--accent)">console.groq.com</a>', gemini: 'Check your key at <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--accent)">aistudio.google.com/apikey</a>', claude: 'Check your key at <a href="https://console.anthropic.com" target="_blank" style="color:var(--accent)">console.anthropic.com</a>', openai: 'Check your key at <a href="https://platform.openai.com/api-keys" target="_blank" style="color:var(--accent)">platform.openai.com</a>' };
     resp.className = 'ai-resp show';
-    resp.innerHTML = `<span style="color:var(--red)">❌ <strong>Error:</strong> ${e.message}</span><br/><br/><span style="color:var(--muted2);font-size:12px">${tips[prov]||'Check your API key and try again.'}</span><br/><br/><button class="btn btn-secondary" style="font-size:12px;padding:7px 14px" onclick="openAIKeyModal()">Update Key</button>`;
+    if (key && prov) {
+      resp.innerHTML = `<span style="color:var(--red)">❌ <strong>Error:</strong> ${e.message}</span><br/><br/><span style="color:var(--muted2);font-size:12px">${tips[prov]||'Check your API key and try again.'}</span><br/><br/><button class="btn btn-secondary" style="font-size:12px;padding:7px 14px" onclick="openAIKeyModal()">Update Key</button>`;
+    } else {
+      resp.innerHTML = `<span style="color:var(--red)">❌ ${e.message}</span><br/><br/><span style="color:var(--muted2);font-size:12px">The free AI is temporarily unavailable. Try again in a moment, or <button class="btn btn-secondary" style="font-size:11px;padding:4px 10px;margin-left:4px" onclick="openAIKeyModal()">use your own key</button></span>`;
+    }
   }
   btn.disabled = false; btn.textContent = 'Ask AI →';
 }
