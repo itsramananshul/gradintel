@@ -464,6 +464,48 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2)}
 .ai-resp.show{display:block;animation:fadeUp .3s ease both}
 .ai-typing::after{content:'▋';animation:blink .7s infinite}
 @keyframes blink{0%,50%{opacity:1}51%,100%{opacity:0}}
+/* SYLLABUS UPLOAD */
+.syllabus-upload-btn{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;
+  border-radius:var(--r-sm);border:2px dashed rgba(129,140,248,.4);
+  background:rgba(129,140,248,.06);color:var(--accent);
+  font-family:'Clash Display',sans-serif;font-weight:700;font-size:13px;
+  cursor:pointer;transition:all .2s;letter-spacing:.02em}
+.syllabus-upload-btn:hover{border-color:var(--accent);background:rgba(129,140,248,.12);transform:translateY(-1px)}
+.syllabus-upload-btn.loading{opacity:.7;cursor:not-allowed;pointer-events:none}
+.syl-preview{background:var(--surface2);border:1px solid rgba(52,211,153,.3);
+  border-radius:var(--r);padding:16px 18px;animation:fadeUp .3s ease both}
+.syl-preview-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.syl-preview-title{font-family:'Clash Display',sans-serif;font-weight:700;font-size:15px;color:var(--green)}
+.syl-subj-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;
+  border-radius:100px;background:rgba(129,140,248,.1);border:1px solid rgba(129,140,248,.25);
+  font-size:12px;margin:3px;cursor:pointer;transition:all .2s;color:var(--text)}
+.syl-subj-chip:hover{border-color:var(--accent);background:rgba(129,140,248,.18)}
+.syl-subj-chip.sel{border-color:var(--accent);background:rgba(129,140,248,.2);font-weight:700}
+.syl-field-preview{font-size:11px;color:var(--muted);margin-top:3px;line-height:1.6}
+.syl-warning{background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.2);
+  border-radius:var(--r-sm);padding:10px 14px;font-size:12px;color:var(--yellow);margin-top:10px;line-height:1.6}
+.syl-no-key{background:rgba(248,113,113,.07);border:1px solid rgba(248,113,113,.2);
+  border-radius:var(--r-sm);padding:12px 14px;font-size:13px;color:var(--red);margin-top:12px}
+/* AI PROVIDER CARDS */
+.ai-prov-card{background:var(--surface2);border:2px solid var(--border2);border-radius:var(--r);
+  padding:18px 12px;text-align:center;cursor:pointer;transition:all .2s}
+.ai-prov-card:hover{border-color:rgba(129,140,248,.4);transform:translateY(-2px)}
+.ai-prov-card.selected{border-color:var(--accent);background:rgba(129,140,248,.08)}
+/* AI KEY STATUS BAR */
+.ai-key-bar{display:flex;align-items:center;justify-content:space-between;
+  background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);
+  padding:10px 14px;font-size:12px}
+.ai-key-bar.configured{border-color:rgba(52,211,153,.3);background:rgba(52,211,153,.05)}
+.ai-key-bar.missing{border-color:rgba(251,191,36,.3);background:rgba(251,191,36,.05)}
+.ks-instr-box{background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r);padding:18px;margin-bottom:6px}
+.ks-instr-step{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--border)}
+.ks-instr-step:last-child{border-bottom:none}
+.ks-step-num{width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;
+  font-family:'Clash Display',sans-serif;font-weight:700;font-size:11px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.ks-step-text{font-size:13px;line-height:1.6;color:var(--text)}
+.ks-step-text a{color:var(--accent);cursor:pointer;text-decoration:underline}
+.ks-step-text code{background:var(--surface3);padding:2px 6px;border-radius:4px;font-family:'Space Mono',monospace;font-size:11px}
 
 /* POLICIES PANEL */
 .policy-section{margin-bottom:20px}
@@ -717,6 +759,15 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2)}
           <label>Number of Subjects</label>
           <input type="number" id="n-subjs" value="3" min="2" max="20"/>
         </div>
+        <div class="divider"></div>
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:13px;color:var(--muted2)">OR — let AI read your syllabus</div>
+          <label class="syllabus-upload-btn" id="syllabus-upload-label" title="Upload a syllabus PDF or image">
+            📄 Upload Syllabus
+            <input type="file" id="syllabus-file-inp" accept=".pdf,.png,.jpg,.jpeg,.webp" style="display:none" onchange="handleSyllabusUpload(this)"/>
+          </label>
+        </div>
+        <div id="syllabus-status" style="display:none;margin-top:12px"></div>
         <div class="btn-row"><button class="btn btn-primary" onclick="goStep2()">Continue →</button></div>
       </div>
     </div>
@@ -812,10 +863,86 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2)}
     </div>
   </div>
 
+  <!-- AI KEY SETUP MODAL -->
+  <div class="modal-overlay" id="ai-key-modal">
+    <div class="modal-box" style="max-width:520px">
+      <div class="modal-title">🤖 Set Up Your AI Key</div>
+      <div style="display:flex;gap:0;margin-bottom:24px;align-items:flex-start">
+        <div style="flex:1;text-align:center">
+          <div style="width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;font-family:'Clash Display',sans-serif;font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 5px" id="ks-s1-dot">1</div>
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--accent)" id="ks-s1-lbl">Choose</div>
+        </div>
+        <div style="flex:0 0 40px;display:flex;align-items:center;padding-bottom:18px"><div style="height:2px;width:100%;background:var(--border2)"></div></div>
+        <div style="flex:1;text-align:center">
+          <div style="width:28px;height:28px;border-radius:50%;background:var(--surface3);color:var(--muted);font-family:'Clash Display',sans-serif;font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 5px" id="ks-s2-dot">2</div>
+          <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em" id="ks-s2-lbl">Get Key</div>
+        </div>
+        <div style="flex:0 0 40px;display:flex;align-items:center;padding-bottom:18px"><div style="height:2px;width:100%;background:var(--border2)"></div></div>
+        <div style="flex:1;text-align:center">
+          <div style="width:28px;height:28px;border-radius:50%;background:var(--surface3);color:var(--muted);font-family:'Clash Display',sans-serif;font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 5px" id="ks-s3-dot">3</div>
+          <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em" id="ks-s3-lbl">Paste</div>
+        </div>
+      </div>
+      <div id="ks-step-1">
+        <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:16px;margin-bottom:6px">Which AI do you want to use?</div>
+        <div style="font-size:12px;color:var(--muted2);margin-bottom:18px;line-height:1.6">All have free tiers. Your key is stored <strong>only in your browser</strong> — never shared with anyone.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px">
+          <div class="ai-prov-card" id="prov-gemini" onclick="selectProvider('gemini')">
+            <div style="font-size:26px;margin-bottom:6px">✨</div>
+            <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:13px;margin-bottom:3px">Gemini</div>
+            <div style="font-size:11px;color:var(--muted)">by Google</div>
+            <div style="margin-top:8px;padding:2px 8px;border-radius:100px;background:rgba(52,211,153,.15);color:var(--green);font-size:10px;font-weight:700;display:inline-block">FREE TIER</div>
+          </div>
+          <div class="ai-prov-card" id="prov-claude" onclick="selectProvider('claude')">
+            <div style="font-size:26px;margin-bottom:6px">🧠</div>
+            <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:13px;margin-bottom:3px">Claude</div>
+            <div style="font-size:11px;color:var(--muted)">by Anthropic</div>
+            <div style="margin-top:8px;padding:2px 8px;border-radius:100px;background:rgba(129,140,248,.15);color:var(--accent);font-size:10px;font-weight:700;display:inline-block">RECOMMENDED</div>
+          </div>
+          <div class="ai-prov-card" id="prov-openai" onclick="selectProvider('openai')">
+            <div style="font-size:26px;margin-bottom:6px">⚡</div>
+            <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:13px;margin-bottom:3px">ChatGPT</div>
+            <div style="font-size:11px;color:var(--muted)">by OpenAI</div>
+            <div style="margin-top:8px;padding:2px 8px;border-radius:100px;background:rgba(251,191,36,.15);color:var(--yellow);font-size:10px;font-weight:700;display:inline-block">POPULAR</div>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-secondary" onclick="closeAIKeyModal()">Cancel</button>
+          <button class="btn btn-primary" id="ks-next-1" onclick="ksGoStep2()" disabled style="opacity:.4">Next →</button>
+        </div>
+      </div>
+      <div id="ks-step-2" class="hidden">
+        <div id="ks-instructions"></div>
+        <div class="btn-row">
+          <button class="btn btn-secondary" onclick="ksGoStep1()">← Back</button>
+          <button class="btn btn-primary" onclick="ksGoStep3()">I have my key →</button>
+        </div>
+      </div>
+      <div id="ks-step-3" class="hidden">
+        <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:16px;margin-bottom:6px">Paste your API key</div>
+        <div class="infobox" style="margin-bottom:14px">🔒 <strong>Stored only in your browser.</strong> Never sent to anyone except the AI provider you chose. You can delete it anytime.</div>
+        <div class="field">
+          <label id="ks-key-label">API Key</label>
+          <input type="password" id="ks-key-input" placeholder="Paste your key here..." autocomplete="off"/>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+          <input type="checkbox" id="ks-show-key" onchange="document.getElementById('ks-key-input').type=this.checked?'text':'password'" style="width:auto;cursor:pointer"/>
+          <label for="ks-show-key" style="font-size:12px;color:var(--muted);cursor:pointer;text-transform:none;letter-spacing:0;margin:0">Show key as I type</label>
+        </div>
+        <div id="ks-err" style="background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.25);border-radius:var(--r-sm);padding:10px 14px;font-size:12px;color:var(--red);margin-bottom:14px;display:none"></div>
+        <div class="btn-row">
+          <button class="btn btn-secondary" onclick="ksGoStep2()">← Back</button>
+          <button class="btn btn-primary" onclick="ksSaveKey()">✅ Save & Start Using AI</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- AI ASSISTANT -->
   <div id="tc-ai" class="hidden">
     <div class="card">
       <div class="card-title"><span class="ico">🤖</span>AI Study Assistant</div>
+      <div id="ai-key-status-bar" style="margin-bottom:14px"></div>
       <div class="infobox">Ask anything in plain English. Try: <strong>"I have 3 exams left, midterm is 30% and I got 78 on it, final is 50%"</strong> — or ask for a study plan, ROI analysis, or grade strategy.</div>
       <div class="ai-input-wrap">
         <textarea id="ai-input" placeholder="e.g. 'What should I focus on to get a B+ in Calculus?' or 'I have Midterm worth 40% and got 72, Final is 60% not taken yet. What do I need?'" style="width:100%;padding:12px 14px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r-sm);color:var(--text);font-family:'Cabinet Grotesk',sans-serif;font-size:13px;line-height:1.6;resize:vertical;min-height:90px;outline:none;padding-bottom:48px"></textarea>
@@ -2188,41 +2315,388 @@ function exportICS() {
 }
 
 // ══════════════════════════════════════════════════════════════
-// AI ASSISTANT
+// AI KEY MANAGEMENT
+// ══════════════════════════════════════════════════════════════
+const AI_KEY_STORAGE  = 'gradintel_ai_key';
+const AI_PROV_STORAGE = 'gradintel_ai_provider';
+let selectedProvider  = null;
+
+function getStoredAIKey()      { return localStorage.getItem(AI_KEY_STORAGE) || ''; }
+function getStoredAIProvider() { return localStorage.getItem(AI_PROV_STORAGE) || ''; }
+
+function renderAIKeyStatusBar() {
+  const bar = document.getElementById('ai-key-status-bar');
+  if (!bar) return;
+  const key  = getStoredAIKey();
+  const prov = getStoredAIProvider();
+  const provLabels = { gemini: '✨ Gemini', claude: '🧠 Claude', openai: '⚡ ChatGPT' };
+  if (key && prov) {
+    const masked = key.slice(0,6) + '••••••••' + key.slice(-4);
+    bar.innerHTML = `<div class="ai-key-bar configured">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="color:var(--green);font-weight:700">${provLabels[prov] || prov}</span>
+        <span style="color:var(--muted)">${masked}</span>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-secondary" style="font-size:11px;padding:5px 12px" onclick="openAIKeyModal()">Change</button>
+        <button class="btn btn-red" style="font-size:11px;padding:5px 12px" onclick="deleteAIKey()">Remove</button>
+      </div>
+    </div>`;
+  } else {
+    bar.innerHTML = `<div class="ai-key-bar missing">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="color:var(--yellow);font-weight:700">⚠️ No AI key set</span>
+        <span style="color:var(--muted);font-size:12px">Add your own free key to enable the AI assistant</span>
+      </div>
+      <button class="btn btn-primary" style="font-size:12px;padding:7px 16px" onclick="openAIKeyModal()">Set Up Key →</button>
+    </div>`;
+  }
+}
+
+function openAIKeyModal() {
+  selectedProvider = getStoredAIProvider() || null;
+  ksGoStep1();
+  if (selectedProvider) {
+    document.querySelectorAll('.ai-prov-card').forEach(c => c.classList.remove('selected'));
+    const el = document.getElementById('prov-' + selectedProvider);
+    if (el) el.classList.add('selected');
+    const btn = document.getElementById('ks-next-1');
+    if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+  }
+  document.getElementById('ai-key-modal').classList.add('show');
+}
+
+function closeAIKeyModal() {
+  document.getElementById('ai-key-modal').classList.remove('show');
+}
+
+function deleteAIKey() {
+  if (!confirm('Remove your saved API key?')) return;
+  localStorage.removeItem(AI_KEY_STORAGE);
+  localStorage.removeItem(AI_PROV_STORAGE);
+  renderAIKeyStatusBar();
+  showToast('🗑️ API key removed.');
+}
+
+function selectProvider(prov) {
+  selectedProvider = prov;
+  document.querySelectorAll('.ai-prov-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('prov-' + prov).classList.add('selected');
+  const btn = document.getElementById('ks-next-1');
+  btn.disabled = false; btn.style.opacity = '1';
+}
+
+function ksSetStepUI(active) {
+  [1,2,3].forEach(n => {
+    const dot = document.getElementById('ks-s' + n + '-dot');
+    const lbl = document.getElementById('ks-s' + n + '-lbl');
+    if (!dot) return;
+    if (n < active)       { dot.style.background='var(--accent)'; dot.style.color='#fff'; dot.textContent='✓'; }
+    else if (n === active) { dot.style.background='var(--accent)'; dot.style.color='#fff'; dot.textContent=n; if(lbl) lbl.style.color='var(--accent)'; }
+    else                   { dot.style.background='var(--surface3)'; dot.style.color='var(--muted)'; dot.textContent=n; if(lbl) lbl.style.color='var(--muted)'; }
+  });
+}
+
+function ksGoStep1() {
+  document.getElementById('ks-step-1').classList.remove('hidden');
+  document.getElementById('ks-step-2').classList.add('hidden');
+  document.getElementById('ks-step-3').classList.add('hidden');
+  ksSetStepUI(1);
+}
+
+function ksGoStep2() {
+  if (!selectedProvider) { showToast('Pick a provider first!'); return; }
+  document.getElementById('ks-step-1').classList.add('hidden');
+  document.getElementById('ks-step-2').classList.remove('hidden');
+  document.getElementById('ks-step-3').classList.add('hidden');
+  ksSetStepUI(2);
+  const instructions = {
+    gemini: { title: '✨ Getting your free Gemini API key', badge: 'FREE — No credit card needed', badgeColor: 'var(--green)',
+      steps: [
+        { text: 'Go to <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a>' },
+        { text: 'Sign in with your <strong>Google account</strong>' },
+        { text: 'Click <strong>"Create API key"</strong> → then <strong>"Create API key in new project"</strong>' },
+        { text: 'Copy the key — it looks like: <code>AIzaSy...</code>' },
+        { text: 'Paste it in the next step. You get <strong>free requests per day</strong> on the free tier!' }
+      ]
+    },
+    claude: { title: '🧠 Getting your Claude API key', badge: 'Free credits on signup', badgeColor: 'var(--accent)',
+      steps: [
+        { text: 'Go to <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>' },
+        { text: 'Click <strong>"Sign up"</strong> → enter your email and create an account' },
+        { text: 'You\'ll get <strong>free credits</strong> automatically when you sign up' },
+        { text: 'Go to <strong>"API Keys"</strong> in the left sidebar → click <strong>"Create Key"</strong>' },
+        { text: 'Copy the key — it starts with: <code>sk-ant-...</code>' },
+        { text: 'Paste it in the next step. Claude is the smartest AI for academic questions!' }
+      ]
+    },
+    openai: { title: '⚡ Getting your OpenAI API key', badge: 'Free trial credits', badgeColor: 'var(--yellow)',
+      steps: [
+        { text: 'Go to <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com/api-keys</a>' },
+        { text: 'Click <strong>"Sign up"</strong> if you don\'t have an account' },
+        { text: 'You\'ll get <strong>free trial credits</strong> that last a few months' },
+        { text: 'Click <strong>"Create new secret key"</strong> → give it any name' },
+        { text: 'Copy the key — it starts with: <code>sk-proj-...</code> or <code>sk-...</code>' },
+        { text: 'Paste it in the next step.' }
+      ]
+    }
+  };
+  const instr = instructions[selectedProvider];
+  document.getElementById('ks-instructions').innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:16px">${instr.title}</div>
+      <span style="padding:2px 10px;border-radius:100px;font-size:10px;font-weight:700;background:${instr.badgeColor}22;color:${instr.badgeColor}">${instr.badge}</span>
+    </div>
+    <div class="ks-instr-box">
+      ${instr.steps.map((s,i) => `<div class="ks-instr-step"><div class="ks-step-num">${i+1}</div><div class="ks-step-text">${s.text}</div></div>`).join('')}
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-top:10px;line-height:1.7">
+      💡 <strong>Tip:</strong> Keep this tab open and open the link in a new tab. Come back here once you have your key.
+    </div>`;
+}
+
+function ksGoStep3() {
+  document.getElementById('ks-step-2').classList.add('hidden');
+  document.getElementById('ks-step-3').classList.remove('hidden');
+  ksSetStepUI(3);
+  const labels = { gemini: 'Gemini API Key (starts with AIzaSy...)', claude: 'Claude API Key (starts with sk-ant-...)', openai: 'OpenAI API Key (starts with sk-...)' };
+  document.getElementById('ks-key-label').textContent = labels[selectedProvider] || 'API Key';
+  const existing = getStoredAIKey();
+  document.getElementById('ks-key-input').value = (existing && getStoredAIProvider() === selectedProvider) ? existing : '';
+  document.getElementById('ks-err').style.display = 'none';
+  setTimeout(() => document.getElementById('ks-key-input').focus(), 100);
+}
+
+function ksSaveKey() {
+  const key = document.getElementById('ks-key-input').value.trim();
+  const errEl = document.getElementById('ks-err');
+  errEl.style.display = 'none';
+  if (!key) { errEl.textContent = 'Please paste your API key first.'; errEl.style.display='block'; return; }
+  const formats = { gemini: { prefix:'AIza', hint:'Gemini keys start with "AIzaSy"' }, claude: { prefix:'sk-ant', hint:'Claude keys start with "sk-ant-"' }, openai: { prefix:'sk-', hint:'OpenAI keys start with "sk-"' } };
+  const fmt = formats[selectedProvider];
+  if (fmt && !key.startsWith(fmt.prefix)) { errEl.textContent = '⚠️ That doesn\'t look right. ' + fmt.hint + '. Make sure you copied the full key.'; errEl.style.display='block'; return; }
+  localStorage.setItem(AI_KEY_STORAGE, key);
+  localStorage.setItem(AI_PROV_STORAGE, selectedProvider);
+  closeAIKeyModal();
+  renderAIKeyStatusBar();
+  showToast('✅ AI key saved! You can now use the assistant.');
+}
+
+// ══════════════════════════════════════════════════════════════
+// SYLLABUS UPLOAD — AI EXTRACTION
+// ══════════════════════════════════════════════════════════════
+let syllabusExtracted = [];
+
+async function handleSyllabusUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const key  = getStoredAIKey();
+  const prov = getStoredAIProvider();
+  const statusEl = document.getElementById('syllabus-status');
+  const labelEl  = document.getElementById('syllabus-upload-label');
+
+  if (!key || prov !== 'claude') {
+    statusEl.style.display = 'block';
+    statusEl.innerHTML = `<div class="syl-no-key">🔒 <strong>Syllabus upload requires Claude AI.</strong><br/>Go to the <strong>AI Assistant</strong> tab → set your AI key → choose <strong>Claude</strong>.<br/><span style="font-size:11px;color:var(--muted2)">Claude is the only provider that can accurately read PDFs and images.</span><br/><button class="btn btn-primary" style="margin-top:10px;font-size:12px;padding:7px 16px" onclick="showTab('ai');openAIKeyModal()">Set Up Claude Key →</button></div>`;
+    input.value = ''; return;
+  }
+
+  labelEl.classList.add('loading');
+  labelEl.textContent = '⏳ Reading syllabus...';
+  statusEl.style.display = 'block';
+  statusEl.innerHTML = `<div class="infobox" style="display:flex;align-items:center;gap:10px"><span style="animation:spin 1s linear infinite;display:inline-block;font-size:18px">⚙️</span><span>AI is reading your syllabus — extracting subject names, exam weights, and grade breakdown...</span></div>`;
+
+  try {
+    const base64 = await fileToBase64(file);
+    const isPDF  = file.type === 'application/pdf';
+    const mediaType = isPDF ? 'application/pdf' : file.type;
+    const systemPrompt = `You are an academic syllabus parser. Extract course/subject information from the uploaded file.
+Return ONLY valid JSON — no markdown, no explanation, no code fences. Just the raw JSON object.
+Return this exact structure:
+{"subjects":[{"name":"Subject or Course Name","credits":3,"other_pct":40,"exam_pct":60,"exams":[{"name":"Midterm","weight":40},{"name":"Final","weight":60}],"notes":"any important notes about grading"}],"confidence":"high|medium|low","warnings":["any warnings"]}
+Rules:
+- exam weights must add up to 100 (% of the exam portion, not total marks)
+- other_pct = assignments + attendance + quizzes + participation combined
+- exam_pct = 100 - other_pct
+- credits: extract if mentioned, otherwise use 3 as default
+- if the syllabus has multiple subjects, include all of them
+- if weights are given as total marks (e.g. 30/100), convert to percentages
+- If you cannot find clear exam structure, set confidence to "low" and explain in warnings`;
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({
+        model: 'claude-opus-4-6', max_tokens: 2000,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: [
+          { type: isPDF ? 'document' : 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
+          { type: 'text', text: 'Extract all subject/course information from this syllabus. Return only the JSON.' }
+        ]}]
+      })
+    });
+    const data = await response.json();
+    if (data.error) throw new Error(data.error.message);
+    const rawText = data.content?.[0]?.text || '';
+    let parsed;
+    try { parsed = JSON.parse(rawText.replace(/```json|```/g, '').trim()); }
+    catch(e) { throw new Error('AI returned unexpected format. Try a clearer PDF or image.'); }
+    if (!parsed.subjects || !parsed.subjects.length) throw new Error('No subject/course information found. Make sure it\'s a syllabus.');
+    syllabusExtracted = parsed.subjects;
+    showSyllabusPreview(parsed);
+  } catch(e) {
+    statusEl.innerHTML = `<div class="syl-no-key">❌ <strong>Could not read syllabus:</strong> ${e.message}<br/><span style="font-size:11px;color:var(--muted2);margin-top:4px;display:block">Tips: Make sure the file is a clear PDF or image.</span></div>`;
+  }
+  labelEl.classList.remove('loading');
+  labelEl.innerHTML = '📄 Upload Syllabus<input type="file" id="syllabus-file-inp" accept=".pdf,.png,.jpg,.jpeg,.webp" style="display:none" onchange="handleSyllabusUpload(this)"/>';
+  input.value = '';
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload  = () => resolve(r.result.split(',')[1]);
+    r.onerror = () => reject(new Error('Could not read file'));
+    r.readAsDataURL(file);
+  });
+}
+
+function showSyllabusPreview(parsed) {
+  const statusEl = document.getElementById('syllabus-status');
+  const subjects = parsed.subjects;
+  const hasWarnings = parsed.warnings && parsed.warnings.length;
+  const isLow = parsed.confidence === 'low';
+  let html = `<div class="syl-preview"><div class="syl-preview-hdr"><div class="syl-preview-title">✅ Found ${subjects.length} subject${subjects.length!==1?'s':''} — review & confirm</div><button class="btn btn-secondary" style="font-size:11px;padding:5px 12px" onclick="clearSyllabusUpload()">✕ Clear</button></div>`;
+  if (hasWarnings || isLow) html += `<div class="syl-warning">⚠️ ${isLow?'Low confidence — ':''}${(parsed.warnings||[]).join(' · ')||'Some details may be inaccurate. Please review.'}</div>`;
+  html += `<div style="font-size:12px;color:var(--muted2);margin-bottom:10px;margin-top:${hasWarnings?'10px':'0'}">Click subjects to select which ones to add. Then click <strong>"Fill Forms with Selected"</strong>.<br/>You'll still need to enter your <strong>Other Stuff score</strong> and mark <strong>which exams you've taken</strong>.</div><div id="syl-chips" style="margin-bottom:14px">`;
+  subjects.forEach((s, i) => {
+    const examSummary = (s.exams||[]).map(e => `${e.name} ${e.weight}%`).join(' · ');
+    html += `<div class="syl-subj-chip sel" id="sylchip-${i}" onclick="toggleSylChip(${i})"><span id="sylchip-ico-${i}">✓</span><span><strong>${s.name}</strong><div class="syl-field-preview">${s.credits} cr · Exams ${s.exam_pct}% · Other ${s.other_pct}%${examSummary?'<br/>'+examSummary:''}</div></span></div>`;
+  });
+  html += `</div><div class="btn-row" style="margin-top:0"><button class="btn btn-ghost" onclick="selectAllSylChips()">Select All</button><button class="btn btn-primary" onclick="fillFormsFromSyllabus()">✨ Fill Forms with Selected →</button></div></div>`;
+  statusEl.innerHTML = html;
+}
+
+function toggleSylChip(i) {
+  const chip = document.getElementById('sylchip-' + i);
+  const ico  = document.getElementById('sylchip-ico-' + i);
+  ico.textContent = chip.classList.toggle('sel') ? '✓' : '○';
+}
+
+function selectAllSylChips() {
+  syllabusExtracted.forEach((_, i) => {
+    const chip = document.getElementById('sylchip-' + i);
+    const ico  = document.getElementById('sylchip-ico-' + i);
+    if (chip && !chip.classList.contains('sel')) { chip.classList.add('sel'); ico.textContent = '✓'; }
+  });
+}
+
+function clearSyllabusUpload() {
+  syllabusExtracted = [];
+  const el = document.getElementById('syllabus-status');
+  el.style.display = 'none'; el.innerHTML = '';
+}
+
+function fillFormsFromSyllabus() {
+  const selected = syllabusExtracted.filter((_, i) => {
+    const chip = document.getElementById('sylchip-' + i);
+    return chip && chip.classList.contains('sel');
+  });
+  if (!selected.length) { showToast('Select at least one subject!'); return; }
+  if (selected.length === 1) { setMode('single'); } else { setMode('multi'); document.getElementById('n-subjs').value = selected.length; }
+  setStep(2);
+  document.getElementById('pg-setup').classList.add('hidden');
+  document.getElementById('pg-subjects').classList.remove('hidden');
+  buildForms(selected.length);
+  setTimeout(() => {
+    selected.forEach((s, idx) => {
+      const nmEl = document.getElementById(`s${idx}_nm`); if (nmEl) nmEl.value = s.name || '';
+      const crEl = document.getElementById(`s${idx}_cr`); if (crEl) crEl.value = s.credits || 3;
+      const opEl = document.getElementById(`s${idx}_op`); if (opEl) { opEl.value = s.other_pct || 40; updEP(idx); }
+      const neEl = document.getElementById(`s${idx}_ne`);
+      if (neEl && s.exams && s.exams.length) {
+        neEl.value = s.exams.length; rebuildEx(idx);
+        setTimeout(() => {
+          document.querySelectorAll(`#s${idx}_ex .exam-card`).forEach((card, ei) => {
+            const exam = s.exams[ei]; if (!exam) return;
+            const nmInput = card.querySelector('[data-f="nm"]'); const wtInput = card.querySelector('[data-f="wt"]');
+            if (nmInput) nmInput.value = exam.name || ''; if (wtInput) wtInput.value = exam.weight || '';
+          });
+        }, 80);
+      }
+    });
+    showToast(`✨ ${selected.length} subject${selected.length!==1?'s':''} pre-filled! Add your scores and save.`);
+    document.getElementById('pg-subjects').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (!document.getElementById('syl-fill-banner')) {
+      const banner = document.createElement('div');
+      banner.id = 'syl-fill-banner'; banner.className = 'infobox';
+      banner.style.cssText = 'border-color:rgba(52,211,153,.3);background:rgba(52,211,153,.05);margin-bottom:16px';
+      banner.innerHTML = `✅ <strong>Pre-filled from syllabus!</strong> Review the details below. You still need to:<br/>&nbsp;&nbsp;1. Enter your <strong>Other Stuff score</strong> for each subject<br/>&nbsp;&nbsp;2. Mark any exams you've <strong>already taken</strong> and enter your score`;
+      document.getElementById('subj-forms').prepend(banner);
+    }
+  }, 120);
+}
+
+// ══════════════════════════════════════════════════════════════
+// AI ASSISTANT — MULTI PROVIDER
 // ══════════════════════════════════════════════════════════════
 async function runAI() {
   const inp = document.getElementById('ai-input').value.trim();
   if (!inp) { showToast('Type a question first!'); return; }
+  const key  = getStoredAIKey();
+  const prov = getStoredAIProvider();
+  if (!key || !prov) { openAIKeyModal(); return; }
 
   const btn = document.getElementById('ai-send-btn');
   btn.disabled = true; btn.textContent = 'Thinking...';
   const resp = document.getElementById('ai-resp');
   resp.className = 'ai-resp show ai-typing';
-  resp.textContent = 'Analysing your situation';
+  resp.textContent = 'Analysing your situation...';
 
   const { cumGPA } = computeAllGPA();
   const subjectSummary = semesters.flatMap(sem => sem.subjects.map(s => {
     const res = computeSubject(s);
     return s.name + ': ' + res.cur.toFixed(1) + '% (' + res.curG.l + '), ' + res.remExams.length + ' exams left';
   })).join('; ');
-
-  const prompt = 'You are Gradintel AI academic advisor. Be concise and practical. GPA scale: ' + policies.scale + '. Cumulative GPA: ' + cumGPA.toFixed(4) + '. ' + (subjectSummary ? 'Subjects: ' + subjectSummary + '.' : '') + ' Answer in 3-5 sentences max. Give numbers. Be direct.\n\nQuestion: ' + inp;
+  const systemPrompt = 'You are Gradintel, an AI academic advisor built into a GPA tracker app. Be concise and practical. GPA scale: ' + (policies?.scale || '4.0') + '. Cumulative GPA: ' + cumGPA.toFixed(4) + '. ' + (subjectSummary ? 'Current subjects: ' + subjectSummary + '.' : 'No subjects added yet.') + ' Answer in 3-5 sentences. Give specific numbers and actionable advice. Be direct and encouraging.';
 
   try {
-    const response = await fetch(AI_WORKER_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt })
-    });
-    const data = await response.json();
-    if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
-    // OpenAI response format
-    const text = data.choices?.[0]?.message?.content || 'No response generated.';
+    let text = '';
+    if (prov === 'gemini') {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ parts: [{ text: systemPrompt + '\n\nStudent question: ' + inp }] }] })
+      });
+      const d = await res.json();
+      if (d.error) throw new Error(d.error.message);
+      text = d.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      if (!text) throw new Error('Empty response from Gemini. Check your key is valid.');
+    } else if (prov === 'claude') {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+        body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 400, system: systemPrompt, messages: [{ role: 'user', content: inp }] })
+      });
+      const d = await res.json();
+      if (d.error) throw new Error(d.error.message);
+      text = d.content?.[0]?.text || '';
+      if (!text) throw new Error('Empty response from Claude. Check your key is valid.');
+    } else if (prov === 'openai') {
+      const res = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
+        body: JSON.stringify({ model: 'gpt-4o-mini', max_tokens: 400, messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: inp }] })
+      });
+      const d = await res.json();
+      if (d.error) throw new Error(d.error.message);
+      text = d.choices?.[0]?.message?.content || '';
+      if (!text) throw new Error('Empty response from OpenAI. Check your key is valid.');
+    }
     resp.className = 'ai-resp show';
-    resp.innerHTML = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br/>');
+    resp.innerHTML = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>').replace(/\n/g, '<br/>');
   } catch(e) {
+    const tips = { gemini: 'Check your key at <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--accent)">aistudio.google.com/apikey</a>', claude: 'Check your key at <a href="https://console.anthropic.com" target="_blank" style="color:var(--accent)">console.anthropic.com</a>', openai: 'Check your key at <a href="https://platform.openai.com/api-keys" target="_blank" style="color:var(--accent)">platform.openai.com</a>' };
     resp.className = 'ai-resp show';
-    resp.innerHTML = '<span style="color:var(--red)">❌ Error: ' + e.message + '<br/>Make sure your Cloudflare Worker is deployed and the GEMINI_KEY secret is set.</span>';
+    resp.innerHTML = `<span style="color:var(--red)">❌ <strong>Error:</strong> ${e.message}</span><br/><br/><span style="color:var(--muted2);font-size:12px">${tips[prov]||'Check your API key and try again.'}</span><br/><br/><button class="btn btn-secondary" style="font-size:12px;padding:7px 14px" onclick="openAIKeyModal()">Update Key</button>`;
   }
   btn.disabled = false; btn.textContent = 'Ask AI →';
 }
@@ -2475,7 +2949,7 @@ function showTab(id) {
   if (id === 'study') { renderStudy(); renderCalendar(); }
   if (id === 'courses') renderCourses();
   if (id === 'dashboard') { renderDashboard(); updateStats(); }
-  if (id === 'ai') renderROI();
+  if (id === 'ai') { renderROI(); renderAIKeyStatusBar(); }
   if (id === 'policies') renderPoliciesUI();
 }
 function toggleTheme() {
