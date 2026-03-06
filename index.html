@@ -1951,7 +1951,7 @@ function makeForm(idx, total) {
   d.innerHTML = `<div class="card-title"><span class="ico">📚</span>${total > 1 ? `Subject ${idx + 1} of ${total}` : 'Subject Details'}</div>
     <div class="field-row">
       <div class="field"><label>Subject Name</label><input type="text" id="s${idx}_nm" placeholder="e.g. Calculus"/></div>
-      <div class="field"><label>Credits</label><input type="number" id="s${idx}_cr" value="3" min=".5" max="12" step=".5"/></div>
+      <div class="field"><label>Credits</label><input type="number" id="s${idx}_cr" placeholder="e.g. 3" min=".5" max="12" step=".5"/></div>
     </div>
     <div class="divider"></div>
     <div class="infobox">Split grade into <strong>Exams</strong> and <strong>Other stuff</strong> (assignments, attendance, quizzes).<br/>GPA is calculated on <strong>taken exams only</strong> — untaken exams won't drag your score down.</div>
@@ -1959,7 +1959,7 @@ function makeForm(idx, total) {
       <div class="field"><label>Other Stuff %</label><input type="number" id="s${idx}_op" value="40" min="0" max="100" oninput="updEP(${idx})"/></div>
       <div class="field"><label>Exam % (auto)</label><input type="number" id="s${idx}_ep" value="60" readonly style="opacity:.4;cursor:not-allowed"/></div>
     </div>
-    <div class="field"><label>Other Stuff Score (out of 100 · blank = assume 35)</label><input type="number" id="s${idx}_os" placeholder="e.g. 75" min="0" max="100"/></div>
+    <div class="field"><label>Other Stuff Score (out of 100 · blank = assume 88)</label><input type="number" id="s${idx}_os" placeholder="e.g. 88" min="0" max="100"/></div>
     <div class="divider"></div>
     <div class="field" style="max-width:180px"><label>Number of Exams</label><input type="number" id="s${idx}_ne" value="2" min="1" max="15" oninput="rebuildEx(${idx})"/></div>
     <div id="s${idx}_ex"></div>`;
@@ -1998,11 +1998,11 @@ function rebuildEx(idx) {
 function togSc(sel, si, ei) { document.getElementById(`s${si}_e${ei}_sf`).style.display = sel.value === 'yes' ? 'block' : 'none'; }
 function readSubjFromForm(idx) {
   const nm = document.getElementById(`s${idx}_nm`)?.value.trim() || `Subject ${idx + 1}`;
-  const cr = parseFloat(document.getElementById(`s${idx}_cr`)?.value) || 3;
+  const cr = parseFloat(document.getElementById(`s${idx}_cr`)?.value) || 0;
   const op = parseFloat(document.getElementById(`s${idx}_op`)?.value) || 40;
   const ep = 100 - op;
   const osRaw = document.getElementById(`s${idx}_os`)?.value;
-  const os = osRaw === '' || osRaw == null ? 35 : parseFloat(osRaw);
+  const os = osRaw === '' || osRaw == null ? 88 : parseFloat(osRaw);
   const cards = document.querySelectorAll(`#s${idx}_ex .exam-card`);
   const exams = [];
   cards.forEach((card, i) => {
@@ -2523,14 +2523,18 @@ async function handleSyllabusUpload(input) {
   const systemPrompt = `You are an academic syllabus parser. Extract course/subject information from the provided content.
 Return ONLY valid JSON — no markdown, no explanation, no code fences. Just the raw JSON object.
 Return this exact structure:
-{"subjects":[{"name":"Subject or Course Name","credits":3,"other_pct":40,"exam_pct":60,"exams":[{"name":"Midterm","weight":40},{"name":"Final","weight":60}],"notes":""}],"confidence":"high|medium|low","warnings":["any warnings"]}
+{"subjects":[{"name":"Subject or Course Name","credits":null,"other_pct":null,"exam_pct":null,"exams":[{"name":"Midterm","weight":40},{"name":"Final","weight":60}],"missing":["credits","other_pct"]}],"confidence":"high|medium|low","warnings":["any warnings"]}
+
 Rules:
-- exam weights must add up to 100 (% of the exam portion)
-- other_pct = assignments + attendance + quizzes combined; exam_pct = 100 - other_pct
-- credits: extract if mentioned, otherwise default 3
-- include all subjects if multiple
-- convert total marks to percentages if needed
-- set confidence "low" if exam structure is unclear`;
+- "exams" means ONLY items explicitly called: exam, test, midterm, final, end-term, mid-term. Do NOT include quizzes, assignments, lab work, projects, presentations, attendance — those go into other_pct.
+- exam weights must add up to 100 (they are % of the EXAM PORTION only, not of total marks)
+- other_pct = everything that is NOT an exam: quizzes + assignments + attendance + participation + projects combined
+- exam_pct = 100 - other_pct. If only exam % is stated, other_pct = 100 - exam_pct
+- If exam total % is stated (e.g. "exams = 60%"), set exam_pct = 60, other_pct = 40 automatically
+- credits: set to the number if explicitly mentioned. If NOT mentioned, set to null — do not guess
+- other_pct: set to number if you can calculate it. If not enough info, set to null
+- "missing" array: list field names that are null or could not be found (e.g. "credits", "other_pct", "exam weights")
+- Do NOT invent or assume values. Only extract what is clearly stated.`;
 
   try {
     let rawText = '';
@@ -2699,31 +2703,77 @@ function fillFormsFromSyllabus() {
   document.getElementById('pg-subjects').classList.remove('hidden');
   buildForms(selected.length);
   setTimeout(() => {
+    // Track what's missing across all subjects
+    const allMissing = new Set();
+
     selected.forEach((s, idx) => {
+      // Name — always fill
       const nmEl = document.getElementById(`s${idx}_nm`); if (nmEl) nmEl.value = s.name || '';
-      const crEl = document.getElementById(`s${idx}_cr`); if (crEl) crEl.value = s.credits || 3;
-      const opEl = document.getElementById(`s${idx}_op`); if (opEl) { opEl.value = s.other_pct || 40; updEP(idx); }
+
+      // Credits — only fill if found, otherwise leave blank for user
+      const crEl = document.getElementById(`s${idx}_cr`);
+      if (crEl) {
+        if (s.credits != null) { crEl.value = s.credits; }
+        else { crEl.value = ''; allMissing.add('Credits'); }
+      }
+
+      // Other % — only fill if found
+      const opEl = document.getElementById(`s${idx}_op`);
+      if (opEl) {
+        if (s.other_pct != null) { opEl.value = s.other_pct; updEP(idx); }
+        else if (s.exam_pct != null) { opEl.value = 100 - s.exam_pct; updEP(idx); }
+        else { opEl.value = ''; allMissing.add('Other Stuff %'); }
+      }
+
+      // Exams
       const neEl = document.getElementById(`s${idx}_ne`);
       if (neEl && s.exams && s.exams.length) {
         neEl.value = s.exams.length; rebuildEx(idx);
         setTimeout(() => {
           document.querySelectorAll(`#s${idx}_ex .exam-card`).forEach((card, ei) => {
             const exam = s.exams[ei]; if (!exam) return;
-            const nmInput = card.querySelector('[data-f="nm"]'); const wtInput = card.querySelector('[data-f="wt"]');
-            if (nmInput) nmInput.value = exam.name || ''; if (wtInput) wtInput.value = exam.weight || '';
+            const nmInput = card.querySelector('[data-f="nm"]');
+            const wtInput = card.querySelector('[data-f="wt"]');
+            if (nmInput) nmInput.value = exam.name || '';
+            if (wtInput) {
+              if (exam.weight != null) { wtInput.value = exam.weight; }
+              else { wtInput.value = ''; allMissing.add('Exam weights'); }
+            }
           });
         }, 80);
+      } else {
+        allMissing.add('Exam names & weights');
+      }
+
+      // Collect any "missing" fields the AI flagged
+      if (s.missing && s.missing.length) {
+        s.missing.forEach(m => allMissing.add(m));
       }
     });
-    showToast(`✨ ${selected.length} subject${selected.length!==1?'s':''} pre-filled! Add your scores and save.`);
+
     document.getElementById('pg-subjects').scrollIntoView({ behavior: 'smooth', block: 'start' });
-    if (!document.getElementById('syl-fill-banner')) {
-      const banner = document.createElement('div');
-      banner.id = 'syl-fill-banner'; banner.className = 'infobox';
-      banner.style.cssText = 'border-color:rgba(52,211,153,.3);background:rgba(52,211,153,.05);margin-bottom:16px';
-      banner.innerHTML = `✅ <strong>Pre-filled from syllabus!</strong> Review the details below. You still need to:<br/>&nbsp;&nbsp;1. Enter your <strong>Other Stuff score</strong> for each subject<br/>&nbsp;&nbsp;2. Mark any exams you've <strong>already taken</strong> and enter your score`;
-      document.getElementById('subj-forms').prepend(banner);
-    }
+
+    // Build a specific banner telling the user exactly what to fill in
+    const existingBanner = document.getElementById('syl-fill-banner');
+    if (existingBanner) existingBanner.remove();
+    const banner = document.createElement('div');
+    banner.id = 'syl-fill-banner';
+    banner.style.cssText = 'border-radius:var(--r);padding:16px 18px;margin-bottom:16px;border:1px solid rgba(129,140,248,.3);background:rgba(129,140,248,.06)';
+
+    const alwaysNeeded = [
+      '📊 Your <strong>Other Stuff score</strong> — your actual score out of 100 for assignments/attendance/quizzes',
+      '✅ Mark which exams you\'ve <strong>already taken</strong> and enter your score'
+    ];
+    const fromMissing = [...allMissing].map(m => `⚠️ <strong>${m}</strong> — not found in the syllabus, please fill in manually`);
+    const allItems = [...alwaysNeeded, ...fromMissing];
+
+    banner.innerHTML = `<div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:14px;margin-bottom:10px;color:var(--accent)">✨ Pre-filled from syllabus! You still need to fill in:</div>
+      <ul style="margin:0;padding-left:18px;font-size:13px;line-height:2">
+        ${allItems.map(item => `<li>${item}</li>`).join('')}
+      </ul>`;
+    document.getElementById('subj-forms').prepend(banner);
+
+    showToast(`✨ ${selected.length} subject${selected.length!==1?'s':''} pre-filled!`);
   }, 120);
 }
 
