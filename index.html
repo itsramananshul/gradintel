@@ -1088,11 +1088,12 @@ const AI_WORKER_URL = 'https://gradintel-ai.akanshul20062008.workers.dev';
 let sb = null;
 function initSupabase() {
   if (!SUPABASE_URL || SUPABASE_URL === 'YOUR_SUPABASE_PROJECT_URL') return false;
+  // Hide the banner since credentials are configured
+  document.getElementById('config-banner').classList.add('hidden');
   try {
     sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
-    document.getElementById('config-banner').classList.add('hidden');
     return true;
-  } catch(e) { return false; }
+  } catch(e) { console.error('Supabase init error:', e); return false; }
 }
 
 // ══════════════════════════════════════════════════════════════
