@@ -5687,17 +5687,39 @@ let ciBmRows  = [];    // bookmarklet-received rows
 // It runs on the Canvas page, extracts grades from the DOM / API,
 // and posts them back to the Gradintel origin via postMessage.
 function ciGetBookmarkletCode() {
-  // The inner function stringified and wrapped in an IIFE
+  // Bake the Supabase URL + anon key directly into the bookmarklet at generation time.
+  // The anon key is safe to expose — it's a public key with RLS protecting data.
+  const sbUrl  = SUPABASE_URL;
+  const sbAnon = SUPABASE_ANON;
+  const userId = (typeof currentUser !== 'undefined' && currentUser) ? currentUser.id : 'anonymous';
+
   const fn = `(function(){
-  var origin = ${JSON.stringify(window.location.origin)};
+  var SBURL  = ${JSON.stringify(sbUrl)};
+  var SBANON = ${JSON.stringify(sbAnon)};
+  var UID    = ${JSON.stringify(userId)};
+
   function send(data) {
-    // Open Gradintel tab if not already focused, then postMessage
-    try { window.opener && window.opener.postMessage({type:'GRADINTEL_CANVAS',data:data},origin); } catch(e){}
+    // PRIMARY: POST directly to Supabase REST API — works from ANY domain, no CORS issues
+    fetch(SBURL + '/rest/v1/canvas_sync', {
+      method: 'POST',
+      headers: {
+        'Content-Type':  'application/json',
+        'apikey':        SBANON,
+        'Authorization': 'Bearer ' + SBANON,
+        'Prefer':        'return=minimal'
+      },
+      body: JSON.stringify({ user_id: UID, payload: data, created_at: new Date().toISOString() })
+    }).catch(function(){});
+
+    // FALLBACK: BroadcastChannel (works if same browser, same origin)
     try {
       var bc = new BroadcastChannel('gradintel_canvas');
       bc.postMessage({type:'GRADINTEL_CANVAS',data:data});
       bc.close();
     } catch(e){}
+
+    // FALLBACK: postMessage to opener
+    try { window.opener && window.opener.postMessage({type:'GRADINTEL_CANVAS',data:data},'*'); } catch(e){}
   }
   function toast(msg) {
     var d=document.createElement('div');
@@ -5819,17 +5841,45 @@ function ciCopyBm() {
     });
 }
 
-// ── BROADCAST CHANNEL LISTENER ───────────────────────────────
+// ── SUPABASE REALTIME LISTENER ────────────────────────────────
 let ciBcListening = false;
+let _ciRealtimeChannel = null;
 function ciStartListener() {
   if (ciBcListening) return;
   ciBcListening = true;
+
+  // 1) Supabase Realtime — listens for INSERT on canvas_sync table for this user.
+  //    Fires the instant the bookmarklet POSTs from ANY domain. This is the primary path.
+  if (sb && typeof currentUser !== 'undefined' && currentUser) {
+    try {
+      if (_ciRealtimeChannel) sb.removeChannel(_ciRealtimeChannel);
+      _ciRealtimeChannel = sb
+        .channel('canvas-sync-' + currentUser.id)
+        .on('postgres_changes', {
+          event:  'INSERT',
+          schema: 'public',
+          table:  'canvas_sync',
+          filter: 'user_id=eq.' + currentUser.id
+        }, function(payload) {
+          if (payload.new && payload.new.payload) {
+            ciReceiveBmData(payload.new.payload);
+            // Clean up the row immediately after receiving
+            sb.from('canvas_sync').delete().eq('id', payload.new.id).then(function(){});
+          }
+        })
+        .subscribe();
+    } catch(e) { console.warn('Supabase realtime failed:', e); }
+  }
+
+  // 2) BroadcastChannel fallback (same-origin tabs)
   try {
     const bc = new BroadcastChannel('gradintel_canvas');
     bc.onmessage = e => {
       if (e.data && e.data.type === 'GRADINTEL_CANVAS') ciReceiveBmData(e.data.data);
     };
   } catch(e) {}
+
+  // 3) postMessage fallback
   window.addEventListener('message', e => {
     if (e.data && e.data.type === 'GRADINTEL_CANVAS') ciReceiveBmData(e.data.data);
   });
@@ -5971,9 +6021,14 @@ function ciShowPreview(rows, mode) {
   const summary = document.getElementById(summaryId);
   if (!card || !table) return;
 
-  // Hide waiting state
+  // Hide waiting state, show card
   if (waitId) document.getElementById(waitId).style.display = 'none';
   card.style.display = '';
+  // Update sync badge timestamp for bookmarklet
+  if (!isCSV) {
+    const timeEl = document.getElementById('ci-bm-sync-time');
+    if (timeEl) timeEl.textContent = 'Last synced: ' + new Date().toLocaleTimeString();
+  }
 
   // Group by course name
   const byCourse = {};
@@ -6018,33 +6073,176 @@ function ciShowPreview(rows, mode) {
   ciPopulateSemSelects();
 }
 
+// ── MANUAL PASTE FALLBACK ─────────────────────────────────────
+function ciCheckManualPaste(val) {
+  const el = document.getElementById('ci-bm-paste-status');
+  if (!el) return;
+  if (!val.trim()) { el.textContent = ''; return; }
+  try {
+    const p = JSON.parse(val.trim());
+    const rows = (p.data && p.data.rows) ? p.data.rows.filter(r => r.name && r.pct !== null) : [];
+    el.style.color = rows.length ? 'var(--green)' : 'var(--yellow)';
+    el.textContent = rows.length
+      ? `✅ Found ${rows.length} scored assignment(s) — click Import`
+      : '⚠️ JSON parsed but no scored assignments found.';
+  } catch(e) {
+    el.style.color = 'var(--red)';
+    el.textContent = '❌ Not valid JSON — make sure you copied the full output.';
+  }
+}
+function ciDoManualPasteImport() {
+  const ta = document.getElementById('ci-bm-manual-paste');
+  if (!ta || !ta.value.trim()) { showToast('⚠️ Paste the JSON first.'); return; }
+  try {
+    const p = JSON.parse(ta.value.trim());
+    if (!p || !p.data || !p.data.rows) throw new Error('Missing rows');
+    ciReceiveBmData(p.data);
+    ta.value = '';
+    document.getElementById('ci-bm-paste-status').textContent = '';
+  } catch(e) {
+    showToast('❌ Invalid JSON: ' + e.message);
+  }
+}
+
 // ── BOOKMARKLET RECEIVER ─────────────────────────────────────
-function ciReceiveBmData(data) {
+async function ciReceiveBmData(data) {
   if (!data || !data.rows) return;
-  // Normalize rows to same format as CSV rows
   ciBmRows = data.rows.filter(r => r.name).map(r => ({
     courseName: data.courseName || 'Canvas Import',
     name: r.name,
     group: r.group || null,
     weight: r.weight || null,
-    score: r.score !== null ? parseFloat(r.score) : null,
-    possible: r.possible !== null ? parseFloat(r.possible) : null,
-    pct: r.pct !== null ? parseFloat(r.pct) : null,
+    score: (r.score !== null && r.score !== undefined) ? parseFloat(r.score) : null,
+    possible: (r.possible !== null && r.possible !== undefined) ? parseFloat(r.possible) : null,
+    pct: (r.pct !== null && r.pct !== undefined) ? parseFloat(r.pct) : null,
     source: 'bookmarklet'
   }));
-  if (!ciBmRows.length) { showToast('⚠️ Bookmarklet sent no grade data.'); return; }
-  showToast(`📡 Received ${ciBmRows.length} assignments from Canvas!`);
-  // Switch to bookmarklet method and show preview
-  ciSwitchMethod('bm');
-  ciShowPreview(ciBmRows, 'bm');
-  // If not on canvas tab, nudge user
-  const tabEl = document.getElementById('tab-canvas');
-  if (tabEl && !tabEl.classList.contains('active')) {
-    showToast('📊 Canvas grades received! Click "Canvas Import" tab to review.');
-  }
+  if (!ciBmRows.length) { showToast('\u26a0\ufe0f Bookmarklet sent no grade data.'); return; }
+  showToast('\ud83d\udce1 Canvas grades received — syncing ' + ciBmRows.length + ' assignments\u2026');
+  await ciAutoImport(ciBmRows, data.courseName || 'Canvas Import');
 }
 
 // ── IMPORT ENGINE ─────────────────────────────────────────────
+// ciAutoImport: called automatically when bookmarklet fires.
+// Finds the existing semester/course and UPSERTS scores — updates
+// existing assignments and adds new ones. No user interaction needed.
+async function ciAutoImport(rows, courseNameHint) {
+  const scoredRows = rows.filter(r => r.pct !== null && r.pct !== undefined);
+  if (!scoredRows.length) { showToast('\u26a0\ufe0f No scored assignments to sync.'); return; }
+
+  // Group by course name
+  const byCourse = {};
+  scoredRows.forEach(r => {
+    if (!byCourse[r.courseName]) byCourse[r.courseName] = [];
+    byCourse[r.courseName].push(r);
+  });
+
+  let updatedCourses = 0, updatedScores = 0, newScores = 0;
+
+  try {
+    for (const [courseName, courseRows] of Object.entries(byCourse)) {
+      // Search ALL semesters for a matching course name
+      let targetSem = null;
+      let subject = null;
+      for (const sem of semesters) {
+        const found = sem.subjects.find(s => s.name.toLowerCase() === courseName.toLowerCase());
+        if (found) { targetSem = sem; subject = found; break; }
+      }
+
+      // No existing course found — create it in a "Canvas Sync" semester
+      if (!subject) {
+        let canvasSem = semesters.find(s => s.name === 'Canvas Sync');
+        if (!canvasSem) {
+          canvasSem = { id: uid(), name: 'Canvas Sync', subjects: [], user_id: currentUser.id, _gpa: 0 };
+          semesters.push(canvasSem);
+        }
+        targetSem = canvasSem;
+
+        const totalPossible = courseRows.reduce((a, r) => a + (r.possible || 1), 0);
+        const exams = courseRows.map(r => ({
+          id: uid(),
+          name: r.name.length > 40 ? r.name.slice(0,40) + '\u2026' : r.name,
+          weight: totalPossible > 0 ? ((r.possible || 1) / totalPossible * 100) : (100 / courseRows.length),
+          taken: true,
+          score: parseFloat(r.pct.toFixed(1))
+        }));
+        const wSum = exams.reduce((a, e) => a + e.weight, 0);
+        if (wSum > 0) exams.forEach(e => e.weight = e.weight / wSum * 100);
+
+        subject = { id: uid(), name: courseName, credits: 3, status: 'normal', exams };
+        canvasSem.subjects.push(subject);
+        updatedCourses++;
+        newScores += exams.length;
+
+      } else {
+        // Course exists — UPSERT each assignment
+        courseRows.forEach(r => {
+          const newScore = parseFloat(r.pct.toFixed(1));
+          const existingIdx = subject.exams.findIndex(e =>
+            e.name.toLowerCase().replace(/\u2026$/, '') === r.name.toLowerCase().slice(0, 40)
+            || e.name.toLowerCase() === r.name.toLowerCase()
+          );
+          if (existingIdx >= 0) {
+            // UPDATE existing score
+            if (subject.exams[existingIdx].score !== newScore) {
+              subject.exams[existingIdx].score = newScore;
+              subject.exams[existingIdx].taken = true;
+              updatedScores++;
+            }
+          } else {
+            // ADD new assignment
+            subject.exams.push({
+              id: uid(),
+              name: r.name.length > 40 ? r.name.slice(0,40) + '\u2026' : r.name,
+              weight: 100 / (subject.exams.length + 1),
+              taken: true,
+              score: newScore
+            });
+            newScores++;
+          }
+        });
+        // Re-normalise weights by points possible
+        const totalPoss = courseRows.reduce((a, r) => a + (r.possible || 1), 0);
+        subject.exams.forEach(e => {
+          const match = courseRows.find(r => r.name.slice(0,40) === e.name.replace(/\u2026$/, '') || r.name === e.name.replace(/\u2026$/, ''));
+          e.weight = match && totalPoss > 0 ? (match.possible || 1) / totalPoss * 100 : e.weight;
+        });
+        const wS = subject.exams.reduce((a,e) => a + e.weight, 0);
+        if (wS > 0) subject.exams.forEach(e => e.weight = e.weight / wS * 100);
+        updatedCourses++;
+      }
+
+      // Recompute semester GPA
+      const cp = targetSem.subjects.reduce((a, s) => a + s.credits * computeSubject(s).curG.p, 0);
+      const cr = targetSem.subjects.reduce((a, s) => a + s.credits, 0);
+      targetSem._gpa = cr ? cp / cr : 0;
+      await saveSemesterToDB(targetSem);
+    }
+
+    updateStats(); renderDashboard(); renderCourses(); renderHistory(); renderWIFull();
+
+    const parts = [];
+    if (newScores)     parts.push(newScores + ' new');
+    if (updatedScores) parts.push(updatedScores + ' updated');
+    const total = newScores + updatedScores;
+    const msg = '\u2705 Canvas synced! ' + (parts.length ? parts.join(', ') : 'No changes') + ' score' + (total !== 1 ? 's' : '') + ' across ' + updatedCourses + ' course' + (updatedCourses !== 1 ? 's' : '') + '.';
+    showToast(msg);
+    if (newScores > 0) fireConfetti();
+
+    // Update sync badge text
+    const syncMsg = document.getElementById('ci-bm-sync-msg');
+    if (syncMsg) syncMsg.textContent = msg.replace('\u2705 ', '');
+
+    // Refresh preview panel
+    ciShowPreview(ciBmRows, 'bm');
+
+  } catch(e) {
+    showToast('\u274c Sync failed: ' + e.message);
+    console.error(e);
+  }
+}
+
+// ciDoImport: used by CSV manual import button
 async function ciDoImport(mode) {
   const rows = mode === 'csv' ? ciCsvRows : ciBmRows;
   const semSelId  = mode === 'csv' ? 'ci-sem-select'  : 'ci-bm-sem-select';
@@ -6052,23 +6250,21 @@ async function ciDoImport(mode) {
   const btnId     = mode === 'csv' ? 'ci-import-btn'  : null;
 
   const scoredRows = rows.filter(r => r.pct !== null && r.pct !== undefined);
-  if (!scoredRows.length) { showToast('⚠️ No scored assignments to import.'); return; }
+  if (!scoredRows.length) { showToast('\u26a0\ufe0f No scored assignments to import.'); return; }
 
   const semSel  = document.getElementById(semSelId);
   const semName = document.getElementById(semNameId);
   if (!semSel) return;
 
-  if (btnId) { const b = document.getElementById(btnId); if (b) { b.disabled = true; b.textContent = 'Importing…'; } }
+  if (btnId) { const b = document.getElementById(btnId); if (b) { b.disabled = true; b.textContent = 'Importing\u2026'; } }
 
   try {
-    // Group by courseName
     const byCourse = {};
     scoredRows.forEach(r => {
       if (!byCourse[r.courseName]) byCourse[r.courseName] = [];
       byCourse[r.courseName].push(r);
     });
 
-    // Resolve or create semester
     let targetSem;
     if (semSel.value === '__new__') {
       const name = (semName && semName.value.trim()) || ('Canvas Import ' + new Date().toLocaleDateString());
@@ -6076,78 +6272,59 @@ async function ciDoImport(mode) {
       semesters.push(targetSem);
     } else {
       targetSem = semesters.find(s => s.id === semSel.value);
-      if (!targetSem) { showToast('❌ Semester not found.'); return; }
+      if (!targetSem) { showToast('\u274c Semester not found.'); return; }
     }
 
-    let importedCourses = 0;
-    let importedExams = 0;
+    let importedCourses = 0, importedExams = 0;
 
     for (const [courseName, courseRows] of Object.entries(byCourse)) {
-      // Check if course already exists in this semester
       let subject = targetSem.subjects.find(s => s.name.toLowerCase() === courseName.toLowerCase());
       if (!subject) {
-        // Build a single "course" subject where each assignment is an exam
-        // Group assignments to build weighted exam structure
-        const groups = {};
-        courseRows.forEach(r => {
-          const g = r.group || 'Assignments';
-          if (!groups[g]) groups[g] = [];
-          groups[g].push(r);
-        });
-
-        // Build exam list: one exam per assignment, with weight = pct of total possible
         const totalPossible = courseRows.reduce((a, r) => a + (r.possible || 1), 0);
         const exams = courseRows.map(r => ({
           id: uid(),
-          name: r.name.length > 40 ? r.name.slice(0,40) + '…' : r.name,
+          name: r.name.length > 40 ? r.name.slice(0,40) + '\u2026' : r.name,
           weight: totalPossible > 0 ? ((r.possible || 1) / totalPossible * 100) : (100 / courseRows.length),
           taken: r.pct !== null,
           score: r.pct !== null ? parseFloat(r.pct.toFixed(1)) : null
         }));
-
-        // Normalise weights to sum to 100
         const wSum = exams.reduce((a, e) => a + e.weight, 0);
         if (wSum > 0) exams.forEach(e => e.weight = e.weight / wSum * 100);
-
         subject = { id: uid(), name: courseName, credits: 3, status: 'normal', exams };
         targetSem.subjects.push(subject);
         importedCourses++;
         importedExams += exams.filter(e => e.taken).length;
       } else {
-        // Merge new assignments into existing subject
+        // Upsert into existing course
         courseRows.forEach(r => {
           if (r.pct === null) return;
-          const exists = subject.exams.find(e => e.name.toLowerCase() === r.name.toLowerCase());
-          if (!exists) {
+          const existingIdx = subject.exams.findIndex(e => e.name.toLowerCase() === r.name.toLowerCase().slice(0,40));
+          if (existingIdx >= 0) {
+            subject.exams[existingIdx].score = parseFloat(r.pct.toFixed(1));
+            subject.exams[existingIdx].taken = true;
+          } else {
             subject.exams.push({ id: uid(), name: r.name.slice(0,40), weight: 100 / (subject.exams.length + 1), taken: true, score: parseFloat(r.pct.toFixed(1)) });
             importedExams++;
           }
         });
-        // Re-normalise weights
         const wS = subject.exams.reduce((a,e)=>a+e.weight,0);
         if (wS>0) subject.exams.forEach(e=>e.weight=e.weight/wS*100);
       }
     }
 
-    // Recompute semester GPA
-    if (targetSem.subjects.length) {
-      const cp = targetSem.subjects.reduce((a, s) => a + s.credits * computeSubject(s).curG.p, 0);
-      const cr = targetSem.subjects.reduce((a, s) => a + s.credits, 0);
-      targetSem._gpa = cr ? cp / cr : 0;
-    }
-
+    const cp = targetSem.subjects.reduce((a, s) => a + s.credits * computeSubject(s).curG.p, 0);
+    const cr = targetSem.subjects.reduce((a, s) => a + s.credits, 0);
+    targetSem._gpa = cr ? cp / cr : 0;
     await saveSemesterToDB(targetSem);
 
     updateStats(); renderDashboard(); renderCourses(); renderHistory(); renderWIFull();
-    showToast(`✅ Imported ${importedCourses} course(s) · ${importedExams} scored assignment(s) into "${targetSem.name}"!`);
+    showToast('\u2705 Imported ' + importedCourses + ' course(s) \u00b7 ' + importedExams + ' assignment(s) into "' + targetSem.name + '"!');
     fireConfetti();
-
-    // Clear preview
     if (mode === 'csv') ciClearPreview();
     else ciClearBmPreview();
 
   } catch(e) {
-    showToast('❌ Import failed: ' + e.message);
+    showToast('\u274c Import failed: ' + e.message);
     console.error(e);
   } finally {
     if (btnId) { const b = document.getElementById(btnId); if (b) { b.disabled = false; b.textContent = 'Import into Gradintel'; } }
@@ -6163,19 +6340,49 @@ function ciClearPreview() {
 }
 function ciClearBmPreview() {
   ciBmRows = [];
-  document.getElementById('ci-bm-preview').style.display = 'none';
-  document.getElementById('ci-bm-waiting').style.display = '';
+  const prev = document.getElementById('ci-bm-preview');
+  const wait = document.getElementById('ci-bm-waiting');
+  if (prev) prev.style.display = 'none';
+  if (wait) wait.style.display = '';
 }
 
-// Start BroadcastChannel listener immediately on page load
+// Start listeners immediately on page load
 // so bookmarklet data is captured even if user isn't on canvas tab
 (function() {
+  // BroadcastChannel fallback (same-origin)
   try {
     const bc = new BroadcastChannel('gradintel_canvas');
     bc.onmessage = e => { if (e.data && e.data.type === 'GRADINTEL_CANVAS') ciReceiveBmData(e.data.data); };
   } catch(e) {}
+  // postMessage fallback (any origin)
   window.addEventListener('message', e => { if (e.data && e.data.type === 'GRADINTEL_CANVAS') ciReceiveBmData(e.data.data); });
+  // Supabase realtime + catch-up poll is handled in ciStartListener() when Canvas tab opens.
+  // Also do a one-time catch-up poll after auth, in case bookmarklet fired before page load.
+  document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(function() {
+      try {
+        if (sb && typeof currentUser !== 'undefined' && currentUser) {
+          sb.from('canvas_sync')
+            .select('*')
+            .eq('user_id', currentUser.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .then(function(res) {
+              if (res.data && res.data.length > 0) {
+                var row = res.data[0];
+                var age = Date.now() - new Date(row.created_at).getTime();
+                if (age < 120000) {
+                  ciReceiveBmData(row.payload);
+                  sb.from('canvas_sync').delete().eq('id', row.id).then(function(){});
+                }
+              }
+            });
+        }
+      } catch(e) {}
+    }, 2500);
+  });
 })();
+
 </script>
 
 <!-- ════════════ CANVAS IMPORT TAB (CSV + Bookmarklet) ════════════ -->
@@ -6327,7 +6534,7 @@ function ciClearBmPreview() {
           <div class="ci-step-num ci-step-accent">3</div>
           <div class="ci-step-body">
             <div class="ci-step-title">Click the bookmark</div>
-            <div class="ci-step-desc">Grades are extracted and sent here instantly. Come back to this tab to review and import.</div>
+            <div class="ci-step-desc">Grades sync <strong>automatically</strong> — no button click needed. Works every time, updates existing scores.</div>
           </div>
         </div>
       </div>
@@ -6337,33 +6544,44 @@ function ciClearBmPreview() {
     <div class="card" style="margin-bottom:14px">
       <div class="card-title"><span class="ico">📡</span>Live grades receiver</div>
       <div class="infobox" style="margin-bottom:12px">When you click the bookmarklet on Canvas, data appears here automatically. This tab listens in real-time.</div>
+      <!-- Waiting state -->
       <div id="ci-bm-waiting" style="text-align:center;padding:36px 20px;color:var(--muted)">
         <div style="font-size:36px;margin-bottom:10px">⏳</div>
-        <div style="font-size:13px;margin-bottom:6px">Waiting for data from bookmarklet…</div>
-        <div style="font-size:11px;color:var(--muted)">Click the bookmarklet while you have a Canvas Grades page open</div>
+        <div style="font-size:13px;margin-bottom:6px;font-family:'Clash Display',sans-serif;font-weight:700">Waiting for bookmarklet…</div>
+        <div style="font-size:11px;color:var(--muted)">Go to Canvas → Grades page → click the bookmark.<br>Grades will sync here <strong>automatically</strong> — no button needed.</div>
+        <!-- Manual fallback -->
+        <div style="margin-top:22px;border-top:1px solid var(--border);padding-top:18px;text-align:left">
+          <div style="font-size:11px;color:var(--muted2);margin-bottom:8px;text-align:center">
+            ⚠️ <strong>Grades not appearing?</strong> Use the manual paste fallback below.
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.6">
+            On the Canvas Grades page, open <strong>DevTools → Console</strong> (F12), paste this command and press Enter — then copy the output it shows:
+          </div>
+          <div style="position:relative">
+            <textarea id="ci-bm-console-cmd" readonly onclick="this.select()" style="width:100%;font-family:'Space Mono',monospace;font-size:10px;padding:10px;background:var(--surface3);border:1px solid var(--border2);border-radius:var(--r-sm);color:var(--accent3);resize:none;height:56px;cursor:text">copy(JSON.stringify({type:'GRADINTEL_CANVAS',data:{source:'manual',courseName:document.title.replace(' Grades','').trim(),rows:Array.from(document.querySelectorAll('#grades_summary tr.student_assignment')).map(tr=>{var n=(tr.querySelector('.title a,.title')||{}).textContent?.trim();var s=tr.querySelector('.score_value')?.textContent?.trim();var p=tr.querySelector('.points_possible')?.textContent?.trim();return{name:n,score:s,possible:p,pct:(s&&p&&+p>0)?(+s/+p*100).toFixed(1):null}}).filter(r=>r.name)}}))</textarea>
+            <button onclick="navigator.clipboard.writeText(document.getElementById('ci-bm-console-cmd').value).then(()=>showToast('✅ Command copied — paste in Canvas DevTools Console'))" class="btn" style="position:absolute;top:6px;right:6px;font-size:10px;padding:3px 8px;background:var(--surface2);border:1px solid var(--border2);color:var(--muted2)">Copy</button>
+          </div>
+          <div style="margin-top:12px;font-size:11px;color:var(--muted)">Then paste the JSON output here:</div>
+          <div style="display:flex;gap:8px;margin-top:6px">
+            <textarea id="ci-bm-manual-paste" placeholder='Paste the copied JSON here…' style="flex:1;font-family:\'Space Mono\',monospace;font-size:10px;padding:10px;background:var(--surface3);border:1px solid var(--border2);border-radius:var(--r-sm);color:var(--text);resize:none;height:60px" oninput="ciCheckManualPaste(this.value)"></textarea>
+            <button onclick="ciDoManualPasteImport()" class="btn btn-primary" style="font-size:12px;padding:10px 14px;flex-shrink:0;align-self:flex-end">Import</button>
+          </div>
+          <div id="ci-bm-paste-status" style="font-size:11px;margin-top:6px;color:var(--muted)"></div>
+        </div>
       </div>
+      <!-- Auto-synced preview (shown after bookmarklet fires) -->
       <div id="ci-bm-preview" style="display:none">
-        <div id="ci-bm-preview-summary" style="font-size:12px;color:var(--muted2);margin-bottom:12px"></div>
-        <div id="ci-bm-preview-table" style="overflow-x:auto;margin-bottom:14px"></div>
-        <div class="ci-sem-row">
-          <div class="field" style="flex:1;margin-bottom:0">
-            <label>Import into semester</label>
-            <select id="ci-bm-sem-select" style="padding:9px 12px;font-size:13px;border-radius:var(--r-sm);background:var(--surface2);border:1px solid var(--border2);color:var(--text);width:100%">
-              <option value="__new__">➕ Create new semester</option>
-            </select>
+        <!-- Sync status badge -->
+        <div id="ci-bm-sync-badge" style="display:flex;align-items:center;gap:10px;background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.25);border-radius:var(--r);padding:12px 16px;margin-bottom:14px">
+          <span style="font-size:18px">✅</span>
+          <div>
+            <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:13px;color:var(--green)" id="ci-bm-sync-msg">Synced successfully</div>
+            <div style="font-size:11px;color:var(--muted2)" id="ci-bm-sync-time"></div>
           </div>
-          <div class="field" id="ci-bm-sem-name-wrap" style="flex:1;margin-bottom:0">
-            <label>New semester name</label>
-            <input type="text" id="ci-bm-sem-name" placeholder="e.g. Spring 2025" style="padding:9px 12px;font-size:13px;border-radius:var(--r-sm);background:var(--surface2);border:1px solid var(--border2);color:var(--text);width:100%">
-          </div>
+          <button class="btn btn-ghost" style="margin-left:auto;font-size:11px;padding:5px 12px" onclick="ciClearBmPreview()">✕ Clear</button>
         </div>
-        <div class="btn-row" style="margin-top:14px">
-          <button class="btn btn-secondary" onclick="ciClearBmPreview()">✕ Clear</button>
-          <button class="btn btn-primary" onclick="ciDoImport('bm')">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="url(#site-ig)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3"/></svg>
-            Import into Gradintel
-          </button>
-        </div>
+        <div id="ci-bm-preview-summary" style="font-size:12px;color:var(--muted2);margin-bottom:10px"></div>
+        <div id="ci-bm-preview-table" style="overflow-x:auto"></div>
       </div>
     </div>
 
@@ -7186,7 +7404,8 @@ function cvEsc(str) {
 
 // Load config when canvas tab opens
 document.addEventListener('DOMContentLoaded', function() {
-  // Inject spin keyframe for sync var style = document.createElement('style');
+  // Inject spin keyframe for sync
+  var style = document.createElement('style');
   style.textContent = '@keyframes gv3spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}';
   document.head.appendChild(style);
   cvLoadConfig();
