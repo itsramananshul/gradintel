@@ -1220,6 +1220,315 @@ input:not(.af input):focus, select:focus {
   .topbar { padding-top: 58px !important; }
 }
 
+
+/* ════════════════ CANVAS INTEGRATION STYLES ════════════════ */
+.cv-hero {
+  text-align: center;
+  padding: 44px 0 28px;
+}
+.cv-hero-badge {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: rgba(229,62,48,0.12); border: 1px solid rgba(229,62,48,0.3);
+  border-radius: 100px; padding: 5px 14px; font-size: 11px; font-weight: 700;
+  color: #e53e30; letter-spacing: .06em; text-transform: uppercase;
+  margin-bottom: 16px; font-family: 'Space Mono', monospace;
+}
+.cv-hero h2 {
+  font-family: 'Clash Display', sans-serif; font-size: 28px; font-weight: 700;
+  background: linear-gradient(135deg, var(--c-text), var(--a1));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text; margin: 0 0 10px;
+}
+.cv-hero p {
+  color: var(--c-muted); font-size: 14px; max-width: 460px; margin: 0 auto;
+  line-height: 1.7;
+}
+
+/* Status bar */
+.cv-status-bar {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--c-surf); border: 1px solid var(--c-bd2);
+  border-radius: 14px; padding: 14px 18px; margin-bottom: 20px;
+  position: relative; overflow: hidden;
+}
+.cv-status-bar::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(229,62,48,0.4), transparent);
+}
+.cv-status-dot {
+  width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0;
+  background: var(--c-muted); transition: background 0.3s, box-shadow 0.3s;
+}
+.cv-status-dot.connected { background: #34d399; box-shadow: 0 0 8px #34d399; }
+.cv-status-dot.syncing { background: var(--a1); box-shadow: 0 0 8px var(--a1); animation: cvPulse 1s infinite; }
+.cv-status-dot.error { background: #f87171; box-shadow: 0 0 8px #f87171; }
+@keyframes cvPulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.cv-status-text { flex: 1; font-size: 13px; color: var(--c-text); font-weight: 600; }
+.cv-status-sub { font-size: 11px; color: var(--c-muted); margin-top: 1px; }
+
+/* Config form */
+.cv-config-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px;
+}
+@media (max-width: 640px) { .cv-config-grid { grid-template-columns: 1fr; } }
+
+.cv-field { display: flex; flex-direction: column; gap: 6px; }
+.cv-field label {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .1em; color: var(--c-muted);
+  font-family: 'Space Mono', monospace;
+}
+.cv-field input {
+  padding: 10px 14px !important;
+  font-size: 13px !important; font-family: 'Cabinet Grotesk', sans-serif !important;
+  border-radius: 11px !important;
+  background: var(--c-surf2) !important;
+  border: 1px solid var(--c-bd2) !important;
+  color: var(--c-text) !important;
+  transition: border-color 0.18s, box-shadow 0.18s !important;
+}
+.cv-field input:focus {
+  border-color: var(--a1) !important;
+  box-shadow: 0 0 0 3px rgba(167,139,250,0.13) !important;
+  outline: none !important;
+}
+.cv-field .cv-hint {
+  font-size: 11px; color: var(--c-muted); line-height: 1.5;
+}
+.cv-field .cv-hint a {
+  color: var(--a1); text-decoration: none;
+}
+.cv-field .cv-hint a:hover { text-decoration: underline; }
+
+/* Worker notice */
+.cv-worker-note {
+  background: rgba(167,139,250,0.07); border: 1px solid rgba(167,139,250,0.2);
+  border-radius: 13px; padding: 16px 18px; margin-bottom: 20px;
+  display: flex; gap: 13px; align-items: flex-start;
+}
+.cv-worker-note-ico {
+  width: 32px; height: 32px; border-radius: 9px; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--a1), var(--a2));
+  display: flex; align-items: center; justify-content: center;
+}
+.cv-worker-note-text { flex: 1; }
+.cv-worker-note-text strong {
+  display: block; font-size: 13px; font-weight: 700; color: var(--c-text);
+  margin-bottom: 4px;
+}
+.cv-worker-note-text p {
+  font-size: 12px; color: var(--c-muted); line-height: 1.6; margin: 0 0 8px;
+}
+.cv-worker-note-text code {
+  display: block; background: var(--c-surf3); border: 1px solid var(--c-bd2);
+  border-radius: 8px; padding: 10px 12px; font-family: 'Space Mono', monospace;
+  font-size: 11px; color: #34d399; line-height: 1.7; overflow-x: auto;
+  white-space: pre; margin: 6px 0;
+}
+
+/* Sync actions row */
+.cv-actions {
+  display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 24px;
+}
+.cv-btn-sync {
+  display: flex; align-items: center; gap: 8px;
+  padding: 11px 22px; border-radius: 12px; border: none; cursor: pointer;
+  font-family: 'Cabinet Grotesk', sans-serif; font-size: 14px; font-weight: 700;
+  background: linear-gradient(135deg, #e53e30, #c0392b);
+  color: #fff;
+  box-shadow: 0 4px 18px rgba(229,62,48,0.35), inset 0 1px 0 rgba(255,255,255,0.15);
+  transition: all 0.22s;
+}
+.cv-btn-sync:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(229,62,48,0.5);
+}
+.cv-btn-sync:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.cv-btn-save {
+  display: flex; align-items: center; gap: 8px;
+  padding: 11px 22px; border-radius: 12px; border: 1px solid var(--c-bd2); cursor: pointer;
+  font-family: 'Cabinet Grotesk', sans-serif; font-size: 14px; font-weight: 700;
+  background: var(--c-surf2); color: var(--c-text);
+  transition: all 0.22s;
+}
+.cv-btn-save:hover { border-color: var(--a1); background: rgba(167,139,250,0.08); }
+.cv-btn-disconnect {
+  display: flex; align-items: center; gap: 8px;
+  padding: 11px 18px; border-radius: 12px;
+  border: 1px solid rgba(248,113,113,0.3); cursor: pointer;
+  font-family: 'Cabinet Grotesk', sans-serif; font-size: 13px; font-weight: 600;
+  background: rgba(248,113,113,0.07); color: #f87171;
+  transition: all 0.22s; margin-left: auto;
+}
+.cv-btn-disconnect:hover { border-color: #f87171; background: rgba(248,113,113,0.15); }
+
+/* Course preview grid */
+.cv-courses-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px; margin-top: 4px;
+}
+.cv-course-card {
+  background: var(--c-surf); border: 1px solid var(--c-bd2);
+  border-radius: 14px; padding: 14px 16px;
+  transition: all 0.22s cubic-bezier(.34,1.4,.64,1);
+  position: relative; overflow: hidden; cursor: pointer;
+}
+.cv-course-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, var(--a1), var(--a2));
+  opacity: 0; transition: opacity 0.2s;
+}
+.cv-course-card:hover { border-color: var(--a1); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+.cv-course-card:hover::before { opacity: 1; }
+.cv-course-card.selected { border-color: var(--a1) !important; background: rgba(167,139,250,0.07) !important; }
+.cv-course-card.selected::before { opacity: 1; }
+.cv-cc-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.cv-cc-name { font-size: 13px; font-weight: 700; color: var(--c-text); line-height: 1.3; }
+.cv-cc-code { font-size: 10px; color: var(--c-muted); font-family: 'Space Mono', monospace; }
+.cv-cc-grade {
+  font-size: 18px; font-weight: 800; font-family: 'Clash Display', sans-serif;
+  background: linear-gradient(135deg, var(--a1), var(--a2));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text; flex-shrink: 0;
+}
+.cv-cc-grade.no-grade { font-size: 13px; -webkit-text-fill-color: var(--c-muted); background: none; color: var(--c-muted); }
+.cv-cc-meta { display: flex; gap: 8px; align-items: center; }
+.cv-cc-tag {
+  font-size: 10px; padding: 2px 8px; border-radius: 100px;
+  background: rgba(167,139,250,0.1); color: var(--a1);
+  font-family: 'Space Mono', monospace; font-weight: 700;
+}
+.cv-cc-assignments {
+  font-size: 11px; color: var(--c-muted);
+}
+.cv-cc-check {
+  position: absolute; top: 10px; right: 10px;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--a1); display: none;
+  align-items: center; justify-content: center;
+}
+.cv-course-card.selected .cv-cc-check { display: flex; }
+
+/* Import confirm card */
+.cv-import-confirm {
+  background: var(--c-surf); border: 1px solid rgba(52,211,153,0.3);
+  border-radius: 14px; padding: 16px 18px; margin-top: 14px;
+  display: none; animation: gv3up 0.2s ease both;
+}
+.cv-import-confirm.show { display: block; }
+.cv-ic-title { font-size: 13px; font-weight: 700; color: #34d399; margin-bottom: 8px; }
+.cv-ic-items { font-size: 12px; color: var(--c-muted); line-height: 2; }
+.cv-ic-items span { color: var(--c-text); font-weight: 600; }
+
+/* Assignments table */
+.cv-assign-list {
+  display: flex; flex-direction: column; gap: 6px; margin-top: 10px;
+}
+.cv-assign-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px; border-radius: 10px;
+  background: var(--c-surf2); border: 1px solid var(--c-bd);
+  font-size: 12px; transition: border-color 0.15s;
+}
+.cv-assign-row:hover { border-color: var(--a1); }
+.cv-assign-name { flex: 1; color: var(--c-text); font-weight: 600; }
+.cv-assign-due { color: var(--c-muted); font-size: 11px; font-family: 'Space Mono', monospace; white-space: nowrap; }
+.cv-assign-score { font-weight: 700; color: var(--a1); white-space: nowrap; }
+.cv-assign-score.missing { color: #f87171; }
+.cv-assign-score.pending { color: var(--c-muted); }
+
+/* Steps guide */
+.cv-steps { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+.cv-step {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 12px 14px; border-radius: 12px;
+  background: var(--c-surf); border: 1px solid var(--c-bd2);
+}
+.cv-step-num {
+  width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--a1), var(--a2));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 800; color: #fff;
+}
+.cv-step-body { flex: 1; }
+.cv-step-title { font-size: 13px; font-weight: 700; color: var(--c-text); margin-bottom: 2px; }
+.cv-step-desc { font-size: 12px; color: var(--c-muted); line-height: 1.6; }
+.cv-step-desc a { color: var(--a1); text-decoration: none; }
+.cv-step-desc a:hover { text-decoration: underline; }
+.cv-step-desc code {
+  background: var(--c-surf2); border: 1px solid var(--c-bd2);
+  border-radius: 5px; padding: 1px 6px;
+  font-family: 'Space Mono', monospace; font-size: 11px; color: #34d399;
+}
+
+/* Semester select */
+.cv-sem-select {
+  display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 16px;
+}
+.cv-sem-select label { font-size: 12px; color: var(--c-muted); font-weight: 600; }
+.cv-sem-select select {
+  padding: 7px 12px !important; border-radius: 10px !important;
+  font-size: 12px !important; flex: 1;
+}
+
+/* Toast for canvas */
+.cv-toast {
+  position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px);
+  background: var(--c-surf); border: 1px solid var(--c-bd2);
+  border-radius: 12px; padding: 10px 18px; font-size: 13px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  z-index: 9000; opacity: 0; transition: all 0.3s; pointer-events: none;
+  white-space: nowrap; font-weight: 600; color: var(--c-text);
+}
+.cv-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* Log output */
+.cv-log {
+  background: var(--c-surf3); border: 1px solid var(--c-bd);
+  border-radius: 11px; padding: 12px 14px;
+  font-family: 'Space Mono', monospace; font-size: 11px;
+  color: var(--c-muted); max-height: 160px; overflow-y: auto;
+  margin-top: 10px; display: none; line-height: 2;
+}
+.cv-log.show { display: block; }
+.cv-log .ok  { color: #34d399; }
+.cv-log .err { color: #f87171; }
+.cv-log .inf { color: var(--a1); }
+
+
+/* ── Canvas method selector cards ── */
+.cv-method-card {
+  background: var(--c-surf); border: 1.5px solid var(--c-bd2);
+  border-radius: 16px; padding: 16px; cursor: pointer;
+  transition: all 0.22s cubic-bezier(.34,1.4,.64,1);
+  position: relative; overflow: hidden;
+}
+.cv-method-card:hover { border-color: var(--a1); transform: translateY(-2px); }
+.cv-method-card.active {
+  border-color: var(--a1) !important;
+  background: rgba(167,139,250,0.07) !important;
+  box-shadow: 0 0 0 1px rgba(167,139,250,0.2), 0 8px 24px rgba(167,139,250,0.15);
+}
+.cv-method-card.active::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:2px;
+  background: linear-gradient(90deg, var(--a1), var(--a2));
+}
+.cv-method-badge {
+  display: inline-flex; align-items: center;
+  background: rgba(167,139,250,0.12); border: 1px solid rgba(167,139,250,0.25);
+  border-radius: 100px; padding: 2px 10px;
+  font-size: 10px; font-weight: 700; color: var(--a1);
+  letter-spacing: .06em; text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.cv-method-icon {
+  width: 42px; height: 42px; border-radius: 12px; margin-bottom: 10px;
+  background: linear-gradient(135deg, var(--a1), var(--a2));
+  display: flex; align-items: center; justify-content: center;
+}
+.cv-method-title { font-size: 14px; font-weight: 700; color: var(--c-text); margin-bottom: 4px; }
+.cv-method-desc  { font-size: 12px; color: var(--c-muted); line-height: 1.5; }
+
 </style>
 </head>
 
@@ -1343,6 +1652,21 @@ input:not(.af input):focus, select:focus {
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="3" width="22" height="5" rx="2" fill="rgba(167,139,250,0.2)" stroke="var(--a1)" stroke-width="1.8"/><path fill="rgba(167,139,250,0.08)" stroke="var(--a1)" stroke-width="1.6" d="M3 8h18v12a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><line x1="12" y1="12" x2="12" y2="18" stroke="var(--a2)" stroke-width="2" stroke-linecap="round"/><polyline fill="none" stroke="var(--a2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="9 15 12 18 15 15"/></svg>
       </div>
       <span class="gv3-lbl">Export</span>
+    </button>
+    <button class="gv3-item" data-tab="canvas" onclick="gv3Switch('canvas')">
+      <div class="gv3-ico" data-tip="Canvas LMS">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill="rgba(229,62,48,0.2)" stroke="#e53e30" stroke-width="1.8" stroke-linejoin="round" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path fill="none" stroke="#e53e30" stroke-width="1.8" stroke-linecap="round" d="M8 12h8M12 8v8"/><circle cx="12" cy="12" r="3" fill="#e53e30" opacity=".6"/></svg>
+      </div>
+      <span class="gv3-lbl">Canvas Sync</span>
+    </button>
+    <button class="gv3-item" data-tab="privacy" onclick="gv3Switch('privacy')">
+      <div class="gv3-ico" data-tip="Privacy Policy">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path fill="rgba(52,211,153,0.15)" stroke="#34d399" stroke-width="1.8" stroke-linejoin="round" d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.35C17.25 22.15 21 17.25 21 12V7L12 2z"/>
+          <path stroke="#34d399" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M9 12l2 2 4-4"/>
+        </svg>
+      </div>
+      <span class="gv3-lbl">Privacy Policy</span>
     </button>
   </div>
 
@@ -5273,6 +5597,406 @@ document.addEventListener('DOMContentLoaded', ()=>{
 // Patch addXP into grade saving — hook checkBadges into existing save flow
 const origSaveEditModal = typeof saveEditModal === 'function' ? saveEditModal : null;
 </script>
+
+<!-- ════════════ CANVAS SYNC TAB ════════════ -->
+<div id="tc-canvas" class="hidden">
+
+  <div class="cv-hero">
+    <div class="cv-hero-badge">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+      Canvas LMS Integration
+    </div>
+    <h2>Sync Your Grades Automatically</h2>
+    <p>Connect Gradintel to your university Canvas account. Import all your courses, grades, and assignments — no manual entry, no access token needed.</p>
+  </div>
+
+  <!-- ── METHOD SELECTOR ─────────────────────────────────────── -->
+  <div style="display:flex;gap:12px;margin-bottom:22px;flex-wrap:wrap">
+
+    <!-- Chrome Extension Card (RECOMMENDED) -->
+    <div class="cv-method-card active" id="cv-method-ext" onclick="cvSelectMethod('ext')" style="flex:1;min-width:200px">
+      <div class="cv-method-badge">⭐ Recommended</div>
+      <div class="cv-method-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><circle cx="12" cy="12" r="4"/><path d="M12 8V2M12 22v-6M8 12H2M22 12h-6"/></svg>
+      </div>
+      <div class="cv-method-title">Chrome Extension</div>
+      <div class="cv-method-desc">Install once, sync in one click. Works on every university. No token, no setup.</div>
+    </div>
+
+    <!-- Cloudflare Worker Card (Advanced) -->
+    <div class="cv-method-card" id="cv-method-cf" onclick="cvSelectMethod('cf')" style="flex:1;min-width:200px">
+      <div class="cv-method-badge" style="background:rgba(52,211,153,0.12);color:#34d399;border-color:rgba(52,211,153,0.25)">Advanced</div>
+      <div class="cv-method-icon" style="background:linear-gradient(135deg,#f97316,#f59e0b)">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      </div>
+      <div class="cv-method-title">Cloudflare Worker</div>
+      <div class="cv-method-desc">For advanced users. Requires a free Cloudflare account and 5-min setup.</div>
+    </div>
+  </div>
+
+  <!-- ── EXTENSION PANEL ──────────────────────────────────────── -->
+  <div id="cv-panel-ext">
+
+    <!-- Install steps -->
+    <div class="card" style="padding:20px;margin-bottom:16px">
+      <div class="card-title" style="margin-bottom:16px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Install the Gradintel Extension
+      </div>
+      <div class="cv-steps">
+        <div class="cv-step">
+          <div class="cv-step-num">1</div>
+          <div class="cv-step-body">
+            <div class="cv-step-title">Install from Chrome Web Store</div>
+            <div class="cv-step-desc">
+              <a href="https://chrome.google.com/webstore/search/gradintel" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,var(--a1),var(--a2));color:#fff;padding:8px 16px;border-radius:9px;font-weight:700;font-size:12px;text-decoration:none;margin-top:4px">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Add to Chrome — Free
+              </a>
+            </div>
+          </div>
+        </div>
+        <div class="cv-step">
+          <div class="cv-step-num">2</div>
+          <div class="cv-step-body">
+            <div class="cv-step-title">Open your Canvas &amp; log in as normal</div>
+            <div class="cv-step-desc">Navigate to your university Canvas in Chrome. You just need to be logged in — no token or setup needed.</div>
+          </div>
+        </div>
+        <div class="cv-step">
+          <div class="cv-step-num">3</div>
+          <div class="cv-step-body">
+            <div class="cv-step-title">Click the Gradintel icon → Sign in → Sync</div>
+            <div class="cv-step-desc">Click the Gradintel extension icon in your Chrome toolbar. Sign in with your Gradintel account, then hit <strong>Sync from Canvas</strong>. Your courses appear instantly.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- What gets synced -->
+    <div class="card" style="padding:20px;margin-bottom:16px">
+      <div class="card-title" style="margin-bottom:14px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        What the extension syncs
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px">
+        <div style="background:var(--c-surf2);border:1px solid var(--c-bd2);border-radius:12px;padding:12px 14px">
+          <div style="font-size:18px;margin-bottom:4px">📚</div>
+          <div style="font-size:12px;font-weight:700;color:var(--c-text)">All courses</div>
+          <div style="font-size:11px;color:var(--c-muted);margin-top:2px">Name, code, current grade %</div>
+        </div>
+        <div style="background:var(--c-surf2);border:1px solid var(--c-bd2);border-radius:12px;padding:12px 14px">
+          <div style="font-size:18px;margin-bottom:4px">📝</div>
+          <div style="font-size:12px;font-weight:700;color:var(--c-text)">Assignments</div>
+          <div style="font-size:11px;color:var(--c-muted);margin-top:2px">Scores, due dates, weights</div>
+        </div>
+        <div style="background:var(--c-surf2);border:1px solid var(--c-bd2);border-radius:12px;padding:12px 14px">
+          <div style="font-size:18px;margin-bottom:4px">⚖️</div>
+          <div style="font-size:12px;font-weight:700;color:var(--c-text)">Grade weights</div>
+          <div style="font-size:11px;color:var(--c-muted);margin-top:2px">Homework %, Midterm %, Final %</div>
+        </div>
+        <div style="background:var(--c-surf2);border:1px solid var(--c-bd2);border-radius:12px;padding:12px 14px">
+          <div style="font-size:18px;margin-bottom:4px">🔒</div>
+          <div style="font-size:12px;font-weight:700;color:var(--c-text)">Private &amp; secure</div>
+          <div style="font-size:11px;color:var(--c-muted);margin-top:2px">Data stays in your account only</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /cv-panel-ext -->
+
+  <!-- ── CLOUDFLARE WORKER PANEL ──────────────────────────────── -->
+  <div id="cv-panel-cf" style="display:none">
+
+    <!-- STATUS BAR -->
+    <div class="cv-status-bar" id="cv-status-bar">
+      <div class="cv-status-dot" id="cv-dot"></div>
+      <div>
+        <div class="cv-status-text" id="cv-status-text">Not connected</div>
+        <div class="cv-status-sub" id="cv-status-sub">Fill in your Canvas URL, token, and Worker URL below</div>
+      </div>
+      <button class="cv-btn-disconnect" id="cv-disconnect-btn" onclick="cvDisconnect()" style="display:none">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        Disconnect
+      </button>
+    </div>
+
+    <!-- Worker setup -->
+    <div class="cv-worker-note" id="cv-worker-note">
+      <div class="cv-worker-note-ico">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      </div>
+      <div class="cv-worker-note-text">
+        <strong>One-time Cloudflare Worker setup (5 minutes)</strong>
+        <p>Canvas blocks direct browser requests (CORS). A free Cloudflare Worker acts as a middleman — your token never leaves your device.</p>
+        <p>1. Go to <a href="https://workers.cloudflare.com" target="_blank">workers.cloudflare.com</a> → Create account → Create Worker<br>
+        2. Paste the code below → Deploy → Copy the Worker URL</p>
+        <code>export default {
+  async fetch(request) {
+    const url = new URL(request.url);
+    const target = url.searchParams.get('url');
+    const token = url.searchParams.get('token');
+    if (!target) return new Response('Missing url', { status: 400 });
+    const resp = await fetch(target, {
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }
+    });
+    return new Response(await resp.text(), {
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+    });
+  }
+};</code>
+      </div>
+    </div>
+
+    <!-- Config form -->
+    <div class="card" style="margin-bottom:16px; padding:20px">
+      <div class="card-title" style="margin-bottom:16px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
+        Connection Settings
+      </div>
+      <div class="cv-config-grid">
+        <div class="cv-field">
+          <label>Canvas URL</label>
+          <input type="url" id="cv-url" placeholder="https://canvas.university.edu" oninput="cvSaveConfig()">
+          <span class="cv-hint">Your university's Canvas domain</span>
+        </div>
+        <div class="cv-field">
+          <label>Access Token</label>
+          <input type="password" id="cv-token" placeholder="Your Canvas access token" oninput="cvSaveConfig()">
+          <span class="cv-hint">Canvas → Account → Settings → Approved Integrations → + New Access Token</span>
+        </div>
+        <div class="cv-field">
+          <label>Cloudflare Worker URL</label>
+          <input type="url" id="cv-worker" placeholder="https://gradintel-proxy.yourname.workers.dev" oninput="cvSaveConfig()">
+          <span class="cv-hint">Your deployed Worker URL</span>
+        </div>
+        <div class="cv-field">
+          <label>Enrollment State</label>
+          <select id="cv-enroll-state" onchange="cvSaveConfig()" style="padding:10px 14px;font-size:13px;border-radius:11px;background:var(--c-surf2);border:1px solid var(--c-bd2);color:var(--c-text)">
+            <option value="active">Active courses only</option>
+            <option value="completed">Completed courses only</option>
+            <option value="all">All courses</option>
+          </select>
+        </div>
+      </div>
+      <div class="cv-actions">
+        <button class="cv-btn-sync" id="cv-sync-btn" onclick="cvSync()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+          Sync from Canvas
+        </button>
+        <button class="cv-btn-save" onclick="cvTestConnection()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+          Test Connection
+        </button>
+      </div>
+      <div class="cv-log" id="cv-log"></div>
+    </div>
+
+    <!-- Courses preview -->
+    <div id="cv-courses-section" style="display:none">
+      <div class="card" style="padding:20px;margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+          <div class="card-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4.5A2.5 2.5 0 016.5 2H20v20H6.5A2.5 2.5 0 014 19.5z"/></svg>
+            Courses fetched from Canvas
+          </div>
+          <div style="font-size:12px;color:var(--c-muted)">Click to select for import</div>
+        </div>
+        <div class="cv-sem-select">
+          <label>Import into semester:</label>
+          <select id="cv-sem-target">
+            <option value="new">➕ Create new semester</option>
+          </select>
+          <input type="text" id="cv-sem-name" placeholder="Semester name (e.g. Fall 2025)" style="padding:7px 12px;border-radius:10px;font-size:12px;flex:1;min-width:140px">
+        </div>
+        <div class="cv-courses-grid" id="cv-courses-grid"></div>
+        <div class="cv-import-confirm" id="cv-import-confirm">
+          <div class="cv-ic-title">✓ Ready to import</div>
+          <div class="cv-ic-items" id="cv-import-summary"></div>
+          <div style="display:flex;gap:10px;margin-top:12px">
+            <button class="cv-btn-sync" onclick="cvImportSelected()" style="font-size:13px;padding:9px 18px">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              Import Selected
+            </button>
+            <button class="cv-btn-save" onclick="cvSelectAll()" style="font-size:13px;padding:9px 14px">Select All</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Upcoming assignments -->
+      <div class="card" style="padding:20px;margin-bottom:16px" id="cv-assign-card" style="display:none">
+        <div class="card-title" style="margin-bottom:12px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg>
+          Upcoming Assignments
+          <span id="cv-assign-count" style="font-size:11px;font-weight:600;color:var(--c-muted);margin-left:6px"></span>
+        </div>
+        <div class="cv-assign-list" id="cv-assign-list"></div>
+      </div>
+    </div>
+  </div><!-- /cv-panel-cf -->
+
+  <div class="cv-toast" id="cv-toast"></div>
+</div>
+<!-- ════════════ END CANVAS SYNC TAB ════════════ -->
+
+<!-- ════════════ PRIVACY POLICY TAB ════════════ -->
+<div id="tc-privacy" class="hidden">
+
+  <div class="cv-hero">
+    <div class="cv-hero-badge" style="background:rgba(52,211,153,0.12);border-color:rgba(52,211,153,0.3);color:#34d399">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.35C17.25 22.15 21 17.25 21 12V7L12 2z"/></svg>
+      Legal
+    </div>
+    <h2 style="font-size:24px">Privacy Policy</h2>
+    <p style="font-size:12px;color:var(--c-muted)">Gradintel — Canvas Sync Chrome Extension &nbsp;·&nbsp; Effective: March 8, 2026</p>
+  </div>
+
+  <!-- NOT SELL banner -->
+  <div style="background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.25);border-radius:13px;padding:14px 18px;margin-bottom:20px;display:flex;gap:12px;align-items:center">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2" flex-shrink="0" style="flex-shrink:0"><path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.35C17.25 22.15 21 17.25 21 12V7L12 2z"/><polyline points="9 12 11 14 15 10"/></svg>
+    <p style="font-size:13px;color:#34d399;font-weight:600;margin:0">We do <u>not</u> sell, rent, or share your personal data or academic records with any third party for advertising or commercial purposes.</p>
+  </div>
+
+  <!-- Sections -->
+  <div class="card" style="padding:22px;margin-bottom:14px">
+    <div class="card-title" style="margin-bottom:12px">1. Overview</div>
+    <p style="font-size:13px;color:var(--c-muted);line-height:1.8;margin-bottom:8px">Gradintel operates the Gradintel Canvas Sync Chrome Extension (the "Extension"). This Privacy Policy explains what information the Extension collects, how it is used, and your rights regarding that information.</p>
+    <p style="font-size:13px;color:var(--c-muted);line-height:1.8">The Extension is designed so that your academic data stays under your control at all times.</p>
+  </div>
+
+  <div class="card" style="padding:22px;margin-bottom:14px">
+    <div class="card-title" style="margin-bottom:14px">2. Information We Collect</div>
+    <p style="font-size:13px;color:var(--c-muted);line-height:1.8;margin-bottom:14px">The Extension collects only the minimum data necessary:</p>
+
+    <div style="border:1px solid var(--c-bd2);border-radius:11px;overflow:hidden;margin-bottom:14px">
+      <div style="display:grid;grid-template-columns:1.2fr 1.6fr 1.2fr;background:rgba(167,139,250,0.1);padding:10px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--c-muted)">
+        <span>Data Collected</span><span>Why</span><span>Stored Where</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1.2fr 1.6fr 1.2fr;padding:10px 14px;font-size:12px;line-height:1.6;border-top:1px solid var(--c-bd);color:var(--c-muted)">
+        <span style="color:var(--c-text);font-weight:600">Email &amp; session token</span>
+        <span>Authenticate your Gradintel account</span>
+        <span>Browser storage + Supabase</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1.2fr 1.6fr 1.2fr;padding:10px 14px;font-size:12px;line-height:1.6;border-top:1px solid var(--c-bd);color:var(--c-muted);background:rgba(167,139,250,0.03)">
+        <span style="color:var(--c-text);font-weight:600">Canvas domain URL</span>
+        <span>Know which Canvas to connect to</span>
+        <span>Browser storage only</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1.2fr 1.6fr 1.2fr;padding:10px 14px;font-size:12px;line-height:1.6;border-top:1px solid var(--c-bd);color:var(--c-muted)">
+        <span style="color:var(--c-text);font-weight:600">Course &amp; grade data</span>
+        <span>Import academic records into Gradintel</span>
+        <span>Your Gradintel account</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1.2fr 1.6fr 1.2fr;padding:10px 14px;font-size:12px;line-height:1.6;border-top:1px solid var(--c-bd);color:var(--c-muted);background:rgba(167,139,250,0.03)">
+        <span style="color:var(--c-text);font-weight:600">Canvas session cookies</span>
+        <span>Authenticate Canvas API requests without a token</span>
+        <span style="color:#34d399;font-weight:600">Never stored — memory only</span>
+      </div>
+    </div>
+
+    <p style="font-size:12px;color:var(--c-muted);font-weight:600;margin-bottom:6px">We do NOT collect:</p>
+    <div style="display:flex;flex-wrap:wrap;gap:6px">
+      <span style="background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.2);border-radius:100px;padding:3px 12px;font-size:11px;color:#f87171">Canvas username or password</span>
+      <span style="background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.2);border-radius:100px;padding:3px 12px;font-size:11px;color:#f87171">Browsing history</span>
+      <span style="background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.2);border-radius:100px;padding:3px 12px;font-size:11px;color:#f87171">IP address or location</span>
+      <span style="background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.2);border-radius:100px;padding:3px 12px;font-size:11px;color:#f87171">Data from other websites</span>
+      <span style="background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.2);border-radius:100px;padding:3px 12px;font-size:11px;color:#f87171">Data when Extension is idle</span>
+    </div>
+  </div>
+
+  <div class="card" style="padding:22px;margin-bottom:14px">
+    <div class="card-title" style="margin-bottom:12px">3. Data Storage &amp; Security</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <div style="background:var(--c-surf2);border:1px solid var(--c-bd2);border-radius:11px;padding:12px 14px">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--a1);margin-bottom:6px">Browser Storage</div>
+        <p style="font-size:12px;color:var(--c-muted);line-height:1.7;margin:0">Session token (encrypted by Chrome) &amp; Canvas domain URL. Never sent to any external server.</p>
+      </div>
+      <div style="background:var(--c-surf2);border:1px solid var(--c-bd2);border-radius:11px;padding:12px 14px">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--a1);margin-bottom:6px">Supabase (Your Account)</div>
+        <p style="font-size:12px;color:var(--c-muted);line-height:1.7;margin:0">Course names, grades, credits you choose to import. Protected by row-level security — only you can access it.</p>
+      </div>
+    </div>
+    <div style="background:rgba(52,211,153,0.07);border:1px solid rgba(52,211,153,0.2);border-radius:10px;padding:12px 14px;font-size:12px;color:#34d399;line-height:1.7">
+      🔒 Canvas session cookies are <strong>never stored</strong>. Used in-memory only during an active sync and discarded immediately after. Your Canvas login credentials are never accessed by the Extension.
+    </div>
+  </div>
+
+  <div class="card" style="padding:22px;margin-bottom:14px">
+    <div class="card-title" style="margin-bottom:12px">4. Canvas API Usage</div>
+    <div class="cv-steps">
+      <div class="cv-step"><div class="cv-step-num" style="background:rgba(167,139,250,0.15);color:var(--a1);font-size:16px">→</div>
+        <div class="cv-step-body"><div class="cv-step-desc">Uses your <strong>existing browser session</strong> — same auth as browsing Canvas normally</div></div></div>
+      <div class="cv-step"><div class="cv-step-num" style="background:rgba(167,139,250,0.15);color:var(--a1);font-size:16px">→</div>
+        <div class="cv-step-body"><div class="cv-step-desc">Does <strong>not</strong> create, store, or transmit any Canvas access tokens</div></div></div>
+      <div class="cv-step"><div class="cv-step-num" style="background:rgba(167,139,250,0.15);color:var(--a1);font-size:16px">→</div>
+        <div class="cv-step-body"><div class="cv-step-desc">Initiated <strong>only</strong> when you actively press the "Sync" button</div></div></div>
+      <div class="cv-step"><div class="cv-step-num" style="background:rgba(167,139,250,0.15);color:var(--a1);font-size:16px">→</div>
+        <div class="cv-step-body"><div class="cv-step-desc">Subject to your university's Canvas terms of service and acceptable use policies</div></div></div>
+    </div>
+  </div>
+
+  <div class="card" style="padding:22px;margin-bottom:14px">
+    <div class="card-title" style="margin-bottom:12px">5. Your Rights</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="display:flex;gap:10px;align-items:flex-start;font-size:13px;color:var(--c-muted);line-height:1.6">
+        <span style="color:#34d399;font-weight:700;flex-shrink:0">✓</span> Access all data in your Gradintel account at any time via the website
+      </div>
+      <div style="display:flex;gap:10px;align-items:flex-start;font-size:13px;color:var(--c-muted);line-height:1.6">
+        <span style="color:#34d399;font-weight:700;flex-shrink:0">✓</span> Delete your imported grade data at any time from within Gradintel
+      </div>
+      <div style="display:flex;gap:10px;align-items:flex-start;font-size:13px;color:var(--c-muted);line-height:1.6">
+        <span style="color:#34d399;font-weight:700;flex-shrink:0">✓</span> Uninstall the Extension at any time — this automatically removes all locally stored data
+      </div>
+      <div style="display:flex;gap:10px;align-items:flex-start;font-size:13px;color:var(--c-muted);line-height:1.6">
+        <span style="color:#34d399;font-weight:700;flex-shrink:0">✓</span> Request full account deletion by contacting us below
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="padding:22px;margin-bottom:14px">
+    <div class="card-title" style="margin-bottom:12px">6. Third-Party Services</div>
+    <div style="border:1px solid var(--c-bd2);border-radius:11px;overflow:hidden">
+      <div style="display:grid;grid-template-columns:1fr 2fr 1.2fr;background:rgba(167,139,250,0.1);padding:10px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--c-muted)">
+        <span>Service</span><span>Purpose</span><span>Privacy Policy</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 2fr 1.2fr;padding:10px 14px;font-size:12px;border-top:1px solid var(--c-bd);color:var(--c-muted)">
+        <span style="color:var(--c-text);font-weight:600">Supabase</span>
+        <span>Auth &amp; grade data storage</span>
+        <a href="https://supabase.com/privacy" target="_blank" style="color:var(--a1);text-decoration:none;font-size:11px">supabase.com/privacy</a>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 2fr 1.2fr;padding:10px 14px;font-size:12px;border-top:1px solid var(--c-bd);color:var(--c-muted);background:rgba(167,139,250,0.03)">
+        <span style="color:var(--c-text);font-weight:600">Canvas LMS</span>
+        <span>Source of academic data</span>
+        <span style="font-size:11px">Your institution's policy</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="padding:22px;margin-bottom:14px">
+    <div class="card-title" style="margin-bottom:12px">7. Contact</div>
+    <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
+      <div style="flex:1;min-width:180px">
+        <p style="font-size:13px;color:var(--c-muted);line-height:1.8;margin:0">
+          Questions about this policy or your data?<br>
+          <a href="mailto:ramanal@mail.uc.edu" style="color:var(--a1);text-decoration:none;font-weight:600">ramanal@mail.uc.edu</a><br>
+          <a href="https://gradintel.anshulraman.com" target="_blank" style="color:var(--a1);text-decoration:none;font-size:12px">gradintel.anshulraman.com</a>
+        </p>
+      </div>
+      <div style="background:var(--c-surf2);border:1px solid var(--c-bd2);border-radius:10px;padding:10px 16px;font-size:11px;color:var(--c-muted);text-align:center">
+        <div style="font-weight:700;color:var(--c-text);margin-bottom:2px">Last updated</div>
+        March 8, 2026
+      </div>
+    </div>
+  </div>
+
+  <p style="font-size:11px;color:var(--c-muted);text-align:center;margin-top:8px;line-height:1.6;padding-bottom:20px">
+    This policy applies specifically to the Gradintel Canvas Sync Chrome Extension.<br>
+    Children's privacy: The Extension is intended for university students aged 18+. We do not knowingly collect data from anyone under 13.
+  </p>
+
+</div>
+<!-- ════════════ END PRIVACY POLICY TAB ════════════ -->
+
 </div><!-- /gv3-main -->
 
 <div id="gv3-theme-panel">
@@ -5429,6 +6153,488 @@ document.addEventListener('DOMContentLoaded', function() {
   setTimeout(gv3InitTilt, 600);
 });
 setInterval(gv3InitTilt, 2500);
+
+/* ═══════════════════════════════════════════════════════
+   CANVAS LMS INTEGRATION
+════════════════════════════════════════════════════════ */
+var cvCourses = [];
+var cvSelected = new Set();
+var cvConfig = {};
+var cvToastTimer = null;
+
+function cvLoadConfig() {
+  try {
+    var raw = localStorage.getItem('gradintel_canvas_config');
+    cvConfig = raw ? JSON.parse(raw) : {};
+  } catch(e) { cvConfig = {}; }
+  if (cvConfig.url)    document.getElementById('cv-url').value    = cvConfig.url;
+  if (cvConfig.token)  document.getElementById('cv-token').value  = cvConfig.token;
+  if (cvConfig.worker) document.getElementById('cv-worker').value = cvConfig.worker;
+  if (cvConfig.enrollState) document.getElementById('cv-enroll-state').value = cvConfig.enrollState;
+  cvUpdateStatus();
+}
+
+function cvSaveConfig() {
+  cvConfig = {
+    url:         document.getElementById('cv-url').value.trim().replace(/\/+$/, ''),
+    token:       document.getElementById('cv-token').value.trim(),
+    worker:      document.getElementById('cv-worker').value.trim().replace(/\/+$/, ''),
+    enrollState: document.getElementById('cv-enroll-state').value,
+    connected:   cvConfig.connected || false,
+    lastSync:    cvConfig.lastSync  || null,
+  };
+  localStorage.setItem('gradintel_canvas_config', JSON.stringify(cvConfig));
+  cvUpdateStatus();
+}
+
+function cvUpdateStatus() {
+  var dot  = document.getElementById('cv-dot');
+  var text = document.getElementById('cv-status-text');
+  var sub  = document.getElementById('cv-status-sub');
+  var disc = document.getElementById('cv-disconnect-btn');
+  if (!dot) return;
+  if (cvConfig.connected && cvConfig.lastSync) {
+    dot.className  = 'cv-status-dot connected';
+    text.textContent = '✓ Connected to ' + (cvConfig.url || 'Canvas');
+    sub.textContent  = 'Last synced: ' + cvConfig.lastSync;
+    disc.style.display = 'flex';
+  } else if (cvConfig.url && cvConfig.token && cvConfig.worker) {
+    dot.className  = 'cv-status-dot';
+    dot.style.background = 'var(--a1)'; dot.style.boxShadow = '0 0 8px var(--a1)';
+    text.textContent = 'Ready to sync';
+    sub.textContent  = 'Press "Sync from Canvas" to fetch your courses';
+    disc.style.display = 'none';
+  } else {
+    dot.className  = 'cv-status-dot';
+    dot.style.background = ''; dot.style.boxShadow = '';
+    text.textContent = 'Not connected';
+    sub.textContent  = 'Fill in the fields below to get started';
+    disc.style.display = 'none';
+  }
+}
+
+function cvLog(msg, type) {
+  var log = document.getElementById('cv-log');
+  log.classList.add('show');
+  var line = document.createElement('div');
+  line.className = type || '';
+  line.textContent = (type === 'ok' ? '✓ ' : type === 'err' ? '✗ ' : '→ ') + msg;
+  log.appendChild(line);
+  log.scrollTop = log.scrollHeight;
+}
+
+function cvClearLog() {
+  var log = document.getElementById('cv-log');
+  log.innerHTML = '';
+  log.classList.remove('show');
+}
+
+async function cvFetch(path) {
+  var worker = cvConfig.worker;
+  var token  = cvConfig.token;
+  var base   = cvConfig.url;
+  if (!worker || !token || !base) throw new Error('Missing config');
+  var targetUrl = base + path;
+  var proxyUrl  = worker + '?url=' + encodeURIComponent(targetUrl) + '&token=' + encodeURIComponent(token);
+  var resp = await fetch(proxyUrl);
+  if (!resp.ok) throw new Error('HTTP ' + resp.status + ' from Canvas');
+  return resp.json();
+}
+
+async function cvTestConnection() {
+  cvClearLog();
+  cvLog('Testing connection…', 'inf');
+  try {
+    var profile = await cvFetch('/api/v1/users/self/profile');
+    cvLog('Connected as: ' + (profile.name || profile.short_name || 'Unknown'), 'ok');
+    cvConfig.connected = true;
+    cvSaveConfig();
+    cvShowToast('✓ Connected as ' + (profile.name || 'Canvas User'));
+  } catch(e) {
+    cvLog('Connection failed: ' + e.message, 'err');
+    cvLog('Check your Canvas URL, token, and Worker URL', 'inf');
+    cvShowToast('Connection failed — check the log below');
+  }
+}
+
+async function cvSync() {
+  var btn = document.getElementById('cv-sync-btn');
+  if (!cvConfig.url || !cvConfig.token || !cvConfig.worker) {
+    cvShowToast('⚠️ Please fill in Canvas URL, token, and Worker URL first');
+    return;
+  }
+  btn.disabled = true;
+  btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="animation:spin 1s linear infinite"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/></svg> Syncing…';
+
+  var dot = document.getElementById('cv-dot');
+  dot.className = 'cv-status-dot syncing';
+
+  cvClearLog();
+  cvLog('Connecting to Canvas…', 'inf');
+  cvCourses = [];
+  cvSelected.clear();
+
+  try {
+    // Fetch courses
+    var enrollState = cvConfig.enrollState || 'active';
+    var param = enrollState === 'all' ? '' : '&enrollment_state=' + enrollState;
+    cvLog('Fetching courses…', 'inf');
+    var courses = await cvFetch('/api/v1/courses?include[]=total_scores&include[]=current_grading_period_scores&per_page=50' + param);
+
+    // Filter out courses without names (sandbox/deleted)
+    courses = (courses || []).filter(function(c) { return c.name && !c.access_restricted_by_date; });
+    cvLog('Found ' + courses.length + ' courses', 'ok');
+
+    // Fetch assignments for each course (up to 10 courses to avoid rate limits)
+    var enriched = [];
+    var toFetch = courses.slice(0, 12);
+    for (var i = 0; i < toFetch.length; i++) {
+      var c = toFetch[i];
+      cvLog('Loading ' + c.name + '…', 'inf');
+      try {
+        // Assignment groups (weights)
+        var groups = await cvFetch('/api/v1/courses/' + c.id + '/assignment_groups?include[]=assignments&include[]=submission');
+        c._groups = groups || [];
+
+        // Upcoming assignments (due soon)
+        var assigns = await cvFetch('/api/v1/courses/' + c.id + '/assignments?include[]=submission&order_by=due_at&per_page=30');
+        c._assignments = (assigns || []).filter(function(a) {
+          return a.due_at && new Date(a.due_at) > new Date();
+        }).slice(0, 8);
+      } catch(e2) {
+        c._groups = []; c._assignments = [];
+      }
+      enriched.push(c);
+    }
+
+    cvCourses = enriched;
+    cvConfig.connected = true;
+    cvConfig.lastSync  = new Date().toLocaleString();
+    cvSaveConfig();
+
+    cvRenderCourses();
+    cvRenderAssignments();
+
+    document.getElementById('cv-courses-section').style.display = 'block';
+    document.getElementById('cv-how-section').style.display = 'none';
+
+    cvLog('Sync complete! Select courses below to import into Gradintel.', 'ok');
+    cvShowToast('✓ Synced ' + courses.length + ' courses from Canvas');
+
+  } catch(e) {
+    cvLog('Sync failed: ' + e.message, 'err');
+    cvShowToast('Sync failed — see log below');
+    dot.className = 'cv-status-dot error';
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg> Sync from Canvas';
+}
+
+function cvGradeToPercent(c) {
+  if (c.enrollments && c.enrollments.length > 0) {
+    var e = c.enrollments[0];
+    if (e.computed_current_score != null) return e.computed_current_score;
+    if (e.current_score != null) return e.current_score;
+  }
+  return null;
+}
+
+function cvPercentToLetter(pct) {
+  if (pct == null) return null;
+  if (pct >= 93) return 'A';  if (pct >= 90) return 'A-';
+  if (pct >= 87) return 'B+'; if (pct >= 83) return 'B';
+  if (pct >= 80) return 'B-'; if (pct >= 77) return 'C+';
+  if (pct >= 73) return 'C';  if (pct >= 70) return 'C-';
+  if (pct >= 67) return 'D+'; if (pct >= 63) return 'D';
+  if (pct >= 60) return 'D-'; return 'F';
+}
+
+function cvRenderCourses() {
+  var grid = document.getElementById('cv-courses-grid');
+  grid.innerHTML = '';
+  cvCourses.forEach(function(c) {
+    var pct = cvGradeToPercent(c);
+    var letter = cvPercentToLetter(pct);
+    var assignCount = (c._assignments || []).length;
+    var totalAssigns = 0;
+    (c._groups || []).forEach(function(g) { totalAssigns += (g.assignments || []).length; });
+
+    var card = document.createElement('div');
+    card.className = 'cv-course-card';
+    card.setAttribute('data-id', c.id);
+    card.innerHTML =
+      '<div class="cv-cc-top">' +
+        '<div><div class="cv-cc-name">' + cvEsc(c.name) + '</div>' +
+        '<div class="cv-cc-code">' + cvEsc(c.course_code || '') + '</div></div>' +
+        '<div class="cv-cc-grade ' + (pct == null ? 'no-grade' : '') + '">' +
+          (pct != null ? (pct.toFixed(1) + '%') : 'N/A') + '</div>' +
+      '</div>' +
+      '<div class="cv-cc-meta">' +
+        '<span class="cv-cc-tag">' + (letter || '–') + '</span>' +
+        '<span class="cv-cc-assignments">' +
+          (totalAssigns > 0 ? totalAssigns + ' assignments' : '') +
+          (assignCount > 0 ? ' · ' + assignCount + ' upcoming' : '') +
+        '</span>' +
+      '</div>' +
+      '<div class="cv-cc-check"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>';
+    card.onclick = function() { cvToggleCourse(c.id, card); };
+    grid.appendChild(card);
+  });
+  cvUpdateSemTargets();
+}
+
+function cvToggleCourse(id, card) {
+  if (cvSelected.has(id)) {
+    cvSelected.delete(id);
+    card.classList.remove('selected');
+  } else {
+    cvSelected.add(id);
+    card.classList.add('selected');
+  }
+  cvUpdateImportConfirm();
+}
+
+function cvSelectAll() {
+  cvCourses.forEach(function(c) {
+    cvSelected.add(c.id);
+    var card = document.querySelector('.cv-course-card[data-id="' + c.id + '"]');
+    if (card) card.classList.add('selected');
+  });
+  cvUpdateImportConfirm();
+}
+
+function cvUpdateImportConfirm() {
+  var box = document.getElementById('cv-import-confirm');
+  if (cvSelected.size === 0) { box.classList.remove('show'); return; }
+
+  var selectedCourses = cvCourses.filter(function(c) { return cvSelected.has(c.id); });
+  var totalAssigns = 0;
+  selectedCourses.forEach(function(c) {
+    (c._groups || []).forEach(function(g) { totalAssigns += (g.assignments || []).length; });
+  });
+
+  document.getElementById('cv-import-summary').innerHTML =
+    '<span>' + cvSelected.size + '</span> course(s) selected · ' +
+    '<span>' + totalAssigns + '</span> total assignments · ' +
+    'Will be added to Gradintel as subjects with exam weights';
+  box.classList.add('show');
+}
+
+function cvRenderAssignments() {
+  var allUpcoming = [];
+  cvCourses.forEach(function(c) {
+    (c._assignments || []).forEach(function(a) {
+      a._courseName = c.name;
+      allUpcoming.push(a);
+    });
+  });
+  allUpcoming.sort(function(a, b) { return new Date(a.due_at) - new Date(b.due_at); });
+
+  if (allUpcoming.length === 0) return;
+
+  var card = document.getElementById('cv-assign-card');
+  card.style.display = 'block';
+  document.getElementById('cv-assign-count').textContent = '(' + allUpcoming.length + ' upcoming)';
+
+  var list = document.getElementById('cv-assign-list');
+  list.innerHTML = '';
+  allUpcoming.slice(0, 20).forEach(function(a) {
+    var sub = a.submission || {};
+    var score = null, scoreClass = 'pending';
+    if (sub.score != null && a.points_possible > 0) {
+      score = sub.score.toFixed(1) + '/' + a.points_possible;
+      scoreClass = sub.score / a.points_possible >= 0.7 ? '' : 'missing';
+    } else if (sub.missing) {
+      score = 'MISSING'; scoreClass = 'missing';
+    } else {
+      score = '—'; scoreClass = 'pending';
+    }
+
+    var dueDate = new Date(a.due_at);
+    var today = new Date();
+    var diffDays = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+    var dueStr = diffDays === 0 ? 'Today' :
+                 diffDays === 1 ? 'Tomorrow' :
+                 diffDays < 7  ? 'In ' + diffDays + 'd' :
+                 dueDate.toLocaleDateString('en-US', { month:'short', day:'numeric' });
+
+    var row = document.createElement('div');
+    row.className = 'cv-assign-row';
+    row.innerHTML =
+      '<div class="cv-assign-name">' + cvEsc(a.name) + '<span style="font-weight:400;color:var(--c-muted);font-size:11px;margin-left:6px">' + cvEsc(a._courseName) + '</span></div>' +
+      '<span class="cv-assign-due">' + dueStr + '</span>' +
+      '<span class="cv-assign-score ' + scoreClass + '">' + score + '</span>';
+    list.appendChild(row);
+  });
+}
+
+function cvUpdateSemTargets() {
+  var sel = document.getElementById('cv-sem-target');
+  sel.innerHTML = '<option value="new">➕ Create new semester</option>';
+  if (typeof semesters !== 'undefined') {
+    semesters.forEach(function(s) {
+      var opt = document.createElement('option');
+      opt.value = s.id; opt.textContent = s.name;
+      sel.appendChild(opt);
+    });
+  }
+}
+
+function cvCourseToSubject(course) {
+  // Convert Canvas course + assignment groups → Gradintel subject schema
+  var pct   = cvGradeToPercent(course);
+  var groups = course._groups || [];
+
+  // Build exam list from Canvas assignment groups
+  var exams = [];
+  var otherPct = 0;
+  var otherScore = pct || 0;
+  var examTotalPct = 0;
+
+  // Identify if there are meaningful assignment groups with weights
+  var weightedGroups = groups.filter(function(g) { return g.group_weight > 0; });
+
+  if (weightedGroups.length >= 2) {
+    // Use the two largest weighted groups as "exams", rest as "other"
+    weightedGroups.sort(function(a, b) { return b.group_weight - a.group_weight; });
+
+    // Top groups become exams (max 4)
+    var examGroups = weightedGroups.slice(0, 4);
+    examGroups.forEach(function(g) {
+      // Calculate this group's current score
+      var assigns = g.assignments || [];
+      var graded  = assigns.filter(function(a) { return a.submission && a.submission.score != null; });
+      var earned  = graded.reduce(function(s, a) { return s + a.submission.score; }, 0);
+      var max     = graded.reduce(function(s, a) { return s + (a.points_possible || 0); }, 0);
+      var groupScore = max > 0 ? (earned / max * 100) : null;
+
+      exams.push({
+        name:   g.name,
+        weight: Math.round(g.group_weight),
+        taken:  groupScore != null,
+        score:  groupScore != null ? parseFloat(groupScore.toFixed(1)) : null
+      });
+      examTotalPct += g.group_weight;
+    });
+
+    otherPct   = Math.max(0, Math.round(100 - examTotalPct));
+    otherScore = pct || 0;
+  } else {
+    // No meaningful groups — treat entire grade as "other"
+    otherPct   = 100;
+    otherScore = pct || 0;
+    exams = [{ name: 'Final Exam', weight: 100, taken: false, score: null }];
+    examTotalPct = 0;
+    otherPct = 100;
+  }
+
+  // Normalise exam weights to sum to 100
+  var totalW = exams.reduce(function(s, e) { return s + e.weight; }, 0);
+  if (totalW > 0) exams.forEach(function(e) { e.weight = parseFloat((e.weight / totalW * 100).toFixed(2)); });
+
+  return {
+    id:          uid(),
+    name:        course.name,
+    credits:     course.credits_hours || 3,
+    other_pct:   examTotalPct > 0 ? otherPct : 100,
+    other_score: parseFloat((otherScore).toFixed(1)),
+    exam_pct:    examTotalPct > 0 ? Math.round(examTotalPct) : 0,
+    exams:       exams,
+    status:      'normal',
+    _canvas_id:  course.id,
+  };
+}
+
+async function cvImportSelected() {
+  if (cvSelected.size === 0) { cvShowToast('Select at least one course first'); return; }
+
+  var selectedCourses = cvCourses.filter(function(c) { return cvSelected.has(c.id); });
+  var subjects = selectedCourses.map(cvCourseToSubject);
+
+  var semTarget = document.getElementById('cv-sem-target').value;
+  var semName   = document.getElementById('cv-sem-name').value.trim() ||
+                  'Canvas Sync — ' + new Date().toLocaleDateString('en-US', { month:'short', year:'numeric' });
+
+  try {
+    if (semTarget === 'new') {
+      // Create new semester
+      var sem = {
+        id:       uid(),
+        name:     semName,
+        date:     new Date().toLocaleDateString(),
+        subjects: subjects
+      };
+      var semCP = subjects.reduce(function(a, s) {
+        return a + s.credits * (s.other_pct === 100 ? s.other_score / 100 : s.other_score / 100);
+      }, 0);
+      var semCR = subjects.reduce(function(a, s) { return a + s.credits; }, 0);
+      sem._gpa = semCR > 0 ? parseFloat((semCP / semCR).toFixed(3)) : 0;
+      await saveSemesterToDB(sem);
+    } else {
+      // Add to existing semester
+      var existing = semesters.find(function(s) { return s.id === semTarget; });
+      if (!existing) { cvShowToast('Semester not found'); return; }
+      subjects.forEach(function(s) { existing.subjects.push(s); });
+      await saveSemesterToDB(existing);
+    }
+
+    // Refresh app
+    if (typeof renderSemesterList === 'function') renderSemesterList();
+    if (typeof renderDashboard === 'function') renderDashboard();
+    if (typeof renderDash === 'function') renderDash();
+
+    cvShowToast('✓ Imported ' + subjects.length + ' course(s) into Gradintel!');
+    cvLog('Imported ' + subjects.length + ' courses as subjects', 'ok');
+
+    // Reset selection
+    cvSelected.clear();
+    document.querySelectorAll('.cv-course-card').forEach(function(c) { c.classList.remove('selected'); });
+    document.getElementById('cv-import-confirm').classList.remove('show');
+
+  } catch(e) {
+    cvShowToast('Import failed: ' + e.message);
+    cvLog('Import error: ' + e.message, 'err');
+  }
+}
+
+function cvDisconnect() {
+  if (!confirm('Disconnect Canvas? This only removes the connection — your imported data stays.')) return;
+  cvConfig = {};
+  localStorage.removeItem('gradintel_canvas_config');
+  document.getElementById('cv-url').value    = '';
+  document.getElementById('cv-token').value  = '';
+  document.getElementById('cv-worker').value = '';
+  cvCourses = [];
+  cvSelected.clear();
+  document.getElementById('cv-courses-section').style.display = 'none';
+  document.getElementById('cv-how-section').style.display = 'block';
+  cvUpdateStatus();
+  cvShowToast('Disconnected from Canvas');
+}
+
+function cvShowToast(msg) {
+  var t = document.getElementById('cv-toast');
+  if (!t) return;
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(cvToastTimer);
+  cvToastTimer = setTimeout(function() { t.classList.remove('show'); }, 3000);
+}
+
+function cvEsc(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Load config when canvas tab opens
+document.addEventListener('DOMContentLoaded', function() {
+  // Inject spin keyframe for sync button
+  var style = document.createElement('style');
+  style.textContent = '@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }';
+  document.head.appendChild(style);
+  cvLoadConfig();
+});
+
 </script>
 
 </body>
