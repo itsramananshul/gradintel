@@ -6240,22 +6240,73 @@ async function ciAutoImport(rows, courseNameHint) {
   try {
     for (const [courseName, courseRows] of Object.entries(byCourse)) {
 
-      // ── Compute weighted other_score from points scored / points possible ──
-      let totalScored   = 0;
-      let totalPossible = 0;
+      // ── Compute other_score respecting Canvas group weights ──────────────
+      // Strategy:
+      //   1) Group assignments by their Canvas group name + group weight
+      //   2) For each group: compute that group's score = points scored / points possible
+      //   3) Weighted average across groups using Canvas group_weight values
+      //   4) If no group weights provided, fall back to simple points total
+
+      // Step 1: bucket by group
+      const groupBuckets = {}; // groupName → { weight, scored, possible, fallbackPct, fallbackCount }
       courseRows.forEach(function(r) {
+        const gName  = r.group   || '__ungrouped__';
+        const gWeight = (r.weight !== null && r.weight !== undefined) ? parseFloat(r.weight) : null;
+        if (!groupBuckets[gName]) {
+          groupBuckets[gName] = { weight: gWeight, scored: 0, possible: 0, fallbackPct: 0, fallbackCount: 0 };
+        }
+        const b = groupBuckets[gName];
+        // Always keep the highest group weight seen (all assignments in a group share the same weight)
+        if (gWeight !== null && (b.weight === null || gWeight > b.weight)) b.weight = gWeight;
         if (r.score !== null && r.possible !== null && r.possible > 0) {
-          totalScored   += r.score;
-          totalPossible += r.possible;
+          b.scored   += r.score;
+          b.possible += r.possible;
         } else if (r.pct !== null) {
-          // No raw points — fall back to treating each assignment as 1 point
-          totalScored   += r.pct / 100;
-          totalPossible += 1;
+          b.fallbackPct   += r.pct;
+          b.fallbackCount += 1;
         }
       });
-      const computedOtherScore = totalPossible > 0
-        ? parseFloat((totalScored / totalPossible * 100).toFixed(2))
-        : null;
+
+      // Step 2: compute each group's percentage
+      const groups = Object.values(groupBuckets);
+      groups.forEach(function(b) {
+        if (b.possible > 0) {
+          b.groupPct = b.scored / b.possible * 100;
+        } else if (b.fallbackCount > 0) {
+          b.groupPct = b.fallbackPct / b.fallbackCount; // simple avg as fallback
+        } else {
+          b.groupPct = null;
+        }
+      });
+      const scoredGroups = groups.filter(function(b) { return b.groupPct !== null; });
+
+      // Step 3: weighted average if group weights exist, otherwise simple points total
+      let computedOtherScore = null;
+      const totalGroupWeight = scoredGroups.reduce(function(a, b) { return a + (b.weight || 0); }, 0);
+
+      if (totalGroupWeight > 0) {
+        // Canvas group-weight aware calculation
+        let weightedSum = 0;
+        scoredGroups.forEach(function(b) {
+          weightedSum += (b.groupPct / 100) * (b.weight / totalGroupWeight);
+        });
+        computedOtherScore = parseFloat((weightedSum * 100).toFixed(2));
+      } else {
+        // Fallback: simple points total (no group weights available)
+        let totalScored = 0, totalPossible = 0;
+        courseRows.forEach(function(r) {
+          if (r.score !== null && r.possible !== null && r.possible > 0) {
+            totalScored   += r.score;
+            totalPossible += r.possible;
+          } else if (r.pct !== null) {
+            totalScored   += r.pct / 100;
+            totalPossible += 1;
+          }
+        });
+        computedOtherScore = totalPossible > 0
+          ? parseFloat((totalScored / totalPossible * 100).toFixed(2))
+          : null;
+      }
 
       if (computedOtherScore === null) continue;
 
