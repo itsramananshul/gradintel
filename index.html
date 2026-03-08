@@ -70,7 +70,23 @@ body.reduced-motion #cur,body.reduced-motion #cur-ring{display:none}
 [data-theme="light"] .anno{display:none}
 [data-theme="light"] #bgCanvas{opacity:.25}
 
-/* CONFIG BANNER */
+/* ── TOPBAR COMPACT STATS (shown on non-dashboard pages) ── */
+#topbar-stats{
+  display:none;align-items:center;gap:10px;padding:0 0 6px;
+  overflow-x:auto;flex-wrap:nowrap;
+}
+#topbar-stats.show{ display:flex; }
+.ts-pill{
+  display:flex;align-items:center;gap:6px;
+  padding:5px 12px;border-radius:100px;
+  background:var(--surface2);border:1px solid var(--border2);
+  font-size:11px;font-family:'Cabinet Grotesk',sans-serif;white-space:nowrap;flex-shrink:0;
+}
+.ts-lbl{ color:var(--muted);font-size:10px;letter-spacing:.08em;text-transform:uppercase; }
+.ts-val{ font-family:'Clash Display',sans-serif;font-weight:700;font-size:13px;color:var(--accent); }
+/* hide dashboard-only sections on other tabs */
+.dash-only{ transition:opacity .25s; }
+.dash-only.hidden-off{ display:none!important; }
 .config-banner{position:fixed;top:0;left:0;right:0;z-index:500;
   background:linear-gradient(90deg,rgba(251,191,36,.15),rgba(248,113,113,.15));
   border-bottom:1px solid rgba(251,191,36,.3);
@@ -80,7 +96,8 @@ body.reduced-motion #cur,body.reduced-motion #cur-ring{display:none}
 
 /* AUTH */
 .auth-wrap{position:fixed;inset:0;z-index:100;display:flex;align-items:center;
-  justify-content:center;padding:20px;transition:opacity .4s,transform .4s}
+  justify-content:center;padding:20px;transition:opacity .4s,transform .4s;opacity:0;pointer-events:none}
+.auth-wrap.ready{opacity:1;pointer-events:auto}
 .auth-wrap.out{opacity:0;transform:scale(1.04);pointer-events:none}
 .auth-box{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r-xl);
   padding:40px 36px;width:100%;max-width:420px;position:relative;overflow:hidden;
@@ -1717,6 +1734,12 @@ input:not(.af input):focus, select:focus {
       </div>
       <span class="gv3-lbl">Degree</span>
     </button>
+    <button class="gv3-item" data-tab="canvas" onclick="gv3Switch('canvas')">
+      <div class="gv3-ico" data-tip="Canvas LMS">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill="rgba(229,62,48,0.2)" stroke="#e53e30" stroke-width="1.8" stroke-linejoin="round" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path fill="none" stroke="#e53e30" stroke-width="1.8" stroke-linecap="round" d="M8 12h8M12 8v8"/><circle cx="12" cy="12" r="3" fill="#e53e30" opacity=".6"/></svg>
+      </div>
+      <span class="gv3-lbl">Canvas Sync</span>
+    </button>
     <button class="gv3-item" data-tab="policies" onclick="gv3Switch('policies')">
       <div class="gv3-ico" data-tip="Policies">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill="rgba(167,139,250,0.15)" stroke="var(--a1)" stroke-width="1.8" stroke-linejoin="round" d="M12 2L3 7v7c0 5 4 9 9 9s9-4 9-9V7z"/><polyline fill="none" stroke="var(--a2)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" points="8 12 11 15 16 10"/></svg>
@@ -1728,12 +1751,6 @@ input:not(.af input):focus, select:focus {
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="3" width="22" height="5" rx="2" fill="rgba(167,139,250,0.2)" stroke="var(--a1)" stroke-width="1.8"/><path fill="rgba(167,139,250,0.08)" stroke="var(--a1)" stroke-width="1.6" d="M3 8h18v12a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><line x1="12" y1="12" x2="12" y2="18" stroke="var(--a2)" stroke-width="2" stroke-linecap="round"/><polyline fill="none" stroke="var(--a2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="9 15 12 18 15 15"/></svg>
       </div>
       <span class="gv3-lbl">Export</span>
-    </button>
-    <button class="gv3-item" data-tab="canvas" onclick="gv3Switch('canvas')">
-      <div class="gv3-ico" data-tip="Canvas LMS">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill="rgba(229,62,48,0.2)" stroke="#e53e30" stroke-width="1.8" stroke-linejoin="round" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path fill="none" stroke="#e53e30" stroke-width="1.8" stroke-linecap="round" d="M8 12h8M12 8v8"/><circle cx="12" cy="12" r="3" fill="#e53e30" opacity=".6"/></svg>
-      </div>
-      <span class="gv3-lbl">Canvas Sync</span>
     </button>
     <button class="gv3-item" data-tab="privacy" onclick="gv3Switch('privacy')">
       <div class="gv3-ico" data-tip="Privacy Policy">
@@ -1910,13 +1927,21 @@ input:not(.af input):focus, select:focus {
     </div>
   </div>
 
-  <div class="hero">
+  <div class="hero dash-only">
     <div class="hero-ey">Academic Performance System</div>
     <h1 id="hero-h">Welcome back!</h1>
     <p id="hero-p">Your GPA dashboard · Track · Predict · Improve</p>
   </div>
 
-  <div class="dash-stats">
+  <!-- Compact stats bar shown on non-dashboard pages -->
+  <div id="topbar-stats">
+    <div class="ts-pill"><span class="ts-lbl">GPA</span><span class="ts-val" id="ts-gpa">—</span></div>
+    <div class="ts-pill"><span class="ts-lbl">Semester</span><span class="ts-val" id="ts-sem">—</span></div>
+    <div class="ts-pill"><span class="ts-lbl">Subjects</span><span class="ts-val" id="ts-subjs">0</span></div>
+    <div class="ts-pill"><span class="ts-lbl">Credits</span><span class="ts-val" id="ts-credits">0</span></div>
+  </div>
+
+  <div class="dash-stats dash-only">
     <div class="stat-card" style="animation-delay:.05s">
       <div class="stat-lbl">Cumulative GPA</div>
       <div class="stat-val sh-num" id="ds-gpa" data-val="—">—</div>
@@ -1940,9 +1965,9 @@ input:not(.af input):focus, select:focus {
   </div>
 
   <!-- GOAL PROGRESS -->
-  <div id="goal-ring-section"></div>
+  <div id="goal-ring-section" class="dash-only"></div>
   <!-- AT RISK WARNING CENTER -->
-  <div id="risk-center"></div>
+  <div id="risk-center" class="dash-only"></div>
 
   <div class="nav-tabs">
     <button class="nav-tab active" onclick="showTab('dashboard')" id="tab-dashboard"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="url(#site-ig)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> Dashboard</button>
@@ -2063,9 +2088,28 @@ input:not(.af input):focus, select:focus {
 
   <!-- WHAT-IF -->
   <div id="tc-whatif" class="hidden">
+    <!-- GPA cards that update live with sliders -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px" id="wi-gpa-header">
+      <div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);padding:16px 20px;display:flex;align-items:center;gap:14px">
+        <div style="font-size:28px">📊</div>
+        <div>
+          <div style="font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Cumulative GPA</div>
+          <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:28px;color:var(--accent)" id="wi-cum-gpa">—</div>
+          <div style="font-size:11px;color:var(--muted)">Updates as you move sliders below</div>
+        </div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);padding:16px 20px;display:flex;align-items:center;gap:14px">
+        <div style="font-size:28px">🗓️</div>
+        <div>
+          <div style="font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);margin-bottom:4px">This Semester GPA</div>
+          <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:28px;color:var(--accent3)" id="wi-sem-gpa">—</div>
+          <div style="font-size:11px;color:var(--muted)">Based on your slider inputs</div>
+        </div>
+      </div>
+    </div>
     <div class="card">
       <div class="card-title"><span class="ico"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="url(#site-ig)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M9 3h6M9 3v6l-4 8a1 1 0 00.9 1.5h10.2A1 1 0 0023 17l-4-8V3"/></svg></span>What-If Simulator</div>
-      <div class="infobox">Drag sliders to simulate different exam scores and see projected grades live.</div>
+      <div class="infobox">Drag sliders to simulate different exam scores and see projected grades live. Your real GPA above stays unchanged.</div>
       <div id="wi-full"></div>
     </div>
   </div>
@@ -2333,8 +2377,8 @@ input:not(.af input):focus, select:focus {
       <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:14px;margin-bottom:10px">🔒 Safe Zone Indicator</div>
       <div id="sim-safezone"></div>
       <div class="divider"></div>
-      <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:14px;margin-bottom:10px">📉 Minimum Grade Calculator</div>
-      <div style="font-size:12px;color:var(--muted);margin-bottom:12px">What's the lowest you can score on remaining exams and still maintain your goal GPA?</div>
+      <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:14px;margin-bottom:6px">🎯 Target Grade Calculator</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:14px">Pick the grade you want in each course — see exactly what you need on remaining exams.</div>
       <div id="sim-minimum"></div>
     </div>
   </div>
@@ -2343,8 +2387,8 @@ input:not(.af input):focus, select:focus {
     <div style="font-size:13px;color:var(--muted2);margin-bottom:14px">Drag the slider to see how your cumulative GPA would look if you had scored X% better across all past semesters.</div>
     <div id="tm-wrap">
       <label style="font-size:12px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase">Hypothetical score boost across all past exams</label>
-      <input type="range" id="tm-slider" min="-20" max="20" value="0" oninput="renderTimeMachine()" style="margin:12px 0"/>
-      <div class="slider-labels"><span>-20%</span><span style="color:var(--accent);font-weight:700" id="tm-val">0%</span><span>+20%</span></div>
+      <input type="range" id="tm-slider" min="-100" max="100" value="0" oninput="renderTimeMachine()" style="margin:12px 0"/>
+      <div class="slider-labels"><span>-100%</span><span style="color:var(--accent);font-weight:700" id="tm-val">0%</span><span>+100%</span></div>
       <div style="margin-top:14px;display:flex;gap:18px;align-items:center">
         <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em">Actual GPA</div><div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:32px" id="tm-actual">—</div></div>
         <div style="font-size:22px;color:var(--muted)">→</div>
@@ -2403,13 +2447,21 @@ input:not(.af input):focus, select:focus {
 <div id="tc-planner" class="hidden">
   <div class="card" style="margin-bottom:14px">
     <div class="card-title">📅 Deadline Tracker</div>
-    <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+    <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
       <button class="btn btn-primary" onclick="openAddDeadlineModal()">+ Add Deadline</button>
+      <button class="btn btn-secondary" onclick="importDeadlinesFromCanvas()" style="font-size:12px;display:flex;align-items:center;gap:6px">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Import from Canvas
+      </button>
       <div style="display:flex;gap:6px">
         <button class="chip" id="dl-filter-all" onclick="filterDeadlines('all')" style="border-color:var(--accent);color:var(--accent)">All</button>
         <button class="chip" id="dl-filter-upcoming" onclick="filterDeadlines('upcoming')">Upcoming</button>
         <button class="chip" id="dl-filter-overdue" onclick="filterDeadlines('overdue')">Overdue</button>
       </div>
+    </div>
+    <div id="dl-canvas-status" style="display:none;margin-bottom:10px;padding:10px 14px;background:rgba(129,140,248,.08);border:1px solid rgba(129,140,248,.25);border-radius:var(--r);font-size:12px;color:var(--muted2)">
+      📡 Listening for Canvas bookmarklet… Go to Canvas → any Grades page → click your Gradintel bookmarklet. Deadlines will import automatically.
+      <button onclick="document.getElementById('dl-canvas-status').style.display='none'" style="float:right;background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1">✕</button>
     </div>
     <div id="deadline-list"></div>
   </div>
@@ -2566,6 +2618,29 @@ input:not(.af input):focus, select:focus {
     <button class="btn btn-primary" onclick="openAddRequirementModal()" style="margin-bottom:14px">+ Add Requirement</button>
     <div id="requirements-list"></div>
   </div>
+  <!-- PDF AUTO-FILL CARD -->
+  <div class="card" style="margin-bottom:14px;border:1px solid rgba(129,140,248,.3);background:linear-gradient(135deg,rgba(129,140,248,.04),rgba(244,114,182,.02))">
+    <div class="card-title">🤖 AI Degree Auto-Fill <span style="font-size:10px;background:rgba(129,140,248,.18);color:var(--accent);padding:2px 8px;border-radius:100px;font-weight:600;letter-spacing:.04em;vertical-align:middle">BETA</span></div>
+    <div class="infobox" style="margin-bottom:14px">Upload your university's degree requirements PDF — AI will read it and auto-populate your course requirements list. Works best with text-based PDFs.</div>
+    <div id="pdf-drop-zone" onclick="document.getElementById('pdf-upload-input').click()"
+      style="border:2px dashed var(--border2);border-radius:var(--r);padding:28px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s"
+      ondragover="event.preventDefault();this.style.borderColor='var(--accent)';this.style.background='rgba(129,140,248,.06)'"
+      ondragleave="this.style.borderColor='';this.style.background=''"
+      ondrop="event.preventDefault();this.style.borderColor='';this.style.background='';handleDegreePdfDrop(event)">
+      <div style="font-size:32px;margin-bottom:8px">📄</div>
+      <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:14px;margin-bottom:4px">Drop your degree PDF here</div>
+      <div style="font-size:12px;color:var(--muted)">or click to browse — PDF only</div>
+    </div>
+    <input type="file" id="pdf-upload-input" accept=".pdf" style="display:none" onchange="handleDegreePdfFile(this.files[0])"/>
+    <div id="pdf-ai-status" style="margin-top:12px;display:none">
+      <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r)">
+        <div id="pdf-ai-spinner" style="width:18px;height:18px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:gv3spin .7s linear infinite;flex-shrink:0"></div>
+        <div id="pdf-ai-msg" style="font-size:13px;color:var(--muted2)">Reading PDF…</div>
+      </div>
+    </div>
+    <div id="pdf-ai-preview" style="display:none;margin-top:14px"></div>
+  </div>
+
   <div class="card">
     <div class="card-title">🏫 Professor Notes</div>
     <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Private notes on professors / courses to help future you when picking classes</div>
@@ -2806,7 +2881,10 @@ async function doSignOut() {
   document.getElementById('user-modal').classList.remove('show');
   document.getElementById('app').style.display = 'none';
   document.getElementById('auth-wrap').classList.remove('out');
-  document.getElementById('auth-wrap').style.display = 'flex';
+  const authWrap = document.getElementById('auth-wrap');
+  authWrap.style.display = 'flex';
+  authWrap.classList.add('ready');
+  authWrap.classList.remove('out');
   document.getElementById('in-email').value = '';
   document.getElementById('in-pass').value = '';
   document.getElementById('auth-err').style.display = 'none';
@@ -2973,6 +3051,9 @@ function launchApp() {
   renderStudy();
   renderROI();
   initAnimations();
+  // Restore last active tab (default: dashboard)
+  const lastTab = localStorage.getItem('gradintel_active_tab') || 'dashboard';
+  showTab(lastTab);
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -3738,18 +3819,40 @@ function renderWIFull() {
   const c = document.getElementById('wi-full'); c.innerHTML = '';
   const all = []; semesters.forEach(sem => sem.subjects.forEach(s => all.push({ s, sem })));
   if (!all.length) { c.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted)">Add subjects first.</div>'; return; }
+
+  // Store the real baseline cumulative GPA for reference
+  let realCumCP = 0, realCumCR = 0;
+  semesters.forEach(sem => sem.subjects.forEach(s => {
+    const res = computeSubject(s);
+    realCumCP += s.credits * (res.curG?.p || 0); realCumCR += s.credits;
+  }));
+  const realCumGPA = realCumCR > 0 ? realCumCP / realCumCR : 0;
+
+  // Init GPA cards with real GPA as starting point
+  const cumGpaEl = document.getElementById('wi-cum-gpa');
+  const semGpaEl = document.getElementById('wi-sem-gpa');
+  if (cumGpaEl) cumGpaEl.textContent = realCumCR > 0 ? realCumGPA.toFixed(2) : '—';
+  if (semGpaEl) {
+    const latestSem = semesters[semesters.length - 1];
+    if (latestSem && latestSem.subjects.length) {
+      const cp = latestSem.subjects.reduce((a, s) => a + s.credits * computeSubject(s).curG.p, 0);
+      const cr = latestSem.subjects.reduce((a, s) => a + s.credits, 0);
+      semGpaEl.textContent = cr > 0 ? (cp / cr).toFixed(2) : '—';
+    } else { semGpaEl.textContent = '—'; }
+  }
+
   all.forEach(({ s, sem }, si) => {
     const res = computeSubject(s);
     const div = document.createElement('div'); div.style.marginBottom = '24px';
     div.innerHTML = `<div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:16px;margin-bottom:10px">${s.name} <span style="font-size:12px;color:var(--muted);font-weight:400">· ${sem.name}</span></div>
       <div class="infobox">Current: <strong>${res.cur.toFixed(1)}%</strong> (${res.curG.l}) · Remaining weight: <strong>${(res.remFrac * 100).toFixed(1)}%</strong></div>
-      <input type="range" min="0" max="100" value="75" style="width:100%" oninput="wiUpd(this,${si})"/>
+      <input type="range" min="0" max="100" value="${Math.round(res.cur)}" style="width:100%" oninput="wiUpd(this,${si})"/>
       <div class="slider-labels"><span>0%</span><span>50%</span><span>100%</span></div>
       <div style="display:flex;gap:18px;margin-top:12px;flex-wrap:wrap">
-        <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px">Score</div>
-          <div id="wi2v${si}" style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:26px;color:var(--accent)">75%</div></div>
+        <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px">If I score</div>
+          <div id="wi2v${si}" style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:26px;color:var(--accent)">${Math.round(res.cur)}%</div></div>
         <div style="font-size:22px;color:var(--muted);display:flex;align-items:center">→</div>
-        <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px">Total</div>
+        <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px">Final Total</div>
           <div id="wi2t${si}" style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:26px;color:var(--accent3)">—</div></div>
         <div style="font-size:22px;color:var(--muted);display:flex;align-items:center">→</div>
         <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px">Grade</div>
@@ -3759,14 +3862,49 @@ function renderWIFull() {
     setTimeout(() => { const sl = div.querySelector('input[type=range]'); wiUpd(sl, si, res); }, 50);
   });
 }
+
 function wiUpd(sl, si, resOv) {
   const v = parseFloat(sl.value);
   const all = []; semesters.forEach(sem => sem.subjects.forEach(s => all.push(s)));
   const res = resOv || computeSubject(all[si]);
+
+  // Update this subject's display
   document.getElementById(`wi2v${si}`).textContent = v.toFixed(0) + '%';
-  const proj = Math.min(100, res.curAbsolute + (res.remFrac * v)); const g = pctToG(proj);
+  const proj = Math.min(100, res.curAbsolute + (res.remFrac * v));
+  const g = pctToG(proj);
   document.getElementById(`wi2t${si}`).textContent = proj.toFixed(1) + '%';
-  document.getElementById(`wi2g${si}`).textContent = g.l; document.getElementById(`wi2g${si}`).style.color = gCol(g.l);
+  document.getElementById(`wi2g${si}`).textContent = g.l;
+  document.getElementById(`wi2g${si}`).style.color = gCol(g.l);
+
+  // Recalculate projected cumulative and semester GPA from all sliders
+  _wiRecalcGPAs();
+}
+
+function _wiRecalcGPAs() {
+  // Collect current slider values per subject index
+  const sliders = document.querySelectorAll('#wi-full input[type=range]');
+  const allSubjects = []; semesters.forEach(sem => sem.subjects.forEach(s => allSubjects.push({ s, sem })));
+  const latestSemName = semesters.length ? semesters[semesters.length - 1].name : null;
+
+  let cumCP = 0, cumCR = 0, semCP = 0, semCR = 0;
+  allSubjects.forEach(({ s, sem }, si) => {
+    const sliderVal = sliders[si] ? parseFloat(sliders[si].value) : null;
+    const res = computeSubject(s);
+    let projPct;
+    if (sliderVal !== null) {
+      projPct = Math.min(100, res.curAbsolute + (res.remFrac * sliderVal));
+    } else {
+      projPct = res.cur;
+    }
+    const gp = pctToG(projPct).p;
+    cumCP += s.credits * gp; cumCR += s.credits;
+    if (sem.name === latestSemName) { semCP += s.credits * gp; semCR += s.credits; }
+  });
+
+  const cumEl = document.getElementById('wi-cum-gpa');
+  const semEl = document.getElementById('wi-sem-gpa');
+  if (cumEl) { const gpa = cumCR > 0 ? cumCP / cumCR : 0; cumEl.textContent = gpa.toFixed(2); cumEl.style.color = gpa >= 3.5 ? 'var(--green)' : gpa >= 2.5 ? 'var(--accent)' : 'var(--red)'; }
+  if (semEl) { const gpa = semCR > 0 ? semCP / semCR : 0; semEl.textContent = gpa.toFixed(2); semEl.style.color = gpa >= 3.5 ? 'var(--green)' : gpa >= 2.5 ? 'var(--accent3)' : 'var(--red)'; }
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -4672,10 +4810,50 @@ function openUserModal() {
     <div class="divider"></div>
     <div style="font-size:12px;color:var(--muted)">Mode: ${profile.mode === 'fresh' ? 'Starting fresh' : 'Continuing student'}</div>
     ${profile.mode === 'existing' ? `<div style="font-size:12px;color:var(--muted);margin-top:4px">Started with: GPA ${profile.start_gpa} (${profile.start_credits} credits)</div>` : ''}
-    <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+
+    <!-- EDIT PROFILE SECTION -->
+    <div id="edit-profile-section" style="display:none;margin-top:16px;padding:14px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r)">
+      <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:13px;margin-bottom:12px">✏️ Edit Profile</div>
+      <div class="field" style="margin-bottom:10px">
+        <label style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em">Display Name</label>
+        <input type="text" id="edit-name" value="${profile.full_name||''}" placeholder="Your name"
+          style="width:100%;padding:9px 12px;background:var(--surface3);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:'Cabinet Grotesk',sans-serif;font-size:13px;margin-top:4px"/>
+      </div>
+      <div class="field" style="margin-bottom:10px">
+        <label style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em">University</label>
+        <input type="text" id="edit-uni" value="${profile.university||''}" placeholder="Your university"
+          style="width:100%;padding:9px 12px;background:var(--surface3);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:'Cabinet Grotesk',sans-serif;font-size:13px;margin-top:4px"/>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn btn-primary" style="font-size:12px;padding:8px 14px" onclick="saveProfileEdits()">Save Changes</button>
+        <button class="btn btn-ghost" style="font-size:12px;padding:8px 14px" onclick="document.getElementById('edit-profile-section').style.display='none'">Cancel</button>
+      </div>
+    </div>
+
+    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-secondary" style="font-size:12px;padding:8px 14px" onclick="document.getElementById('edit-profile-section').style.display=document.getElementById('edit-profile-section').style.display==='none'?'block':'none'">✏️ Edit Profile</button>
       <button class="btn btn-secondary" style="font-size:12px;padding:8px 14px" onclick="exportJSON();document.getElementById('user-modal').classList.remove('show')"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="url(#site-ig)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg> Export Backup</button>
     </div>`;
   document.getElementById('user-modal').classList.add('show');
+}
+
+async function saveProfileEdits() {
+  const newName = document.getElementById('edit-name')?.value.trim();
+  const newUni  = document.getElementById('edit-uni')?.value.trim();
+  if (!newName) { showToast('Name cannot be empty'); return; }
+  profile.full_name   = newName;
+  profile.university  = newUni;
+  // Save to Supabase
+  try {
+    await sb.from('gpa_profiles').upsert({ ...profile, user_id: currentUser.id }, { onConflict: 'user_id' });
+  } catch(e) {}
+  // Update UI
+  document.getElementById('uav').textContent = newName[0].toUpperCase();
+  document.getElementById('uname-display').textContent = newName.split(' ')[0];
+  document.getElementById('hero-h').textContent = `Welcome back, ${newName.split(' ')[0]}! 👋`;
+  if (newUni) document.getElementById('hero-p').textContent = `${newUni} · GPA Dashboard`;
+  document.getElementById('user-modal').classList.remove('show');
+  showToast('✅ Profile updated!');
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -4693,7 +4871,34 @@ function showTab(id) {
   document.querySelectorAll('[id^="tc-"]').forEach(el => el.classList.add('hidden'));
   document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
   document.getElementById('tc-' + id).classList.remove('hidden');
-  document.getElementById('tab-' + id).classList.add('active');
+  document.getElementById('tab-' + id) && document.getElementById('tab-' + id).classList.add('active');
+
+  // Persist active tab
+  localStorage.setItem('gradintel_active_tab', id);
+
+  // Show/hide dashboard-only sections and compact topbar stats
+  const isDash = id === 'dashboard';
+  document.querySelectorAll('.dash-only').forEach(el => {
+    el.classList.toggle('hidden-off', !isDash);
+  });
+  const tsBar = document.getElementById('topbar-stats');
+  if (tsBar) {
+    if (!isDash) {
+      tsBar.classList.add('show');
+      // Sync compact stats from main stat values
+      const gpaEl = document.getElementById('ds-gpa');
+      const semEl = document.getElementById('ds-sem');
+      const subjsEl = document.getElementById('ds-subjs');
+      const credEl = document.getElementById('ds-credits');
+      if (gpaEl)   document.getElementById('ts-gpa').textContent    = gpaEl.textContent;
+      if (semEl)   document.getElementById('ts-sem').textContent    = semEl.textContent;
+      if (subjsEl) document.getElementById('ts-subjs').textContent  = subjsEl.textContent;
+      if (credEl)  document.getElementById('ts-credits').textContent = credEl.textContent;
+    } else {
+      tsBar.classList.remove('show');
+    }
+  }
+
   if (id === 'history') { renderHistory(); buildSemTrendChart(); }
   if (id === 'whatif') renderWIFull();
   if (id === 'study') { renderStudy(); renderCalendar(); }
@@ -4801,9 +5006,16 @@ function initAnimations() {
     document.body.classList.add('reduced-motion');
     const btn = document.getElementById('motionBtn'); if (btn) btn.style.opacity = '.4';
   }
-  if (!initSupabase()) return;
+  if (!initSupabase()) { document.getElementById('auth-wrap').classList.add('ready'); return; }
   const { data: { session } } = await sb.auth.getSession();
-  if (session) { currentUser = session.user; await onAuthSuccess(); }
+  if (session) {
+    // User is already logged in — don't show auth at all
+    currentUser = session.user;
+    await onAuthSuccess();
+  } else {
+    // No session — show the sign-in page
+    document.getElementById('auth-wrap').classList.add('ready');
+  }
   sb.auth.onAuthStateChange(async (event, session) => {
     if (event === 'SIGNED_IN' && session && !currentUser) { currentUser = session.user; await onAuthSuccess(); }
   });
@@ -5099,23 +5311,84 @@ function renderSafeZone(){
 }
 function renderMinCalc(){
   const c=document.getElementById('sim-minimum'); if(!c) return;
-  const goalGpa=policies.goalGpa||3.0;
   const courses=getAllActiveCourses().filter(x=>getRemExams(x).length>0);
-  c.innerHTML=courses.map(s=>{
-    const remExams=getRemExams(s);
-    if(!remExams.length) return '';
-    // rough minimum: what average score on remaining exams to hit goal
-    const res=computeSubject(s);
-    const targets=res.targets||[];
-    const tgt=targets.find(t=>Math.abs(t.gpa-goalGpa)<0.1)||targets[0];
-    const min=tgt?.perExam?.[0]?.needed??null;
-    let label; let col;
-    if(min===null) { label='N/A'; col='var(--muted)'; }
-    else if(min<=0) { label='Already secured ✅'; col='var(--green)'; }
-    else if(min>100) { label='Not achievable ❌'; col='var(--red)'; }
-    else { label=`Need ≥ ${min.toFixed(1)}% average`; col=min<70?'var(--green)':min<85?'var(--yellow)':'var(--red)'; }
-    return `<div class="safe-zone-bar"><div class="sz-name">${s.name}<div style="font-size:10px;color:var(--muted)">${remExams.length} exam${remExams.length>1?'s':''} left</div></div><div style="color:${col};font-family:'Clash Display',sans-serif;font-weight:700;font-size:13px">${label}</div></div>`;
-  }).join('') || '<div style="color:var(--muted);font-size:13px">No remaining exams found.</div>';
+  if(!courses.length){ c.innerHTML='<div style="color:var(--muted);font-size:13px">No remaining exams found.</div>'; return; }
+
+  const gradeOpts = ['A+','A','A-','B+','B','B-','C+','C','C-','D+','D','D-','F'];
+
+  c.innerHTML = courses.map(s => {
+    const remExams = getRemExams(s);
+    const selId = 'tgt-grade-' + s.id;
+    const resId = 'tgt-result-' + s.id;
+    const res = computeSubject(s);
+    return `
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;margin-bottom:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:10px">
+        <div>
+          <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:14px">${s.name}</div>
+          <div style="font-size:11px;color:var(--muted)">${remExams.length} exam${remExams.length!==1?'s':''} remaining · Currently ${res.cur.toFixed(1)}% (${res.curG.l})</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:12px;color:var(--muted2)">I want:</span>
+          <select id="${selId}" onchange="calcTargetGrade('${s.id}')"
+            style="padding:6px 10px;border-radius:8px;border:1px solid var(--border2);background:var(--surface3);color:var(--text);font-family:'Clash Display',sans-serif;font-weight:700;font-size:14px;cursor:pointer">
+            ${gradeOpts.map(g => `<option value="${g}" ${g==='B'?'selected':''}>${g}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div id="${resId}"></div>
+    </div>`;
+  }).join('');
+
+  // Compute initial results for all courses
+  courses.forEach(s => calcTargetGrade(s.id));
+}
+
+function calcTargetGrade(courseId){
+  const s = getAllActiveCourses().find(x => x.id === courseId); if(!s) return;
+  const selEl = document.getElementById('tgt-grade-' + courseId);
+  const resEl = document.getElementById('tgt-result-' + courseId);
+  if(!selEl || !resEl) return;
+
+  const targetGrade = selEl.value;
+  const res = computeSubject(s);
+  const remExams = getRemExams(s);
+
+  // Find the target GPA point from pctToG mapping
+  const tgt = res.targets.find(t => t.l === targetGrade) || res.targets[0];
+  if(!tgt){ resEl.innerHTML = '<span style="color:var(--muted);font-size:12px">No data.</span>'; return; }
+
+  const avg = tgt.avg;
+  let html = '';
+  let overallColor;
+
+  if(avg === null){
+    html = `<div style="color:var(--green);font-family:'Clash Display',sans-serif;font-weight:700;font-size:13px">✅ Already secured! You've got ${targetGrade}.</div>`;
+    overallColor = 'var(--green)';
+  } else if(avg > 100){
+    html = `<div style="color:var(--red);font-family:'Clash Display',sans-serif;font-weight:700;font-size:13px">❌ Not achievable — would need ${avg.toFixed(1)}% on remaining exams.</div>`;
+    overallColor = 'var(--red)';
+  } else {
+    overallColor = avg < 70 ? 'var(--green)' : avg < 85 ? 'var(--yellow)' : 'var(--red)';
+    html = `<div style="margin-bottom:8px;font-family:'Clash Display',sans-serif;font-weight:700;font-size:13px;color:${overallColor}">Need avg <strong>${avg.toFixed(1)}%</strong> on remaining exams for ${targetGrade}</div>`;
+    // Per-exam breakdown
+    if(tgt.perExam && tgt.perExam.length > 1){
+      html += `<div style="display:flex;flex-wrap:wrap;gap:6px">`;
+      tgt.perExam.forEach(ex => {
+        const nd = ex.needed;
+        let col = 'var(--green)', txt;
+        if(nd === null){ txt = 'N/A'; col = 'var(--muted)'; }
+        else if(nd <= 0){ txt = 'Secured ✅'; col = 'var(--green)'; }
+        else if(nd > 100){ txt = 'Too high ❌'; col = 'var(--red)'; }
+        else { txt = nd.toFixed(1)+'%'; col = nd<70?'var(--green)':nd<85?'var(--yellow)':'var(--red)'; }
+        html += `<div style="padding:4px 10px;border-radius:8px;background:var(--surface3);border:1px solid var(--border);font-size:11px">
+          <span style="color:var(--muted2)">${ex.name}: </span><strong style="color:${col}">${txt}</strong>
+        </div>`;
+      });
+      html += `</div>`;
+    }
+  }
+  resEl.innerHTML = html;
 }
 
 // ─── TIME MACHINE ─────────────────────────────────────────
@@ -5315,6 +5588,16 @@ function saveDeadline(){
   addXP(5,'Added deadline');
   showToast('📌 Deadline saved!');
 }
+function importDeadlinesFromCanvas(){
+  // Show the status banner and start listening
+  const statusEl = document.getElementById('dl-canvas-status');
+  if(statusEl) statusEl.style.display = 'block';
+  showToast('📡 Go to Canvas → click your Gradintel bookmarklet to sync deadlines!');
+  // The actual handling is done by the realtime listener in the bottom script
+  // ciStartListener may not be running if canvas tab hasn't been opened — start it
+  if(typeof ciStartListener === 'function') ciStartListener();
+}
+
 function filterDeadlines(f){
   deadlineFilter=f;
   ['all','upcoming','overdue'].forEach(x=>{
@@ -5573,6 +5856,142 @@ function renderDegree(){
   renderRequirements();
   renderProfNotes();
 }
+
+// ── PDF DEGREE AUTO-FILL ──────────────────────────────────────
+function handleDegreePdfDrop(event) {
+  const file = event.dataTransfer.files[0];
+  if (file && file.type === 'application/pdf') handleDegreePdfFile(file);
+  else showToast('Please drop a PDF file!');
+}
+
+function handleDegreePdfFile(file) {
+  if (!file) return;
+  const statusEl = document.getElementById('pdf-ai-status');
+  const msgEl    = document.getElementById('pdf-ai-msg');
+  const previewEl= document.getElementById('pdf-ai-preview');
+  statusEl.style.display = 'block';
+  previewEl.style.display = 'none';
+  msgEl.textContent = 'Reading PDF…';
+
+  const prov = localStorage.getItem('gradintel_ai_prov') || 'gemini';
+  const key  = localStorage.getItem('gradintel_ai_key_' + prov) || '';
+  if (!key) {
+    msgEl.textContent = '⚠️ No AI key set — go to the AI Assistant tab to add your API key first.';
+    document.getElementById('pdf-ai-spinner').style.display = 'none';
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    const base64 = e.target.result.split(',')[1];
+    msgEl.textContent = '🤖 Asking AI to extract degree requirements…';
+    try {
+      let jsonText = '';
+      const prompt = `You are reading a university degree requirements PDF. Extract ALL course requirements listed. For each course/requirement output a JSON array. Each item should have: "name" (course name), "credits" (number, default 3 if not specified), "category" (e.g. Core, Elective, Lab, Gen Ed, Major, Minor — infer from context), "status" (always "pending"). Also extract the degree name if visible as "degreeName" and total credits required as "totalCredits" (number). Return ONLY valid JSON, no markdown, no explanation. Format: { "degreeName": "...", "totalCredits": 120, "courses": [{...}, ...] }`;
+
+      if (prov === 'gemini') {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts: [
+            { inline_data: { mime_type: 'application/pdf', data: base64 } },
+            { text: prompt }
+          ]}], generationConfig: { maxOutputTokens: 2000 }})
+        });
+        const d = await res.json();
+        jsonText = d?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      } else {
+        // For non-multimodal providers, extract text from PDF using pdf.js then send as text
+        msgEl.textContent = '📄 Extracting PDF text for AI…';
+        let pdfText = '';
+        try {
+          const pdfData = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+          if (window.pdfjsLib) {
+            const doc = await window.pdfjsLib.getDocument({ data: pdfData }).promise;
+            for (let i = 1; i <= Math.min(doc.numPages, 15); i++) {
+              const page = await doc.getPage(i);
+              const tc = await page.getTextContent();
+              pdfText += tc.items.map(t => t.str).join(' ') + '\n';
+            }
+          }
+        } catch(pe) { pdfText = '[PDF text extraction failed — try Gemini for best results]'; }
+        msgEl.textContent = '🤖 Asking AI to extract degree requirements…';
+        const textPrompt = `Here is text extracted from a university degree requirements PDF:\n\n${pdfText.slice(0, 8000)}\n\n${prompt}`;
+        if (prov === 'claude') {
+          const res = await fetch('https://api.anthropic.com/v1/messages', {
+            method:'POST', headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},
+            body: JSON.stringify({ model:'claude-haiku-4-5-20251001', max_tokens:2000, messages:[{role:'user',content:textPrompt}]})
+          });
+          const d = await res.json(); jsonText = d?.content?.[0]?.text || '';
+        } else {
+          const urls = { groq:'https://api.groq.com/openai/v1/chat/completions', openai:'https://api.openai.com/v1/chat/completions' };
+          const models = { groq:'llama3-8b-8192', openai:'gpt-4o-mini' };
+          const res = await fetch(urls[prov]||urls.openai, {
+            method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+            body: JSON.stringify({ model:models[prov]||models.openai, max_tokens:2000, messages:[{role:'user',content:textPrompt}]})
+          });
+          const d = await res.json(); jsonText = d?.choices?.[0]?.message?.content || '';
+        }
+      }
+
+      // Parse JSON
+      const clean = jsonText.replace(/```json|```/g,'').trim();
+      const parsed = JSON.parse(clean);
+      const courses = parsed.courses || parsed;
+
+      // Show preview
+      msgEl.textContent = `✅ Found ${courses.length} course requirements!`;
+      document.getElementById('pdf-ai-spinner').style.display = 'none';
+      previewEl.style.display = 'block';
+      previewEl.innerHTML = `
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:16px">
+          <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:14px;margin-bottom:4px">
+            ${parsed.degreeName ? '🎓 ' + parsed.degreeName : '🎓 Degree Requirements'}
+          </div>
+          ${parsed.totalCredits ? `<div style="font-size:12px;color:var(--muted);margin-bottom:12px">Total Credits: ${parsed.totalCredits}</div>` : ''}
+          <div style="max-height:220px;overflow-y:auto;margin-bottom:14px">
+            ${courses.slice(0,50).map(c=>`
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)">
+                <div><span style="font-size:12px;font-weight:600">${c.name||'Untitled'}</span>
+                  <span style="font-size:10px;color:var(--muted);margin-left:6px">${c.category||'General'}</span></div>
+                <span style="font-size:11px;color:var(--accent)">${c.credits||3} cr</span>
+              </div>`).join('')}
+            ${courses.length>50?`<div style="font-size:11px;color:var(--muted);padding-top:6px">...and ${courses.length-50} more</div>`:''}
+          </div>
+          <div style="display:flex;gap:10px">
+            <button class="btn btn-primary" onclick="importDegreePdfCourses(${JSON.stringify(courses).replace(/"/g,'&quot;')}, '${(parsed.degreeName||'').replace(/'/g,'')}', ${parsed.totalCredits||0})">
+              ✅ Import All ${courses.length} Requirements
+            </button>
+            <button class="btn btn-secondary" onclick="document.getElementById('pdf-ai-preview').style.display='none'">Discard</button>
+          </div>
+        </div>`;
+    } catch(err) {
+      msgEl.textContent = '❌ Error: ' + (err.message || 'Could not parse response. Try a text-based PDF.');
+      document.getElementById('pdf-ai-spinner').style.display = 'none';
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+function importDegreePdfCourses(courses, degreeName, totalCredits) {
+  const reqs = getRequirements();
+  let added = 0;
+  courses.forEach(function(c) {
+    if (!reqs.some(r => r.name.toLowerCase() === (c.name||'').toLowerCase())) {
+      reqs.push({ id:'req_'+Date.now()+'_'+Math.random().toString(36).slice(2), name:c.name||'Unnamed', credits:parseFloat(c.credits)||3, category:c.category||'General', status:'pending' });
+      added++;
+    }
+  });
+  setNS(userKey('gradintel_requirements'), reqs);
+  // Update degree name/credits if not already set
+  const deg = getDegree();
+  if (degreeName && !deg.name) { document.getElementById('deg-name').value = degreeName; saveDegreeSetup(); }
+  if (totalCredits && !deg.totalCredits) { document.getElementById('deg-total-credits').value = totalCredits; saveDegreeSetup(); }
+  renderRequirements();
+  document.getElementById('pdf-ai-preview').style.display = 'none';
+  document.getElementById('pdf-ai-status').style.display = 'none';
+  showToast('🎓 Imported ' + added + ' course requirements!');
+  checkBadges();
+}
 // Requirements
 function getRequirements(){ return getNS(userKey('gradintel_requirements'),[]); }
 function openAddRequirementModal(){
@@ -5794,6 +6213,9 @@ function ciInitTab() {
   // Set bookmarklet href
   const link = document.getElementById('ci-bm-link');
   if (link) link.href = ciGetBookmarkletCode();
+  // Restore last used method
+  const savedMethod = localStorage.getItem('gradintel_canvas_method') || 'csv';
+  ciSwitchMethod(savedMethod);
   // Populate semester dropdowns
   ciPopulateSemSelects();
   // Start listening for bookmarklet postMessages / BroadcastChannel
@@ -5829,6 +6251,7 @@ function ciSwitchMethod(m) {
   document.getElementById('ci-m-bm').classList.toggle('active', m === 'bm');
   document.getElementById('ci-csv-panel').style.display = m === 'csv' ? '' : 'none';
   document.getElementById('ci-bm-panel').style.display  = m === 'bm'  ? '' : 'none';
+  localStorage.setItem('gradintel_canvas_method', m);
 }
 
 // ── COPY BOOKMARKLET ──────────────────────────────────────────
@@ -6568,7 +6991,7 @@ function ciClearBmPreview() {
           <div class="ci-step-num">3</div>
           <div class="ci-step-body">
             <div class="ci-step-title">Download CSV</div>
-            <div class="ci-step-desc">Click the <strong>CSV</strong> button (top-right of grades page) — one file per course. You can import multiple.</div>
+            <div class="ci-step-desc">Click the <strong>CSV</strong> button (top-right of grades page) — Canvas downloads a <strong>.csv file</strong> (not PDF). One file per course. You can import multiple at once.</div>
           </div>
         </div>
       </div>
@@ -7537,6 +7960,331 @@ document.addEventListener('DOMContentLoaded', function() {
   document.head.appendChild(style);
   cvLoadConfig();
 });
+</script>
+
+<!-- ═══════════ FLOATING AI CHAT BUBBLE ═══════════ -->
+<style>
+#ai-bubble{
+  position:fixed;bottom:24px;right:24px;z-index:8000;
+  width:54px;height:54px;border-radius:50%;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  box-shadow:0 4px 24px rgba(129,140,248,.55);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-size:22px;transition:transform .2s,box-shadow .2s;
+  border:none;outline:none;
+}
+#ai-bubble:hover{transform:scale(1.1);box-shadow:0 6px 32px rgba(129,140,248,.7)}
+#ai-bubble.open{transform:scale(1.1) rotate(45deg)}
+#ai-floatbox{
+  position:fixed;bottom:90px;right:24px;z-index:7999;
+  width:360px;max-width:calc(100vw - 48px);
+  background:var(--surface);border:1px solid var(--border2);
+  border-radius:20px;box-shadow:0 16px 60px rgba(0,0,0,.5);
+  display:none;flex-direction:column;overflow:hidden;
+  animation:fadeUp .2s ease both;
+}
+#ai-floatbox.show{display:flex}
+#ai-float-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 18px;border-bottom:1px solid var(--border);
+  background:linear-gradient(135deg,rgba(129,140,248,.08),rgba(244,114,182,.05));
+}
+#ai-float-title{font-family:'Clash Display',sans-serif;font-weight:700;font-size:14px}
+#ai-float-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:0;line-height:1}
+#ai-float-msgs{
+  flex:1;overflow-y:auto;padding:14px 16px;
+  min-height:200px;max-height:340px;
+  display:flex;flex-direction:column;gap:10px;
+}
+.af-msg{padding:10px 14px;border-radius:14px;font-size:13px;line-height:1.6;max-width:88%}
+.af-msg.user{background:rgba(129,140,248,.15);align-self:flex-end;color:var(--text)}
+.af-msg.ai{background:var(--surface2);border:1px solid var(--border);align-self:flex-start;color:var(--text)}
+.af-msg.thinking{color:var(--muted);font-style:italic}
+#ai-float-input-row{
+  display:flex;gap:8px;padding:12px 14px;border-top:1px solid var(--border);background:var(--surface);
+}
+#ai-float-input{
+  flex:1;background:var(--surface2);border:1px solid var(--border2);
+  border-radius:10px;padding:9px 12px;color:var(--text);
+  font-family:'Cabinet Grotesk',sans-serif;font-size:13px;outline:none;resize:none;
+  line-height:1.4;height:40px;
+}
+#ai-float-input:focus{border-color:var(--accent)}
+#ai-float-send{
+  padding:9px 14px;border-radius:10px;border:none;
+  background:var(--accent);color:#fff;cursor:pointer;
+  font-family:'Clash Display',sans-serif;font-weight:700;font-size:13px;
+  flex-shrink:0;transition:background .2s;
+}
+#ai-float-send:hover{background:var(--accent2)}
+#ai-float-send:disabled{opacity:.5;cursor:not-allowed}
+</style>
+
+<button id="ai-bubble" title="Ask AI" onclick="toggleAIBubble()">🤖</button>
+<div id="ai-floatbox">
+  <div id="ai-float-header">
+    <div id="ai-float-title">🤖 AI Study Assistant</div>
+    <button id="ai-float-close" onclick="toggleAIBubble()">✕</button>
+  </div>
+  <div id="ai-float-msgs">
+    <div class="af-msg ai">Hey! Ask me anything about your grades, what you need to score, study strategy — I have access to all your course data.</div>
+  </div>
+  <div id="ai-float-input-row">
+    <textarea id="ai-float-input" placeholder="Ask anything…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendFloatAI()}" rows="1"></textarea>
+    <button id="ai-float-send" onclick="sendFloatAI()">Send</button>
+  </div>
+</div>
+
+<script>
+function toggleAIBubble(){
+  const box=document.getElementById('ai-floatbox');
+  const btn=document.getElementById('ai-bubble');
+  const show=!box.classList.contains('show');
+  box.classList.toggle('show',show);
+  btn.classList.toggle('open',show);
+  if(show) document.getElementById('ai-float-input').focus();
+}
+
+async function sendFloatAI(){
+  const inp=document.getElementById('ai-float-input');
+  const msgs=document.getElementById('ai-float-msgs');
+  const sendBtn=document.getElementById('ai-float-send');
+  const text=inp.value.trim();
+  if(!text) return;
+
+  // Add user message
+  const userDiv=document.createElement('div');
+  userDiv.className='af-msg user';
+  userDiv.textContent=text;
+  msgs.appendChild(userDiv);
+  inp.value='';
+  sendBtn.disabled=true;
+
+  // Thinking indicator
+  const thinkDiv=document.createElement('div');
+  thinkDiv.className='af-msg thinking';
+  thinkDiv.textContent='Thinking…';
+  msgs.appendChild(thinkDiv);
+  msgs.scrollTop=msgs.scrollHeight;
+
+  try {
+    // Build context from user's data
+    const allSubjects=[];
+    (semesters||[]).forEach(function(sem){
+      (sem.subjects||[]).forEach(function(s){
+        const res=computeSubject(s);
+        allSubjects.push(s.name+': '+res.cur.toFixed(1)+'% ('+res.curG.l+'), '+res.remExams.length+' exams remaining');
+      });
+    });
+    const ctx=allSubjects.length?'Student courses: '+allSubjects.join('; '):'No course data yet.';
+    const systemPrompt='You are a concise, friendly academic advisor embedded in Gradintel. '+ctx+'. Answer briefly and helpfully in 2-4 sentences max.';
+
+    // Use built-in Anthropic API first; fall back to user-configured key if set
+    const userProv=localStorage.getItem('gradintel_ai_prov')||'';
+    const userKey=userProv?localStorage.getItem('gradintel_ai_key_'+userProv)||'':'';
+
+    let reply='';
+
+    if(!userKey) {
+      // Built-in Anthropic API (no key needed from user)
+      const res=await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+        body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:400,system:systemPrompt,messages:[{role:'user',content:text}]})
+      });
+      const d=await res.json();
+      reply=d?.content?.[0]?.text||'No response.';
+    } else {
+      // User has their own key set — use that
+      if(userProv==='gemini'){
+        const res=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key='+userKey,{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({contents:[{parts:[{text:systemPrompt+'\n\nUser: '+text}]}],generationConfig:{maxOutputTokens:400}})
+        });
+        const d=await res.json();
+        reply=d?.candidates?.[0]?.content?.parts?.[0]?.text||'No response.';
+      } else if(userProv==='claude'){
+        const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':userKey,'anthropic-version':'2023-06-01'},
+          body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:400,system:systemPrompt,messages:[{role:'user',content:text}]})});
+        const d=await res.json(); reply=d?.content?.[0]?.text||'No response.';
+      } else if(userProv==='groq'||userProv==='openai'){
+        const urls={groq:'https://api.groq.com/openai/v1/chat/completions',openai:'https://api.openai.com/v1/chat/completions'};
+        const models={groq:'llama3-8b-8192',openai:'gpt-4o-mini'};
+        const res=await fetch(urls[userProv],{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+userKey},
+          body:JSON.stringify({model:models[userProv],max_tokens:400,messages:[{role:'system',content:systemPrompt},{role:'user',content:text}]})});
+        const d=await res.json(); reply=d?.choices?.[0]?.message?.content||'No response.';
+      }
+    }
+
+    thinkDiv.className='af-msg ai';
+    thinkDiv.textContent=reply;
+  } catch(e){
+    thinkDiv.className='af-msg ai';
+    thinkDiv.textContent='Sorry, I ran into an error. Try again in a moment.';
+  }
+  sendBtn.disabled=false;
+  msgs.scrollTop=msgs.scrollHeight;
+}
+</script>
+
+<!-- ═══════════ DEADLINE CANVAS IMPORT ═══════════ -->
+<script>
+// Patch the bookmarklet to also send assignment due dates
+// This extends the existing ciGetBookmarkletCode — after grades are sent,
+// also send deadlines payload separately so deadline tracker can pick them up.
+
+const _origCiGetBookmarkletCode = ciGetBookmarkletCode;
+function ciGetBookmarkletCode() {
+  // We rebuild the full bookmarklet with deadline sending added
+  const sbUrl  = SUPABASE_URL;
+  const sbAnon = SUPABASE_ANON;
+  const userId = (typeof currentUser !== 'undefined' && currentUser) ? currentUser.id : 'anonymous';
+
+  const fn = `(function(){
+  var SBURL  = ${JSON.stringify(sbUrl)};
+  var SBANON = ${JSON.stringify(sbAnon)};
+  var UID    = ${JSON.stringify(userId)};
+
+  function send(data) {
+    fetch(SBURL + '/rest/v1/canvas_sync', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','apikey':SBANON,'Authorization':'Bearer '+SBANON,'Prefer':'return=minimal'},
+      body: JSON.stringify({ user_id: UID, payload: data, created_at: new Date().toISOString() })
+    }).catch(function(){});
+    try { var bc=new BroadcastChannel('gradintel_canvas'); bc.postMessage({type:'GRADINTEL_CANVAS',data:data}); bc.close(); } catch(e){}
+    try { window.opener && window.opener.postMessage({type:'GRADINTEL_CANVAS',data:data},'*'); } catch(e){}
+  }
+
+  function sendDeadlines(deadlines) {
+    fetch(SBURL + '/rest/v1/canvas_sync', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','apikey':SBANON,'Authorization':'Bearer '+SBANON,'Prefer':'return=minimal'},
+      body: JSON.stringify({ user_id: UID, payload: deadlines, created_at: new Date().toISOString() })
+    }).catch(function(){});
+    try { var bc=new BroadcastChannel('gradintel_canvas'); bc.postMessage({type:'GRADINTEL_DEADLINES',data:deadlines}); bc.close(); } catch(e){}
+  }
+
+  function toast(msg) {
+    var d=document.createElement('div');
+    d.style.cssText='position:fixed;bottom:24px;right:24px;background:#818cf8;color:#fff;padding:12px 20px;border-radius:12px;font-family:sans-serif;font-size:14px;font-weight:700;z-index:999999;box-shadow:0 4px 20px rgba(0,0,0,.4)';
+    d.textContent=msg; document.body.appendChild(d); setTimeout(function(){d.remove()},3500);
+  }
+  toast('📊 Gradintel: reading grades & deadlines…');
+
+  var m = location.href.match(/courses\\/([0-9]+)/);
+  var courseId = m ? m[1] : null;
+  var canvasBase = location.origin;
+
+  function extractFromDOM() {
+    var rows = [];
+    document.querySelectorAll('#grades_summary tr.student_assignment').forEach(function(tr){
+      var name = tr.querySelector('.title a,.title') ? (tr.querySelector('.title a')||tr.querySelector('.title')).textContent.trim() : null;
+      var score = tr.querySelector('.score_value') ? tr.querySelector('.score_value').textContent.trim() : null;
+      var possible = tr.querySelector('.points_possible') ? tr.querySelector('.points_possible').textContent.trim() : null;
+      var pct = null;
+      if (score && possible && parseFloat(possible) > 0) pct = (parseFloat(score)/parseFloat(possible)*100).toFixed(1);
+      if (score === null || score === '--') score = null;
+      if (name) rows.push({name:name, score:score, possible:possible, pct:pct});
+    });
+    return rows;
+  }
+
+  var courseNameEl = document.querySelector('h1.course-title,.context_module_sub_header,.course-name,title');
+  var courseName = courseNameEl ? courseNameEl.textContent.trim().replace(' Grades','') : (document.title||'Canvas Course');
+
+  if (courseId) {
+    fetch(canvasBase+'/api/v1/courses/'+courseId+'/assignment_groups?include[]=assignments&include[]=submission&per_page=100', {credentials:'include'})
+      .then(function(r){return r.json();}).then(function(groups){
+        var rows = [];
+        var deadlines = [];
+        groups.forEach(function(g){
+          var gw = g.group_weight||0;
+          (g.assignments||[]).forEach(function(a){
+            var sub = a.submission||{};
+            var pct = null;
+            if (sub.score!=null && a.points_possible>0) pct = (sub.score/a.points_possible*100).toFixed(1);
+            rows.push({name:a.name,group:g.name,weight:gw,score:sub.score!=null?sub.score.toString():null,possible:a.points_possible?a.points_possible.toString():null,pct:pct,due:a.due_at?a.due_at.split('T')[0]:null});
+            // Collect upcoming deadlines (not yet submitted, has due date)
+            if(a.due_at && (!sub.submitted_at) && sub.workflow_state !== 'graded'){
+              deadlines.push({name:a.name,course:courseName,due:a.due_at,group:g.name,points:a.points_possible||0});
+            }
+          });
+        });
+        send({source:'api', courseName:courseName, courseId:courseId, rows:rows});
+        if(deadlines.length) sendDeadlines({type:'GRADINTEL_DEADLINES',courseName:courseName,courseId:courseId,deadlines:deadlines});
+        toast('✅ Gradintel: '+rows.length+' grades + '+deadlines.length+' upcoming deadlines synced!');
+      }).catch(function(){
+        var domRows = extractFromDOM();
+        if (domRows.length) { send({source:'dom', courseName:courseName, courseId:courseId, rows:domRows}); toast('✅ Gradintel: '+domRows.length+' grades found!'); }
+        else toast('⚠️ Gradintel: no grades found on this page.');
+      });
+  } else {
+    var domRows = extractFromDOM();
+    if (domRows.length) { send({source:'dom', courseName:courseName, courseId:null, rows:domRows}); toast('✅ Gradintel: '+domRows.length+' grades found!'); }
+    else toast('⚠️ Gradintel: navigate to a Canvas Grades page first, then click again.');
+  }
+})();`;
+  return 'javascript:' + encodeURIComponent(fn);
+}
+
+// Listen for deadline data from bookmarklet and auto-import into deadline tracker
+(function(){
+  function handleDeadlineData(data){
+    if(!data || !data.deadlines || !data.deadlines.length) return;
+    var imported = 0;
+    data.deadlines.forEach(function(dl){
+      // Don't add if already exists (same name + course)
+      var exists = (deadlines||[]).some(function(d){ return d.name===dl.name && d.course===dl.course; });
+      if(exists) return;
+      var newDl = {
+        id: uid(),
+        name: dl.name,
+        course: dl.course || dl.courseName || 'Canvas',
+        date: dl.due ? dl.due.split('T')[0] : null,
+        type: dl.group || 'Assignment',
+        done: false
+      };
+      if(!deadlines) window.deadlines = [];
+      deadlines.push(newDl);
+      imported++;
+    });
+    if(imported > 0){
+      saveDeadlinesToDB && saveDeadlinesToDB();
+      if(typeof renderDeadlines === 'function') renderDeadlines();
+      showToast('📅 Imported ' + imported + ' deadline' + (imported!==1?'s':'') + ' from Canvas!');
+    }
+  }
+
+  // BroadcastChannel for same-origin
+  try {
+    var bc2 = new BroadcastChannel('gradintel_canvas');
+    var _orig = bc2.onmessage;
+    bc2.onmessage = function(e){
+      if(e.data && e.data.type==='GRADINTEL_DEADLINES') handleDeadlineData(e.data.data);
+    };
+  } catch(e){}
+
+  // postMessage
+  window.addEventListener('message', function(e){
+    if(e.data && e.data.type==='GRADINTEL_DEADLINES') handleDeadlineData(e.data.data);
+  });
+
+  // Supabase realtime for deadlines (piggybacks on canvas_sync table)
+  document.addEventListener('DOMContentLoaded', function(){
+    setTimeout(function(){
+      if(sb && typeof currentUser !== 'undefined' && currentUser){
+        sb.channel('canvas-deadlines-'+currentUser.id)
+          .on('postgres_changes',{event:'INSERT',schema:'public',table:'canvas_sync',filter:'user_id=eq.'+currentUser.id},
+          function(payload){
+            if(payload.new && payload.new.payload && payload.new.payload.type==='GRADINTEL_DEADLINES'){
+              handleDeadlineData(payload.new.payload);
+              sb.from('canvas_sync').delete().eq('id',payload.new.id).then(function(){});
+            }
+          }).subscribe();
+      }
+    }, 3000);
+  });
+})();
 </script>
 </body>
 </html>
