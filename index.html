@@ -6122,122 +6122,198 @@ async function ciReceiveBmData(data) {
   await ciAutoImport(ciBmRows, data.courseName || 'Canvas Import');
 }
 
+// ── EXAM GROUP DETECTION ──────────────────────────────────────
+function ciIsExamGroup(groupName) {
+  if (!groupName) return false;
+  const g = groupName.toLowerCase().trim();
+  return /\bexam\b|\bmidterm\b|\bfinal\b|\btest\b|\bquiz\b/.test(g)
+    // but NOT "hw quizzes" or "quiz practice" — those are regular work
+    ? !/\bhw\b|\bhomework\b|\bpractice\b|\bworksheet\b/.test(g)
+    : false;
+}
+
+// ── COURSE-MATCH PICKER ───────────────────────────────────────
+// Shows a modal asking user which existing course to map the Canvas course to.
+// Resolves with the chosen {sem, subject} or null to skip.
+function ciPickCourseMatch(canvasCourseName) {
+  return new Promise(function(resolve) {
+    // Build list of all subjects across all semesters
+    const options = [];
+    semesters.forEach(function(sem) {
+      (sem.subjects || []).forEach(function(s) {
+        options.push({ sem, subject: s, label: s.name + ' — ' + (sem.name || sem.id) });
+      });
+    });
+
+    if (!options.length) { resolve(null); return; }
+
+    // Build modal HTML
+    const modalId = 'ci-match-modal';
+    let existing = document.getElementById(modalId);
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = modalId;
+    modal.style.cssText = `
+      position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;
+      background:rgba(0,0,0,.7);backdrop-filter:blur(8px);padding:20px;
+    `;
+    modal.innerHTML = `
+      <div style="background:var(--surface);border:1px solid var(--border2);border-radius:20px;
+                  padding:32px;max-width:480px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,.6)">
+        <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:18px;margin-bottom:8px">
+          📡 Match Canvas Course
+        </div>
+        <div style="font-size:13px;color:var(--muted2);margin-bottom:20px;line-height:1.6">
+          Canvas sent grades for <strong style="color:var(--accent)">${canvasCourseName}</strong>.<br>
+          Which of your courses should these grades update?
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;max-height:280px;overflow-y:auto;margin-bottom:20px" id="ci-match-list">
+          ${options.map((o, i) => `
+            <div class="ci-match-opt" data-idx="${i}" onclick="ciPickOpt(${i})"
+              style="padding:12px 16px;border-radius:10px;border:1px solid var(--border2);
+                     background:var(--surface2);cursor:pointer;transition:all .15s;
+                     font-size:14px;font-weight:600">
+              ${o.label}
+            </div>
+          `).join('')}
+        </div>
+        <div style="display:flex;gap:10px">
+          <button onclick="ciPickOpt(-1)" style="flex:1;padding:11px;border-radius:10px;border:1px solid var(--border2);
+            background:transparent;color:var(--muted);cursor:pointer;font-family:'Cabinet Grotesk',sans-serif;font-size:13px">
+            Skip this course
+          </button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    window.ciPickOpt = function(idx) {
+      modal.remove();
+      delete window.ciPickOpt;
+      if (idx < 0) { resolve(null); return; }
+      resolve(options[idx]);
+    };
+
+    // Style hover via JS since we can't add CSS dynamically easily
+    modal.querySelectorAll('.ci-match-opt').forEach(function(el) {
+      el.addEventListener('mouseenter', function() {
+        el.style.borderColor = 'var(--accent)';
+        el.style.background  = 'rgba(129,140,248,.1)';
+      });
+      el.addEventListener('mouseleave', function() {
+        el.style.borderColor = 'var(--border2)';
+        el.style.background  = 'var(--surface2)';
+      });
+    });
+  });
+}
+
 // ── IMPORT ENGINE ─────────────────────────────────────────────
 // ciAutoImport: called automatically when bookmarklet fires.
-// Finds the existing semester/course and UPSERTS scores — updates
-// existing assignments and adds new ones. No user interaction needed.
+// - Filters out exam groups (user enters those manually)
+// - Computes weighted other_score from points scored / points possible
+// - Matches to existing course by name; if no match, asks user to pick
+// - Updates other_score on the existing subject — never touches exams[]
+// - Keeps the user's existing credits, never overwrites them
 async function ciAutoImport(rows, courseNameHint) {
-  const scoredRows = rows.filter(r => r.pct !== null && r.pct !== undefined);
-  if (!scoredRows.length) { showToast('\u26a0\ufe0f No scored assignments to sync.'); return; }
+  // Only keep rows that have a score AND are not exam groups
+  const nonExamRows = rows.filter(function(r) {
+    return r.pct !== null && r.pct !== undefined && !ciIsExamGroup(r.group);
+  });
+
+  if (!nonExamRows.length) {
+    showToast('⚠️ No non-exam scored assignments to sync. Exam grades are left for manual entry.');
+    return;
+  }
 
   // Group by course name
   const byCourse = {};
-  scoredRows.forEach(r => {
+  nonExamRows.forEach(function(r) {
     if (!byCourse[r.courseName]) byCourse[r.courseName] = [];
     byCourse[r.courseName].push(r);
   });
 
-  let updatedCourses = 0, updatedScores = 0, newScores = 0;
+  const skippedExamCount = rows.filter(r => r.pct !== null && ciIsExamGroup(r.group)).length;
+  let updatedCourses = 0;
 
   try {
     for (const [courseName, courseRows] of Object.entries(byCourse)) {
-      // Search ALL semesters for a matching course name
+
+      // ── Compute weighted other_score from points scored / points possible ──
+      let totalScored   = 0;
+      let totalPossible = 0;
+      courseRows.forEach(function(r) {
+        if (r.score !== null && r.possible !== null && r.possible > 0) {
+          totalScored   += r.score;
+          totalPossible += r.possible;
+        } else if (r.pct !== null) {
+          // No raw points — fall back to treating each assignment as 1 point
+          totalScored   += r.pct / 100;
+          totalPossible += 1;
+        }
+      });
+      const computedOtherScore = totalPossible > 0
+        ? parseFloat((totalScored / totalPossible * 100).toFixed(2))
+        : null;
+
+      if (computedOtherScore === null) continue;
+
+      // ── Find matching existing subject ──
       let targetSem = null;
-      let subject = null;
+      let subject   = null;
+
+      // 1) Exact name match (case-insensitive)
       for (const sem of semesters) {
-        const found = sem.subjects.find(s => s.name.toLowerCase() === courseName.toLowerCase());
+        const found = sem.subjects.find(function(s) {
+          return s.name.trim().toLowerCase() === courseName.trim().toLowerCase();
+        });
         if (found) { targetSem = sem; subject = found; break; }
       }
 
-      // No existing course found — create it in a "Canvas Sync" semester
+      // 2) No exact match — ask user to pick
       if (!subject) {
-        let canvasSem = semesters.find(s => s.name === 'Canvas Sync');
-        if (!canvasSem) {
-          canvasSem = { id: uid(), name: 'Canvas Sync', subjects: [], user_id: currentUser.id, _gpa: 0 };
-          semesters.push(canvasSem);
+        showToast('📡 No exact match for "' + courseName + '" — pick your course…');
+        const picked = await ciPickCourseMatch(courseName);
+        if (!picked) {
+          cvLog && cvLog('Skipped "' + courseName + '" — no match selected', 'warn');
+          continue;
         }
-        targetSem = canvasSem;
+        targetSem = picked.sem;
+        subject   = picked.subject;
+      }
 
-        const totalPossible = courseRows.reduce((a, r) => a + (r.possible || 1), 0);
-        const exams = courseRows.map(r => ({
-          id: uid(),
-          name: r.name.length > 40 ? r.name.slice(0,40) + '\u2026' : r.name,
-          weight: totalPossible > 0 ? ((r.possible || 1) / totalPossible * 100) : (100 / courseRows.length),
-          taken: true,
-          score: parseFloat(r.pct.toFixed(1))
-        }));
-        const wSum = exams.reduce((a, e) => a + e.weight, 0);
-        if (wSum > 0) exams.forEach(e => e.weight = e.weight / wSum * 100);
-
-        subject = { id: uid(), name: courseName, credits: 3, status: 'normal', exams };
-        canvasSem.subjects.push(subject);
-        updatedCourses++;
-        newScores += exams.length;
-
-      } else {
-        // Course exists — UPSERT each assignment
-        courseRows.forEach(r => {
-          const newScore = parseFloat(r.pct.toFixed(1));
-          const existingIdx = subject.exams.findIndex(e =>
-            e.name.toLowerCase().replace(/\u2026$/, '') === r.name.toLowerCase().slice(0, 40)
-            || e.name.toLowerCase() === r.name.toLowerCase()
-          );
-          if (existingIdx >= 0) {
-            // UPDATE existing score
-            if (subject.exams[existingIdx].score !== newScore) {
-              subject.exams[existingIdx].score = newScore;
-              subject.exams[existingIdx].taken = true;
-              updatedScores++;
-            }
-          } else {
-            // ADD new assignment
-            subject.exams.push({
-              id: uid(),
-              name: r.name.length > 40 ? r.name.slice(0,40) + '\u2026' : r.name,
-              weight: 100 / (subject.exams.length + 1),
-              taken: true,
-              score: newScore
-            });
-            newScores++;
-          }
-        });
-        // Re-normalise weights by points possible
-        const totalPoss = courseRows.reduce((a, r) => a + (r.possible || 1), 0);
-        subject.exams.forEach(e => {
-          const match = courseRows.find(r => r.name.slice(0,40) === e.name.replace(/\u2026$/, '') || r.name === e.name.replace(/\u2026$/, ''));
-          e.weight = match && totalPoss > 0 ? (match.possible || 1) / totalPoss * 100 : e.weight;
-        });
-        const wS = subject.exams.reduce((a,e) => a + e.weight, 0);
-        if (wS > 0) subject.exams.forEach(e => e.weight = e.weight / wS * 100);
-        updatedCourses++;
+      // ── Update other_score only — keep credits, exams, exam_pct untouched ──
+      subject.other_score = computedOtherScore;
+      // If the subject has no other_pct set yet, default to 100 - exam_pct
+      if (subject.other_pct === undefined || subject.other_pct === null) {
+        subject.other_pct = 100 - (subject.exam_pct || 0);
       }
 
       // Recompute semester GPA
-      const cp = targetSem.subjects.reduce((a, s) => a + s.credits * computeSubject(s).curG.p, 0);
-      const cr = targetSem.subjects.reduce((a, s) => a + s.credits, 0);
+      const cp = targetSem.subjects.reduce(function(a, s) {
+        return a + s.credits * computeSubject(s).curG.p;
+      }, 0);
+      const cr = targetSem.subjects.reduce(function(a, s) { return a + s.credits; }, 0);
       targetSem._gpa = cr ? cp / cr : 0;
       await saveSemesterToDB(targetSem);
+      updatedCourses++;
     }
 
     updateStats(); renderDashboard(); renderCourses(); renderHistory(); renderWIFull();
 
-    const parts = [];
-    if (newScores)     parts.push(newScores + ' new');
-    if (updatedScores) parts.push(updatedScores + ' updated');
-    const total = newScores + updatedScores;
-    const msg = '\u2705 Canvas synced! ' + (parts.length ? parts.join(', ') : 'No changes') + ' score' + (total !== 1 ? 's' : '') + ' across ' + updatedCourses + ' course' + (updatedCourses !== 1 ? 's' : '') + '.';
+    let msg = '✅ Canvas synced! Updated other score for ' + updatedCourses + ' course' + (updatedCourses !== 1 ? 's' : '') + '.';
+    if (skippedExamCount > 0) msg += ' (' + skippedExamCount + ' exam grade' + (skippedExamCount !== 1 ? 's' : '') + ' skipped — enter those manually)';
     showToast(msg);
-    if (newScores > 0) fireConfetti();
+    if (updatedCourses > 0) fireConfetti();
 
-    // Update sync badge text
     const syncMsg = document.getElementById('ci-bm-sync-msg');
-    if (syncMsg) syncMsg.textContent = msg.replace('\u2705 ', '');
+    if (syncMsg) syncMsg.textContent = msg.replace('✅ ', '');
 
-    // Refresh preview panel
     ciShowPreview(ciBmRows, 'bm');
 
   } catch(e) {
-    showToast('\u274c Sync failed: ' + e.message);
+    showToast('❌ Sync failed: ' + e.message);
     console.error(e);
   }
 }
