@@ -39,8 +39,8 @@ body.reduced-motion{cursor:auto}
 body.reduced-motion #cur,body.reduced-motion #cur-ring{display:none}
 
 /* AMBIENT */
-.bg-layer{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
-.bg-blob{position:absolute;border-radius:50%;filter:blur(110px);opacity:.11;animation:blobFloat 14s ease-in-out infinite}
+.bg-layer{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;will-change:transform;contain:strict}
+.bg-blob{position:absolute;border-radius:50%;filter:blur(70px);opacity:.09;will-change:transform;animation:blobFloat 18s ease-in-out infinite}
 .bb1{width:700px;height:700px;top:-200px;left:-200px;background:var(--accent)}
 .bb2{width:600px;height:600px;bottom:-200px;right:-100px;background:var(--accent2);animation-delay:-5s}
 .bb3{width:400px;height:400px;top:40%;left:40%;background:var(--accent3);animation-delay:-9s;opacity:.06}
@@ -48,15 +48,13 @@ body.reduced-motion #cur,body.reduced-motion #cur-ring{display:none}
   background-image:linear-gradient(rgba(129,140,248,.03) 1px,transparent 1px),
                    linear-gradient(90deg,rgba(129,140,248,.03) 1px,transparent 1px);
   background-size:48px 48px}
-.fog{position:fixed;inset:0;z-index:1;pointer-events:none;
-  background:radial-gradient(ellipse 120% 60% at 50% 100%,rgba(7,7,12,.9) 0%,transparent 70%)}
-.fog2{position:fixed;inset:0;z-index:1;pointer-events:none;
+.fog{position:fixed;inset:0;z-index:1;pointer-events:none;will-change:transform;contain:strict;
+  background:radial-gradient(ellipse 120% 60% at 50% 100%,rgba(7,7,12,.30) 0%,transparent 65%)}
+.fog2{position:fixed;inset:0;z-index:1;pointer-events:none;will-change:transform;contain:strict;
   background:radial-gradient(ellipse 60% 40% at 50% 0%,rgba(129,140,248,.04) 0%,transparent 60%)}
-.scanline{position:fixed;inset:0;z-index:2;pointer-events:none;overflow:hidden}
-.scanline::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;
-  background:rgba(129,140,248,.04);animation:scanline 7s linear infinite}
-.anno{position:fixed;font-size:10px;color:var(--muted);font-family:'Space Mono',monospace;
-  letter-spacing:.06em;line-height:1.9;z-index:10;pointer-events:none;opacity:.5}
+.scanline{display:none}
+.scanline::after{display:none}
+.anno{display:none}
 .anno-bl{bottom:22px;left:22px}
 .anno-br{bottom:22px;right:22px;text-align:right}
 #cur{position:fixed;width:8px;height:8px;background:var(--accent);border-radius:50%;
@@ -67,7 +65,7 @@ body.reduced-motion #cur,body.reduced-motion #cur-ring{display:none}
   border-radius:50%;pointer-events:none;z-index:9998;
   transition:width .15s,height .15s,border-color .15s;
   will-change:transform;transform:translate(-100px,-100px)}
-#bgCanvas{position:fixed;inset:0;z-index:0;pointer-events:none}
+#bgCanvas{position:fixed;inset:0;z-index:0;pointer-events:none;will-change:transform;contain:strict}
 [data-theme="light"] .fog,[data-theme="light"] .fog2,[data-theme="light"] .scanline,
 [data-theme="light"] .anno{display:none}
 [data-theme="light"] #bgCanvas{opacity:.25}
@@ -1383,7 +1381,7 @@ input:not(.af input):focus, select:focus {
 <div id="cur"></div><div id="cur-ring"></div>
 <div class="toast" id="toast"></div>
 
-<div class="config-banner" id="config-banner">
+<div class="config-banner hidden" id="config-banner">
   ⚠️ &nbsp;SUPABASE NOT CONFIGURED — add your Project URL + Anon Key at the top of the &lt;script&gt; section. &nbsp;<a href="#" onclick="document.getElementById('config-banner').classList.add('hidden')" style="color:var(--yellow);text-decoration:underline">Dismiss</a>
 </div>
 
@@ -2251,12 +2249,18 @@ const SUPABASE_ANON = 'sb_publishable_JNjLBiahRGmxbY5pF9deeQ_PQ4dg8yl';
 // ══════════════════════════════════════════════════════════════
 let sb = null;
 function initSupabase() {
-  if (!SUPABASE_URL || SUPABASE_URL === 'YOUR_SUPABASE_PROJECT_URL') return false;
+  if (!SUPABASE_URL || SUPABASE_URL === 'YOUR_SUPABASE_PROJECT_URL') {
+    document.getElementById('config-banner').classList.remove('hidden');
+    return false;
+  }
   try {
     sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
     document.getElementById('config-banner').classList.add('hidden');
     return true;
-  } catch(e) { return false; }
+  } catch(e) {
+    document.getElementById('config-banner').classList.remove('hidden');
+    return false;
+  }
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -4337,8 +4341,13 @@ function initAnimations() {
   function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
   resize(); window.addEventListener('resize', resize);
   class P { constructor() { this.reset(true); } reset(init) { this.x = Math.random() * W; this.y = init ? Math.random() * H : Math.random() * H; this.vx = (Math.random() - .5) * .25; this.vy = (Math.random() - .5) * .25; this.life = Math.random(); this.maxLife = .6 + Math.random() * .4; this.size = Math.random() * 1.2 + .3; this.color = Math.random() < .5 ? '129,140,248' : '244,114,182'; } update() { this.x += this.vx; this.y += this.vy; this.life += .002; if (this.life > this.maxLife || this.x < 0 || this.x > W || this.y < 0 || this.y > H) this.reset(false); } draw() { const a = Math.sin((this.life / this.maxLife) * Math.PI) * .45; ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fillStyle = `rgba(${this.color},${a})`; ctx.fill(); } }
-  for (let i = 0; i < 90; i++) particles.push(new P());
-  (function loop() { ctx.clearRect(0, 0, W, H); for (let i = 0; i < particles.length; i++) { for (let j = i + 1; j < particles.length; j++) { const dx = particles[i].x - particles[j].x, dy = particles[i].y - particles[j].y, d = Math.sqrt(dx * dx + dy * dy); if (d < 100) { ctx.beginPath(); ctx.moveTo(particles[i].x, particles[i].y); ctx.lineTo(particles[j].x, particles[j].y); ctx.strokeStyle = `rgba(129,140,248,${(1 - d / 100) * .07})`; ctx.lineWidth = .5; ctx.stroke(); } } } particles.forEach(p => { p.update(); p.draw(); }); requestAnimationFrame(loop); })();
+  for (let i = 0; i < 50; i++) particles.push(new P());
+  (function loop() {
+    ctx.clearRect(0, 0, W, H);
+    // Simple: just draw particles, NO O(n²) connection lines
+    particles.forEach(p => { p.update(); p.draw(); });
+    requestAnimationFrame(loop);
+  })();
   document.querySelectorAll('.card,.stat-card').forEach(card => {
     card.addEventListener('mousemove', e => { const r = card.getBoundingClientRect(); const x = (e.clientX - r.left) / r.width - .5; const y = (e.clientY - r.top) / r.height - .5; card.style.transform = `perspective(800px) rotateY(${x * 5}deg) rotateX(${-y * 5}deg) translateZ(4px)`; });
     card.addEventListener('mouseleave', () => { card.style.transform = ''; });
