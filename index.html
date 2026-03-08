@@ -576,10 +576,416 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2)}
   .mode-grid{grid-template-columns:1fr}
   .export-grid{grid-template-columns:1fr}
 }
+
+/* ══════════════════════════════
+   NEW FEATURE STYLES
+══════════════════════════════ */
+
+/* DEADLINE */
+.deadline-item{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);
+  padding:13px 16px;margin-bottom:8px;display:flex;align-items:center;gap:12px;
+  transition:all .2s;cursor:default}
+.deadline-item:hover{border-color:rgba(129,140,248,.3)}
+.deadline-item.overdue{border-color:rgba(248,113,113,.3);background:rgba(248,113,113,.04)}
+.deadline-item.due-soon{border-color:rgba(251,191,36,.3);background:rgba(251,191,36,.04)}
+.deadline-item.done{opacity:.5}
+.dl-ico{font-size:20px;flex-shrink:0;width:30px;text-align:center}
+.dl-info{flex:1}
+.dl-title-text{font-family:'Clash Display',sans-serif;font-weight:700;font-size:14px;margin-bottom:2px}
+.dl-meta{font-size:11px;color:var(--muted)}
+.dl-urgency{font-family:'Clash Display',sans-serif;font-weight:700;font-size:12px;text-align:right;min-width:70px}
+.dl-actions{display:flex;gap:6px;opacity:0;transition:opacity .15s}
+.deadline-item:hover .dl-actions{opacity:1}
+
+/* POMODORO */
+.pomo-log-item{font-size:11px;color:var(--muted);padding:4px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between}
+
+/* MOOD BUTTON */
+.mood-btn{background:var(--surface2);border:1px solid var(--border2);border-radius:8px;
+  font-size:20px;width:40px;height:40px;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center}
+.mood-btn:hover{transform:scale(1.15);border-color:var(--accent)}
+.mood-btn.selected{border-color:var(--accent);background:rgba(129,140,248,.15);transform:scale(1.1)}
+
+/* HEATMAP */
+.hm-cell{width:18px;height:18px;border-radius:3px;cursor:pointer;transition:transform .15s;display:inline-block;margin:2px;vertical-align:top}
+.hm-cell:hover{transform:scale(1.25)}
+.hm-row{display:flex;align-items:center;gap:0;margin-bottom:3px}
+.hm-label{font-size:10px;color:var(--muted);width:80px;flex-shrink:0;font-family:'Space Mono',monospace}
+
+/* BADGE CARD */
+.badge-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);
+  padding:16px 12px;text-align:center;transition:all .3s;position:relative;overflow:hidden}
+.badge-card.unlocked{border-color:rgba(251,191,36,.4);background:rgba(251,191,36,.06)}
+.badge-card.unlocked::before{content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 0%,rgba(251,191,36,.1),transparent 70%);pointer-events:none}
+.badge-ico{font-size:32px;display:block;margin-bottom:8px;filter:grayscale(1);transition:filter .3s}
+.badge-card.unlocked .badge-ico{filter:none;animation:pop .4s ease}
+.badge-name{font-family:'Clash Display',sans-serif;font-weight:700;font-size:12px;margin-bottom:4px}
+.badge-desc{font-size:10px;color:var(--muted);line-height:1.5}
+.badge-date{font-size:9px;color:var(--accent);margin-top:4px;font-family:'Space Mono',monospace}
+
+/* STREAK GRID */
+.streak-cell{width:11px;height:11px;border-radius:2px;display:inline-block;margin:1px;cursor:pointer;transition:transform .1s}
+.streak-cell:hover{transform:scale(1.3)}
+
+/* REQUIREMENT ITEM */
+.req-item{display:flex;align-items:center;gap:12px;padding:10px 14px;
+  background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);margin-bottom:6px;transition:all .2s}
+.req-item:hover{border-color:rgba(129,140,248,.3)}
+.req-status-badge{padding:3px 9px;border-radius:100px;font-size:10px;font-weight:700;font-family:'Clash Display',sans-serif;flex-shrink:0}
+
+/* PROF NOTE */
+.profnote-item{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);
+  padding:14px 16px;margin-bottom:8px}
+.profnote-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.profnote-course{font-family:'Clash Display',sans-serif;font-weight:700;font-size:14px}
+.profnote-stars{font-size:14px}
+.profnote-notes{font-size:12px;color:var(--muted2);line-height:1.6}
+.profnote-meta{font-size:10px;color:var(--muted);margin-top:6px}
+
+/* SAFE ZONE */
+.safe-zone-bar{display:flex;align-items:center;gap:12px;padding:10px 14px;
+  background:var(--surface2);border-radius:var(--r-sm);margin-bottom:8px;border:1px solid var(--border)}
+.sz-name{font-family:'Clash Display',sans-serif;font-weight:700;font-size:13px;flex:1}
+.sz-indicator{padding:4px 12px;border-radius:100px;font-size:11px;font-weight:700}
+
+/* DEGREE PROGRESS BAR */
+.deg-prog-wrap{margin-bottom:16px}
+.deg-prog-bar{height:12px;background:var(--surface3);border-radius:100px;overflow:hidden;margin-top:6px}
+.deg-prog-fill{height:100%;border-radius:100px;background:linear-gradient(90deg,var(--accent),var(--accent3));transition:width 1s ease}
+
+/* XP NOTIFICATION */
+.xp-popup{position:fixed;top:80px;right:20px;z-index:9999;
+  background:linear-gradient(135deg,rgba(129,140,248,.9),rgba(244,114,182,.9));
+  color:#fff;padding:10px 18px;border-radius:var(--r);font-family:'Clash Display',sans-serif;
+  font-weight:700;font-size:14px;box-shadow:0 8px 32px rgba(129,140,248,.4);
+  animation:fadeDown .4s ease both;pointer-events:none}
+
+@keyframes fadeDown{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:none}}
+
+/* ═══════════════════════════════════════════════════════
+   GRADINTEL 3D REDESIGN — injected override layer
+═══════════════════════════════════════════════════════ */
+:root {
+  --nav-w: 224px;
+  --accent: #a78bfa;
+  --accent2: #f472b6;
+  --bg: #05050f;
+  --surface: #0e0c1e;
+  --surface2: #141228;
+  --surface3: #1c1932;
+  --border: rgba(167,139,250,0.10);
+  --border2: rgba(167,139,250,0.22);
+  --text: #ede9ff;
+  --muted: #7c6faa;
+  --muted2: #a89fd4;
+  --shadow: 0 8px 40px rgba(0,0,0,0.55);
+}
+
+/* ── BODY ── */
+body {
+  background: var(--bg) !important;
+  font-family: 'Cabinet Grotesk', sans-serif !important;
+}
+
+/* ── BACKGROUND GLOW BLOBS ── */
+.bb1 { background: radial-gradient(circle at 40% 40%, rgba(167,139,250,0.28), transparent 70%) !important; filter: blur(80px) !important; width: 480px !important; height: 480px !important; top: -100px !important; left: 60px !important; opacity: 0.8 !important; }
+.bb2 { background: radial-gradient(circle at 60% 60%, rgba(244,114,182,0.22), transparent 70%) !important; filter: blur(80px) !important; width: 420px !important; height: 420px !important; bottom: -60px !important; right: 40px !important; opacity: 0.7 !important; animation-delay: -5s !important; }
+.bb3 { background: radial-gradient(circle, rgba(52,211,153,0.15), transparent 70%) !important; filter: blur(80px) !important; width: 300px !important; height: 300px !important; opacity: 0.5 !important; }
+
+/* ── SIDEBAR ── */
+#g3d-sidebar {
+  position: fixed; left: 0; top: 0; bottom: 0; width: var(--nav-w); z-index: 200;
+  background: linear-gradient(180deg, rgba(8,6,20,0.98) 0%, rgba(5,4,14,0.99) 100%);
+  border-right: 1px solid rgba(167,139,250,0.10);
+  box-shadow: 4px 0 40px rgba(0,0,0,0.5), inset -1px 0 0 rgba(167,139,250,0.05);
+  display: flex; flex-direction: column; overflow: hidden;
+  transition: transform 0.32s cubic-bezier(.4,0,.2,1);
+}
+#g3d-sidebar-logo {
+  padding: 22px 18px 16px; border-bottom: 1px solid rgba(167,139,250,0.07);
+  display: flex; align-items: center; gap: 10px;
+}
+.g3d-gem {
+  width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0;
+  background: linear-gradient(135deg, #a78bfa, #f472b6);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 18px rgba(167,139,250,0.45); position: relative;
+}
+.g3d-gem::after { content: ''; position: absolute; inset: 0; border-radius: 10px; background: linear-gradient(135deg,rgba(255,255,255,0.18),transparent); }
+.g3d-logo-text { font-family: 'Clash Display', sans-serif; font-weight: 700; font-size: 15px; background: linear-gradient(135deg, #ede9ff, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.g3d-logo-sub { font-size: 9px; color: var(--muted); letter-spacing: .1em; text-transform: uppercase; margin-top: 1px; }
+#g3d-nav { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 10px 10px; scrollbar-width: none; }
+#g3d-nav::-webkit-scrollbar { display: none; }
+.g3d-section { font-size: 9px; letter-spacing: .18em; text-transform: uppercase; color: rgba(124,111,170,0.55); padding: 10px 8px 5px; font-family: 'Space Mono', monospace; }
+.g3d-item {
+  display: flex; align-items: center; gap: 9px; padding: 9px 10px;
+  border-radius: 11px; border: none; background: transparent;
+  color: var(--muted); cursor: pointer; font-family: 'Cabinet Grotesk', sans-serif;
+  font-size: 12.5px; font-weight: 500; transition: all 0.18s; width: 100%; text-align: left;
+  position: relative; white-space: nowrap;
+}
+.g3d-item::before { content: ''; position: absolute; inset: 0; border-radius: 11px; background: linear-gradient(135deg, rgba(167,139,250,0.14), rgba(244,114,182,0.07)); opacity: 0; transition: opacity 0.18s; }
+.g3d-item:hover { color: var(--text); }
+.g3d-item:hover::before { opacity: 1; }
+.g3d-item.g3d-active { color: #ede9ff; font-weight: 700; }
+.g3d-item.g3d-active::before { opacity: 1; }
+.g3d-item.g3d-active::after { content: ''; position: absolute; left: 0; top: 20%; height: 60%; width: 3px; border-radius: 0 3px 3px 0; background: linear-gradient(180deg, #a78bfa, #f472b6); }
+.g3d-ico {
+  width: 28px; height: 28px; border-radius: 7px; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06);
+  transition: all 0.2s; position: relative; z-index: 1;
+}
+.g3d-item.g3d-active .g3d-ico, .g3d-item:hover .g3d-ico {
+  background: linear-gradient(135deg, rgba(167,139,250,0.22), rgba(244,114,182,0.12));
+  border-color: rgba(167,139,250,0.28);
+  box-shadow: 0 3px 14px rgba(167,139,250,0.2), inset 0 1px 0 rgba(255,255,255,0.1);
+  transform: translateY(-1px) scale(1.06);
+}
+.g3d-item-lbl { position: relative; z-index: 1; }
+#g3d-sidebar-bottom { padding: 12px 10px; border-top: 1px solid rgba(167,139,250,0.07); display: flex; gap: 6px; }
+
+/* ── MAIN CONTENT SHIFT ── */
+.app { margin-left: var(--nav-w) !important; max-width: none !important; padding-left: 28px !important; padding-right: 28px !important; }
+
+/* ── HIDE OLD NAV TABS ── */
+.nav-tabs { display: none !important; }
+
+/* ── AUTH SCREEN ── */
+.auth-wrap { background: rgba(5,5,15,0.92) !important; backdrop-filter: blur(24px) !important; }
+.auth-box {
+  background: linear-gradient(145deg, #100d26, #080515) !important;
+  border: 1px solid rgba(167,139,250,0.22) !important;
+  border-radius: 26px !important;
+  box-shadow: 0 0 0 1px rgba(167,139,250,0.08), 0 40px 100px rgba(0,0,0,0.7), 0 0 80px rgba(167,139,250,0.06) !important;
+  position: relative !important; overflow: hidden !important;
+}
+.auth-box::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(167,139,250,0.5), rgba(244,114,182,0.25), transparent); z-index: 1; }
+.auth-btn {
+  background: linear-gradient(135deg, #a78bfa, #7c3aed) !important;
+  border-radius: 11px !important;
+  box-shadow: 0 4px 22px rgba(167,139,250,0.4), inset 0 1px 0 rgba(255,255,255,0.14) !important;
+}
+.auth-btn:hover { transform: translateY(-2px) !important; box-shadow: 0 8px 32px rgba(167,139,250,0.55) !important; }
+.auth-tab.on { background: var(--accent) !important; }
+
+/* ── TOPBAR ── */
+.topbar { padding-top: 22px !important; }
+.logo { font-size: 19px !important; }
+.icon-btn {
+  background: rgba(255,255,255,0.04) !important;
+  border-color: var(--border2) !important;
+  border-radius: 11px !important;
+  backdrop-filter: blur(8px);
+  transition: all 0.2s !important;
+}
+.icon-btn:hover { background: rgba(167,139,250,0.1) !important; border-color: var(--accent) !important; box-shadow: 0 0 18px rgba(167,139,250,0.15) !important; transform: translateY(-1px); }
+.user-pill { background: rgba(255,255,255,0.04) !important; border-radius: 100px !important; backdrop-filter: blur(8px); transition: all 0.2s !important; }
+.user-pill:hover { border-color: var(--accent) !important; box-shadow: 0 0 18px rgba(167,139,250,0.15) !important; }
+.uav { background: linear-gradient(135deg, var(--accent), var(--accent2)) !important; box-shadow: 0 2px 10px rgba(167,139,250,0.4) !important; }
+
+/* ── STAT CARDS ── */
+.stat-card {
+  background: linear-gradient(145deg, #120f28, #0a0818) !important;
+  border: 1px solid rgba(167,139,250,0.14) !important;
+  border-radius: 18px !important;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05) !important;
+  position: relative !important; overflow: hidden !important;
+  transition: transform 0.28s cubic-bezier(.34,1.4,.64,1), box-shadow 0.28s, border-color 0.2s !important;
+  cursor: default !important;
+}
+.stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(167,139,250,0.25), transparent); }
+.stat-val { background: linear-gradient(135deg, #ede9ff, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+/* ── MAIN CARDS ── */
+.card {
+  background: linear-gradient(145deg, #100d26, #090717) !important;
+  border: 1px solid rgba(167,139,250,0.13) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 8px 36px rgba(0,0,0,0.42), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+  position: relative !important; overflow: hidden !important;
+  transition: border-color 0.25s, box-shadow 0.25s !important;
+}
+.card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(167,139,250,0.2), rgba(244,114,182,0.12), transparent); pointer-events: none; }
+.card:hover { border-color: rgba(167,139,250,0.3) !important; box-shadow: 0 16px 56px rgba(0,0,0,0.5), 0 0 40px rgba(167,139,250,0.07) !important; }
+.card-title { background: linear-gradient(135deg, #ede9ff, #c4b8f0); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.card-title .ico { -webkit-text-fill-color: initial !important; }
+
+/* ── BUTTONS ── */
+.btn-primary {
+  background: linear-gradient(135deg, #a78bfa, #7c3aed) !important;
+  border-radius: 11px !important;
+  box-shadow: 0 4px 20px rgba(167,139,250,0.35), inset 0 1px 0 rgba(255,255,255,0.14) !important;
+}
+.btn-primary:hover:not(:disabled) { transform: translateY(-2px) !important; box-shadow: 0 8px 30px rgba(167,139,250,0.5) !important; }
+.btn-secondary { background: rgba(255,255,255,0.04) !important; border-color: rgba(167,139,250,0.2) !important; border-radius: 11px !important; backdrop-filter: blur(8px); }
+.btn-secondary:hover { border-color: var(--accent) !important; background: rgba(167,139,250,0.08) !important; }
+.btn { border-radius: 11px !important; }
+
+/* ── INPUTS ── */
+input:not(.af input), select, textarea {
+  background: rgba(255,255,255,0.04) !important;
+  border: 1px solid rgba(167,139,250,0.18) !important;
+  border-radius: 11px !important;
+  backdrop-filter: blur(8px);
+  transition: border-color 0.2s, box-shadow 0.2s !important;
+}
+input:not(.af input):focus, select:focus {
+  border-color: rgba(167,139,250,0.5) !important;
+  box-shadow: 0 0 0 3px rgba(167,139,250,0.12), 0 0 24px rgba(167,139,250,0.07) !important;
+  background: rgba(167,139,250,0.06) !important;
+}
+
+/* ── FORMS IN AUTH ── */
+.af input { background: rgba(255,255,255,0.05) !important; border: 1px solid rgba(167,139,250,0.2) !important; border-radius: 10px !important; }
+.af input:focus { border-color: rgba(167,139,250,0.5) !important; box-shadow: 0 0 0 3px rgba(167,139,250,0.12) !important; }
+
+/* ── MODAL ── */
+.modal-box {
+  background: linear-gradient(145deg, #100d26, #080515) !important;
+  border: 1px solid rgba(167,139,250,0.2) !important;
+  border-radius: 22px !important;
+  box-shadow: 0 32px 90px rgba(0,0,0,0.7) !important;
+}
+
+/* ── MISC COMPONENT UPGRADES ── */
+.infobox { background: rgba(167,139,250,0.06) !important; border: 1px solid rgba(167,139,250,0.14) !important; border-radius: 11px !important; }
+.infobox strong { color: var(--accent) !important; }
+.tgl-btn { border-radius: 10px !important; background: rgba(255,255,255,0.04) !important; border-color: rgba(167,139,250,0.18) !important; }
+.tgl-btn.on { background: rgba(167,139,250,0.12) !important; border-color: rgba(167,139,250,0.4) !important; box-shadow: 0 0 16px rgba(167,139,250,0.1) !important; }
+.export-card { background: linear-gradient(145deg, #120f28, #0a0818) !important; border: 1px solid rgba(167,139,250,0.13) !important; border-radius: 16px !important; transition: all 0.28s cubic-bezier(.34,1.4,.64,1) !important; }
+.export-card:hover { border-color: rgba(167,139,250,0.4) !important; transform: translateY(-4px) scale(1.01) !important; box-shadow: 0 16px 44px rgba(0,0,0,0.4), 0 0 30px rgba(167,139,250,0.1) !important; }
+.ai-prov-card { background: linear-gradient(145deg, #120f28, #0a0818) !important; border: 2px solid rgba(167,139,250,0.15) !important; border-radius: 14px !important; transition: all 0.25s cubic-bezier(.34,1.4,.64,1) !important; }
+.ai-prov-card:hover { border-color: rgba(167,139,250,0.4) !important; transform: translateY(-3px) scale(1.02) !important; }
+.ai-prov-card.selected { border-color: var(--accent) !important; background: rgba(167,139,250,0.1) !important; }
+.policy-row { background: rgba(255,255,255,0.03) !important; border: 1px solid rgba(167,139,250,0.10) !important; border-radius: 11px !important; }
+.policy-row:hover { border-color: rgba(167,139,250,0.22) !important; }
+.deadline-item, .req-item, .profnote-item, .cal-exam-row { background: rgba(255,255,255,0.03) !important; border: 1px solid rgba(167,139,250,0.10) !important; border-radius: 13px !important; transition: all 0.2s !important; }
+.deadline-item:hover, .req-item:hover, .profnote-item:hover, .cal-exam-row:hover { border-color: rgba(167,139,250,0.25) !important; }
+.badge-card { background: linear-gradient(145deg, #120f28, #0a0818) !important; border: 1px solid rgba(167,139,250,0.12) !important; border-radius: 14px !important; }
+.badge-card.unlocked { border-color: rgba(251,191,36,0.4) !important; }
+.goal-ring-wrap { background: rgba(255,255,255,0.03) !important; border: 1px solid rgba(167,139,250,0.12) !important; border-radius: 18px !important; }
+.risk-card { border-radius: 14px !important; }
+.chip { border-radius: 100px !important; background: rgba(167,139,250,0.06) !important; border-color: rgba(167,139,250,0.2) !important; transition: all 0.18s !important; }
+.chip:hover { background: rgba(167,139,250,0.14) !important; border-color: var(--accent) !important; }
+.xp-popup { background: linear-gradient(135deg, rgba(167,139,250,0.95), rgba(244,114,182,0.9)) !important; border-radius: 13px !important; box-shadow: 0 8px 36px rgba(167,139,250,0.5) !important; }
+.divider { background: linear-gradient(90deg, transparent, rgba(167,139,250,0.15), transparent) !important; }
+.safe-zone-bar { background: rgba(255,255,255,0.03) !important; border: 1px solid rgba(167,139,250,0.10) !important; border-radius: 11px !important; }
+
+/* ── HERO ── */
+.hero h1 { font-size: clamp(28px, 4vw, 46px) !important; }
+.hero-ey { display: flex; align-items: center; gap: 8px; }
+.hero-ey::before { content: ''; display: inline-block; width: 18px; height: 1px; background: var(--accent); }
+
+/* ── 3D TILT SHINE ── */
+.tilt-shine { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 1; opacity: 0; transition: opacity 0.3s; }
+
+/* ── MOBILE TOGGLE ── */
+#g3d-mob-toggle {
+  display: none; position: fixed; top: 14px; left: 14px; z-index: 300;
+  width: 38px; height: 38px; border-radius: 11px;
+  border: 1px solid rgba(167,139,250,0.2); background: rgba(8,6,20,0.92);
+  backdrop-filter: blur(12px); align-items: center; justify-content: center;
+  cursor: pointer; color: var(--text);
+}
+#g3d-mob-overlay { display: none; position: fixed; inset: 0; z-index: 195; background: rgba(0,0,0,0.55); backdrop-filter: blur(3px); }
+#g3d-mob-overlay.g3d-show { display: block; }
+
+@media (max-width: 860px) {
+  #g3d-sidebar { transform: translateX(-100%); }
+  #g3d-sidebar.g3d-open { transform: translateX(0); }
+  .app { margin-left: 0 !important; padding-left: 16px !important; padding-right: 16px !important; }
+  #g3d-mob-toggle { display: flex !important; }
+  .topbar { padding-top: 60px !important; }
+}
+
 </style>
 </head>
 
 <body>
+<div id="g3d-mob-overlay" onclick="g3dCloseNav()"></div>
+<button id="g3d-mob-toggle" onclick="g3dToggleNav()">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+</button>
+<nav id="g3d-sidebar">
+  <div id="g3d-sidebar-logo">
+    <div class="g3d-gem">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5"/><line x1="12" y1="22" x2="12" y2="15.5"/><polyline points="22 8.5 12 15.5 2 8.5"/></svg>
+    </div>
+    <div>
+      <div class="g3d-logo-text">Gradintel</div>
+      <div class="g3d-logo-sub">Smart GPA · AI</div>
+    </div>
+  </div>
+  <div id="g3d-nav">
+    <div class="g3d-section">Main</div>
+    <button class="g3d-item g3d-active" data-tab="dashboard">
+      <div class="g3d-ico"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="url(#site-ig)" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+      <span class="g3d-item-lbl">Dashboard</span>
+    </button>
+    <button class="g3d-item" data-tab="tracker">
+      <div class="g3d-ico"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="url(#site-ig)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></div>
+      <span class="g3d-item-lbl">Add Subject</span>
+    </button>
+    <button class="g3d-item" data-tab="courses">
+      <div class="g3d-ico"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="url(#site-ig)" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg></div>
+      <span class="g3d-item-lbl">My Courses</span>
+    </button>
+    <button class="g3d-item" data-tab="history">
+      <div class="g3d-ico"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="url(#site-ig)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+      <span class="g3d-item-lbl">Semesters</span>
+    </button>
+    <div class="g3d-section">Insights</div>
+    <button class="g3d-item" data-tab="analytics">
+      <div class="g3d-ico"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="url(#site-ig)" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
+      <span class="g3d-item-lbl">Analytics</span>
+    </button>
+    <button class="g3d-item" data-tab="whatif">
+      <div class="g3d-ico"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="url(#site-ig)" stroke-width="2"><path d="M9 3h6M9 3v6l-4 8a1 1 0 00.9 1.5h10.2A1 1 0 0023 17l-4-8V3"/></svg></div>
+      <span class="g3d-item-lbl">What-If</span>
+    </button>
+    <button class="g3d-item" data-tab="simulator">
+      <div class="g3d-ico"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="url(#site-ig)" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div>
+      <span class="g3d-item-lbl">Simulator</span>
+    </button>
+    <div class="g3d-section">Tools</div>
+    <button class="g3d-item" data-tab="planner">
+      <div class="g3d-ico"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="url(#site-ig)" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+      <span class="g3d-item-lbl">Planner</span>
+    </button>
+    <button class="g3d-item" data-tab="study">
+      <div class="g3d-ico"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="url(#site-ig)" stroke-width="2"><circle cx="12" cy="12" r="9"/><polyline points="12 6 12 12 15.5 15.5"/></svg></div>
+      <span class="g3d-item-lbl">Study Planner</span>
+    </button>
+    <button class="g3d-item" data-tab="ai">
+      <div class="g3d-ico"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="url(#site-ig)" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M12 11V7"/><circle cx="12" cy="5" r="2"/></svg></div>
+      <span class="g3d-item-lbl">AI Assistant</span>
+    </button>
+    <div class="g3d-section">Profile</div>
+    <button class="g3d-item" data-tab="achievements">
+      <div class="g3d-ico"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="url(#site-ig)" stroke-width="2"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg></div>
+      <span class="g3d-item-lbl">Achievements</span>
+    </button>
+    <button class="g3d-item" data-tab="degree">
+      <div class="g3d-ico"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="url(#site-ig)" stroke-width="2"><path d="M22 9L12 5 2 9l10 4 10-4z"/><path d="M6 11v5c0 2 3 3 6 3s6-1 6-3v-5"/></svg></div>
+      <span class="g3d-item-lbl">Degree</span>
+    </button>
+    <button class="g3d-item" data-tab="policies">
+      <div class="g3d-ico"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="url(#site-ig)" stroke-width="2"><path d="M12 3v18M3 9l9-6 9 6"/></svg></div>
+      <span class="g3d-item-lbl">Policies</span>
+    </button>
+    <button class="g3d-item" data-tab="export">
+      <div class="g3d-ico"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="url(#site-ig)" stroke-width="2"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/></svg></div>
+      <span class="g3d-item-lbl">Export</span>
+    </button>
+  </div>
+  <div id="g3d-sidebar-bottom">
+    <button class="icon-btn" onclick="toggleMotion()" style="flex:1;border-radius:9px" title="Motion"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="url(#site-ig)" stroke-width="2"><path d="M12 3v3M12 18v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M3 12h3M18 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg></button>
+    <button class="icon-btn" onclick="toggleTheme()" style="flex:1;border-radius:9px" title="Theme"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="url(#site-ig)" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg></button>
+    <button class="icon-btn" onclick="window.print()" style="flex:1;border-radius:9px" title="Print"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="url(#site-ig)" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
+  </div>
+</nav>
+
 <svg width="0" height="0" style="position:absolute;overflow:hidden" aria-hidden="true">
   <defs>
     <linearGradient id="site-ig" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -769,6 +1175,11 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2)}
     <button class="nav-tab" onclick="showTab('ai')" id="tab-ai"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="url(#site-ig)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M12 11V7"/><circle cx="12" cy="5" r="2"/><line x1="8" y1="15" x2="8" y2="17"/><line x1="16" y1="15" x2="16" y2="17"/><line x1="9" y1="11" x2="9" y2="11"/></svg> AI Assistant</button>
     <button class="nav-tab" onclick="showTab('policies')" id="tab-policies"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="url(#site-ig)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M12 3v18M3 9l9-6 9 6"/><path d="M3 9l4 8H3M21 9l-4 8h4"/></svg> Policies</button>
     <button class="nav-tab" onclick="showTab('export')" id="tab-export"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="url(#site-ig)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg> Export</button>
+    <button class="nav-tab" onclick="showTab('simulator')" id="tab-simulator">🎯 Simulator</button>
+    <button class="nav-tab" onclick="showTab('analytics')" id="tab-analytics">📊 Analytics</button>
+    <button class="nav-tab" onclick="showTab('planner')" id="tab-planner">📅 Planner</button>
+    <button class="nav-tab" onclick="showTab('achievements')" id="tab-achievements">🏆 Achievements</button>
+    <button class="nav-tab" onclick="showTab('degree')" id="tab-degree">🎓 Degree</button>
   </div>
 
   <!-- DASHBOARD -->
@@ -1100,6 +1511,330 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2)}
         <label>Upload JSON file</label>
         <input type="file" id="import-file" accept=".json" onchange="importJSON(this)" style="padding:8px"/>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- GRADE SIMULATOR TAB -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="tc-simulator" class="hidden">
+  <div class="card">
+    <div class="card-title">🎯 Grade Simulator & Scenarios</div>
+    <div class="infobox">Simulate hypothetical scores and see how they'd affect your GPA in real time. Save up to 3 scenarios side-by-side.</div>
+    <div id="sim-no-data" style="color:var(--muted);font-size:13px;padding:20px 0">Add at least one course with remaining exams to use the simulator.</div>
+    <div id="sim-content" style="display:none">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px" id="sim-scenarios-row">
+        <div class="sim-scenario-card" id="sim-s0" style="background:rgba(129,140,248,.07);border:2px solid rgba(129,140,248,.4);border-radius:var(--r);padding:18px">
+          <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:13px;margin-bottom:4px;color:var(--accent)">📉 Pessimistic</div>
+          <div style="font-size:32px;font-family:'Clash Display',sans-serif;font-weight:700" id="sim-s0-gpa">—</div>
+          <div style="font-size:11px;color:var(--muted)" id="sim-s0-lbl">Assuming all remaining = 50%</div>
+        </div>
+        <div class="sim-scenario-card" id="sim-s1" style="background:rgba(52,211,153,.07);border:2px solid rgba(52,211,153,.4);border-radius:var(--r);padding:18px">
+          <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:13px;margin-bottom:4px;color:var(--green)">📈 Realistic</div>
+          <div style="font-size:32px;font-family:'Clash Display',sans-serif;font-weight:700" id="sim-s1-gpa">—</div>
+          <div style="font-size:11px;color:var(--muted)" id="sim-s1-lbl">Assuming all remaining = 75%</div>
+        </div>
+        <div class="sim-scenario-card" id="sim-s2" style="background:rgba(251,191,36,.07);border:2px solid rgba(251,191,36,.4);border-radius:var(--r);padding:18px">
+          <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:13px;margin-bottom:4px;color:var(--yellow)">🚀 Optimistic</div>
+          <div style="font-size:32px;font-family:'Clash Display',sans-serif;font-weight:700" id="sim-s2-gpa">—</div>
+          <div style="font-size:11px;color:var(--muted)" id="sim-s2-lbl">Assuming all remaining = 95%</div>
+        </div>
+        <div class="sim-scenario-card" id="sim-s3" style="background:rgba(244,114,182,.07);border:2px solid rgba(244,114,182,.4);border-radius:var(--r);padding:18px">
+          <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:13px;margin-bottom:4px;color:var(--accent2)">⭐ Custom</div>
+          <div style="font-size:32px;font-family:'Clash Display',sans-serif;font-weight:700" id="sim-s3-gpa">—</div>
+          <div style="font-size:11px;color:var(--muted)">Your custom inputs below</div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:14px;margin-bottom:14px">🎚️ Custom Scenario — Slide to Simulate</div>
+      <div id="sim-sliders"></div>
+      <div class="divider"></div>
+      <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:14px;margin-bottom:10px">🔒 Safe Zone Indicator</div>
+      <div id="sim-safezone"></div>
+      <div class="divider"></div>
+      <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:14px;margin-bottom:10px">📉 Minimum Grade Calculator</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px">What's the lowest you can score on remaining exams and still maintain your goal GPA?</div>
+      <div id="sim-minimum"></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:14px">
+    <div class="card-title">⏮️ GPA Time Machine</div>
+    <div style="font-size:13px;color:var(--muted2);margin-bottom:14px">Drag the slider to see how your cumulative GPA would look if you had scored X% better across all past semesters.</div>
+    <div id="tm-wrap">
+      <label style="font-size:12px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase">Hypothetical score boost across all past exams</label>
+      <input type="range" id="tm-slider" min="-20" max="20" value="0" oninput="renderTimeMachine()" style="margin:12px 0"/>
+      <div class="slider-labels"><span>-20%</span><span style="color:var(--accent);font-weight:700" id="tm-val">0%</span><span>+20%</span></div>
+      <div style="margin-top:14px;display:flex;gap:18px;align-items:center">
+        <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em">Actual GPA</div><div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:32px" id="tm-actual">—</div></div>
+        <div style="font-size:22px;color:var(--muted)">→</div>
+        <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em">Hypothetical GPA</div><div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:32px;color:var(--accent)" id="tm-hyp">—</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- ANALYTICS TAB -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="tc-analytics" class="hidden">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+    <div class="card">
+      <div class="card-title">🕸️ Subject DNA</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px">Your academic strengths across categories</div>
+      <div style="position:relative;height:240px"><canvas id="dnaChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">📈 Semester Delta</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px">GPA improvement over time</div>
+      <div id="sem-delta-cards"></div>
+    </div>
+  </div>
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-title">🔥 Performance Heatmap</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:14px">Credit-weighted grade heatmap across all semesters</div>
+    <div id="heatmap-wrap"></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+    <div class="card">
+      <div class="card-title">🏅 Best Subjects</div>
+      <div id="best-subjects-list"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">⚠️ Needs Attention</div>
+      <div id="worst-subjects-list"></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">📊 Grade Distribution</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:10px">How your grades are distributed</div>
+    <div style="position:relative;height:180px"><canvas id="distChart"></canvas></div>
+  </div>
+  <div class="card" style="margin-top:14px">
+    <div class="card-title">🎯 Danger Zone Tracker</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:10px">Current semester courses vs. your goal GPA — weeks remaining warning</div>
+    <div id="danger-zone-content"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- PLANNER TAB -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="tc-planner" class="hidden">
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-title">📅 Deadline Tracker</div>
+    <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+      <button class="btn btn-primary" onclick="openAddDeadlineModal()">+ Add Deadline</button>
+      <div style="display:flex;gap:6px">
+        <button class="chip" id="dl-filter-all" onclick="filterDeadlines('all')" style="border-color:var(--accent);color:var(--accent)">All</button>
+        <button class="chip" id="dl-filter-upcoming" onclick="filterDeadlines('upcoming')">Upcoming</button>
+        <button class="chip" id="dl-filter-overdue" onclick="filterDeadlines('overdue')">Overdue</button>
+      </div>
+    </div>
+    <div id="deadline-list"></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+    <div class="card">
+      <div class="card-title">⏱️ Pomodoro Timer</div>
+      <div style="text-align:center;padding:10px 0">
+        <div style="font-size:11px;color:var(--muted);letter-spacing:.2em;text-transform:uppercase;margin-bottom:8px" id="pomo-mode-label">Focus Session</div>
+        <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:56px;letter-spacing:-.02em;color:var(--accent)" id="pomo-display">25:00</div>
+        <div style="margin:12px 0;display:flex;gap:8px;justify-content:center">
+          <button class="btn btn-primary" id="pomo-btn" onclick="togglePomo()">▶ Start</button>
+          <button class="btn btn-secondary" onclick="resetPomo()">↺ Reset</button>
+          <button class="btn btn-ghost" onclick="skipPomo()">⏭ Skip</button>
+        </div>
+        <div style="display:flex;gap:6px;justify-content:center;margin-bottom:12px">
+          <button class="chip" id="pomo-focus" onclick="setPomoMode('focus')" style="border-color:var(--accent);color:var(--accent)">25m Focus</button>
+          <button class="chip" id="pomo-short" onclick="setPomoMode('short')">5m Break</button>
+          <button class="chip" id="pomo-long" onclick="setPomoMode('long')">15m Long</button>
+        </div>
+        <div style="font-size:12px;color:var(--muted)">Session: <strong id="pomo-session-count">0</strong> completed today</div>
+        <div style="margin-top:10px">
+          <label style="font-size:11px;color:var(--muted)">Log to course:</label>
+          <select id="pomo-course-select" style="margin-left:8px;font-size:12px;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;padding:4px 8px;color:var(--text)"><option value="">— None —</option></select>
+        </div>
+      </div>
+      <div id="pomo-log-list" style="margin-top:10px"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">📓 Course Notes</div>
+      <div style="margin-bottom:10px">
+        <select id="notes-course-select" onchange="loadCourseNotes()" style="width:100%;font-size:13px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:8px;color:var(--text)"><option value="">Select course…</option></select>
+      </div>
+      <textarea id="notes-area" placeholder="Jot down quick notes for this course…" style="width:100%;min-height:120px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:10px;color:var(--text);font-family:'Cabinet Grotesk',sans-serif;font-size:13px;line-height:1.6;resize:vertical;outline:none" oninput="saveCourseNotes()"></textarea>
+      <div style="font-size:10px;color:var(--muted);margin-top:4px" id="notes-save-status">Auto-saved</div>
+    </div>
+  </div>
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-title">🗓️ Activity Streak Calendar</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:14px">GitHub-style grid of days you used Gradintel — keep your streak going!</div>
+    <div id="streak-grid"></div>
+    <div style="margin-top:10px;display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)">
+      <span>Less</span>
+      <div style="width:11px;height:11px;border-radius:2px;background:var(--surface3)"></div>
+      <div style="width:11px;height:11px;border-radius:2px;background:rgba(129,140,248,.3)"></div>
+      <div style="width:11px;height:11px;border-radius:2px;background:rgba(129,140,248,.6)"></div>
+      <div style="width:11px;height:11px;border-radius:2px;background:var(--accent)"></div>
+      <span>More</span>
+      &nbsp;·&nbsp; 🔥 Current streak: <strong id="streak-count">0</strong> days
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">😊 Mood + Study Log</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:14px">Track how you feel during study sessions and correlate with grades</div>
+    <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
+      <span style="font-size:12px;color:var(--muted2)">Today's mood:</span>
+      <div id="mood-btns" style="display:flex;gap:6px">
+        <button class="mood-btn" data-mood="5" onclick="logMood(5)" title="Great">😄</button>
+        <button class="mood-btn" data-mood="4" onclick="logMood(4)" title="Good">🙂</button>
+        <button class="mood-btn" data-mood="3" onclick="logMood(3)" title="Okay">😐</button>
+        <button class="mood-btn" data-mood="2" onclick="logMood(2)" title="Stressed">😰</button>
+        <button class="mood-btn" data-mood="1" onclick="logMood(1)" title="Bad">😞</button>
+      </div>
+    </div>
+    <div style="position:relative;height:160px"><canvas id="moodChart"></canvas></div>
+  </div>
+</div>
+
+<!-- DEADLINE MODAL -->
+<div class="modal-overlay" id="deadline-modal">
+  <div class="modal-box" style="max-width:460px">
+    <div class="modal-title"><span>Add Deadline</span><button class="modal-close" onclick="document.getElementById('deadline-modal').classList.remove('show')">✕</button></div>
+    <div class="field"><label>Title</label><input type="text" id="dl-title" placeholder="e.g. Math Assignment 2"/></div>
+    <div class="field"><label>Due Date</label><input type="datetime-local" id="dl-date"/></div>
+    <div class="field"><label>Course</label><select id="dl-course" style="width:100%;padding:10px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;color:var(--text)"><option value="">— None —</option></select></div>
+    <div class="field"><label>Weight % (importance)</label><input type="number" id="dl-weight" placeholder="e.g. 20" min="0" max="100"/></div>
+    <div class="field"><label>Type</label>
+      <select id="dl-type" style="width:100%;padding:10px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;color:var(--text)">
+        <option value="assignment">📝 Assignment</option>
+        <option value="exam">📋 Exam</option>
+        <option value="quiz">⚡ Quiz</option>
+        <option value="project">🚀 Project</option>
+        <option value="other">📌 Other</option>
+      </select>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="document.getElementById('deadline-modal').classList.remove('show')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveDeadline()">Save Deadline</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- ACHIEVEMENTS TAB -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="tc-achievements" class="hidden">
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:18px" id="xp-stats-row">
+    <div class="stat-card">
+      <div class="stat-lbl">Total XP</div>
+      <div class="stat-val" id="xp-total" style="background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">0</div>
+      <div class="stat-sub">experience points</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-lbl">Level</div>
+      <div class="stat-val" id="xp-level">1</div>
+      <div class="stat-sub" id="xp-title-lbl">Freshman</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-lbl">Badges Earned</div>
+      <div class="stat-val" id="badges-count">0</div>
+      <div class="stat-sub">of <span id="badges-total">0</span> total</div>
+    </div>
+  </div>
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-title">⚡ Level Progress</div>
+    <div id="xp-bar-wrap" style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:6px">
+        <span id="xp-level-label">Level 1 — Freshman</span>
+        <span id="xp-next-label">0 / 100 XP</span>
+      </div>
+      <div style="height:8px;background:var(--surface3);border-radius:100px;overflow:hidden">
+        <div id="xp-bar-fill" style="height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:100px;transition:width 1s ease;width:0%"></div>
+      </div>
+    </div>
+    <div id="xp-activities" style="font-size:12px;color:var(--muted)"></div>
+  </div>
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-title">🏆 Trophy Room</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:14px">Earn badges by reaching milestones. Locked badges are shown greyed out.</div>
+    <div id="badges-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">🔥 GPA Streak</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:14px">Consecutive semesters at or above your goal GPA</div>
+    <div id="gpa-streak-content"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- DEGREE PROGRESS TAB -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="tc-degree" class="hidden">
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-title">🎓 Degree Setup</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px">
+      <div class="field"><label>Degree Name</label><input type="text" id="deg-name" placeholder="e.g. B.Sc. Computer Science" oninput="saveDegreeSetup()"/></div>
+      <div class="field"><label>Total Credits Required</label><input type="number" id="deg-total-credits" placeholder="e.g. 120" min="1" oninput="saveDegreeSetup()"/></div>
+      <div class="field"><label>Target Graduation GPA</label><input type="number" id="deg-target-gpa" placeholder="e.g. 3.5" min="0" max="5" step="0.01" oninput="saveDegreeSetup()"/></div>
+    </div>
+    <div id="deg-progress-wrap"></div>
+  </div>
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-title">📋 Course Requirements</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Track which required courses you've completed or still need</div>
+    <button class="btn btn-primary" onclick="openAddRequirementModal()" style="margin-bottom:14px">+ Add Requirement</button>
+    <div id="requirements-list"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">🏫 Professor Notes</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Private notes on professors / courses to help future you when picking classes</div>
+    <button class="btn btn-primary" onclick="openAddProfNoteModal()" style="margin-bottom:14px">+ Add Note</button>
+    <div id="prof-notes-list"></div>
+  </div>
+</div>
+
+<!-- REQUIREMENT MODAL -->
+<div class="modal-overlay" id="req-modal">
+  <div class="modal-box" style="max-width:440px">
+    <div class="modal-title"><span>Add Course Requirement</span><button class="modal-close" onclick="document.getElementById('req-modal').classList.remove('show')">✕</button></div>
+    <div class="field"><label>Course Name</label><input type="text" id="req-name" placeholder="e.g. Calculus II"/></div>
+    <div class="field"><label>Credits</label><input type="number" id="req-credits" placeholder="e.g. 3" min="0.5" step="0.5"/></div>
+    <div class="field"><label>Category</label><input type="text" id="req-category" placeholder="e.g. Core, Elective, Lab"/></div>
+    <div class="field"><label>Status</label>
+      <select id="req-status" style="width:100%;padding:10px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;color:var(--text)">
+        <option value="pending">⏳ Pending</option>
+        <option value="in_progress">📖 In Progress</option>
+        <option value="completed">✅ Completed</option>
+        <option value="waived">🔓 Waived</option>
+      </select>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="document.getElementById('req-modal').classList.remove('show')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveRequirement()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- PROF NOTE MODAL -->
+<div class="modal-overlay" id="profnote-modal">
+  <div class="modal-box" style="max-width:440px">
+    <div class="modal-title"><span>Professor / Course Note</span><button class="modal-close" onclick="document.getElementById('profnote-modal').classList.remove('show')">✕</button></div>
+    <div class="field"><label>Course / Professor</label><input type="text" id="pn-course" placeholder="e.g. Prof. Smith — Algorithms"/></div>
+    <div class="field"><label>Rating</label>
+      <div style="display:flex;gap:8px" id="pn-stars">
+        <button class="mood-btn pn-star" data-v="1" onclick="setPnRating(1)">⭐</button>
+        <button class="mood-btn pn-star" data-v="2" onclick="setPnRating(2)">⭐</button>
+        <button class="mood-btn pn-star" data-v="3" onclick="setPnRating(3)">⭐</button>
+        <button class="mood-btn pn-star" data-v="4" onclick="setPnRating(4)">⭐</button>
+        <button class="mood-btn pn-star" data-v="5" onclick="setPnRating(5)">⭐</button>
+      </div>
+    </div>
+    <div class="field"><label>Notes</label><textarea id="pn-notes" placeholder="Workload, difficulty, tips, would recommend?" style="width:100%;min-height:90px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:10px;color:var(--text);font-family:'Cabinet Grotesk',sans-serif;font-size:13px;resize:vertical"></textarea></div>
+    <div class="field"><label>Semester Taken</label><input type="text" id="pn-sem" placeholder="e.g. Fall 2024"/></div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="document.getElementById('profnote-modal').classList.remove('show')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveProfNote()">Save Note</button>
     </div>
   </div>
 </div>
@@ -1805,6 +2540,9 @@ async function saveEditModal() {
   closeEditModal();
   updateStats(); renderDashboard(); renderCourses(); renderWIFull(); renderStudy(); renderROI();
   showToast(`✅ ${s.name} updated!`);
+  if(typeof addXP==='function') addXP(20,'Grade logged');
+  if(typeof logActivity==='function') logActivity();
+  if(typeof checkBadges==='function') checkBadges();
 }
 function closeEditModal() { document.getElementById('edit-modal').classList.remove('show'); editCtx = null; }
 
@@ -3177,6 +3915,11 @@ function showTab(id) {
   if (id === 'dashboard') { renderDashboard(); updateStats(); }
   if (id === 'ai') { renderROI(); renderAIKeyStatusBar(); }
   if (id === 'policies') renderPoliciesUI();
+  if (id === 'simulator') renderSimulator();
+  if (id === 'analytics') renderAnalytics();
+  if (id === 'planner') { renderDeadlines(); renderStreakGrid(); renderPomoCoursePicker(); renderMoodChart(); renderNotesCourseList(); }
+  if (id === 'achievements') renderAchievements();
+  if (id === 'degree') renderDegree();
 }
 function toggleTheme() {
   const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
@@ -3273,6 +4016,935 @@ function initAnimations() {
     if (event === 'SIGNED_IN' && session && !currentUser) { currentUser = session.user; await onAuthSuccess(); }
   });
 })();
+
+// ══════════════════════════════════════════════════════════════
+// ████  NEW FEATURES BLOCK  ████
+// ══════════════════════════════════════════════════════════════
+
+// ─── HELPERS ───────────────────────────────────────────────
+function getNS(key, def=null){ try{const v=localStorage.getItem(key); return v!==null?JSON.parse(v):def;}catch{return def;} }
+function setNS(key,val){ try{localStorage.setItem(key,JSON.stringify(val));}catch{} }
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+function userKey(k){ return k+'_'+(currentUser?.id||'anon'); }
+function showXPPopup(msg){ const el=document.createElement('div'); el.className='xp-popup'; el.textContent=msg; document.body.appendChild(el); setTimeout(()=>el.remove(),2200); }
+
+// ─── XP & LEVELS ──────────────────────────────────────────
+const XP_LEVELS=[
+  {lvl:1,title:'Freshman',xp:0},
+  {lvl:2,title:'Sophomore',xp:100},
+  {lvl:3,title:'Junior',xp:250},
+  {lvl:4,title:'Senior',xp:500},
+  {lvl:5,title:'Honor Roll',xp:800},
+  {lvl:6,title:'Dean\'s List',xp:1200},
+  {lvl:7,title:'Scholar',xp:1800},
+  {lvl:8,title:'Magna Cum Laude',xp:2600},
+  {lvl:9,title:'Summa Cum Laude',xp:3500},
+  {lvl:10,title:'Valedictorian',xp:5000}
+];
+function getXP(){ return getNS(userKey('gradintel_xp'),0); }
+function addXP(pts, reason=''){
+  const prev=getXP(); const next=prev+pts;
+  setNS(userKey('gradintel_xp'),next);
+  showXPPopup(`+${pts} XP — ${reason}`);
+  const prevLvl=getLevel(prev); const nextLvl=getLevel(next);
+  if(nextLvl.lvl>prevLvl.lvl){ setTimeout(()=>{ showXPPopup(`🎉 Level Up! ${nextLvl.title}`); fireConfetti(); },600); }
+  checkBadges();
+}
+function getLevel(xp=null){
+  if(xp===null) xp=getXP();
+  let cur=XP_LEVELS[0];
+  for(const l of XP_LEVELS){ if(xp>=l.xp) cur=l; else break; }
+  return cur;
+}
+
+// ─── ACTIVITY STREAK ─────────────────────────────────────
+function logActivity(){
+  const k=userKey('gradintel_activity');
+  const data=getNS(k,{});
+  const today=todayStr();
+  data[today]=(data[today]||0)+1;
+  setNS(k,data);
+}
+function getStreak(){
+  const data=getNS(userKey('gradintel_activity'),{});
+  let streak=0; const d=new Date();
+  for(let i=0;i<365;i++){
+    const s=d.toISOString().slice(0,10);
+    if(data[s]) streak++;
+    else if(i>0) break;
+    d.setDate(d.getDate()-1);
+  }
+  return streak;
+}
+
+// ─── BADGES ───────────────────────────────────────────────
+const ALL_BADGES=[
+  {id:'first_login',ico:'🎓',name:'First Step',desc:'Signed in for the first time',xp:10},
+  {id:'first_grade',ico:'📝',name:'First Grade',desc:'Logged your first exam score',xp:20},
+  {id:'gpa_3',ico:'⭐',name:'3.0 Club',desc:'Achieved a semester GPA ≥ 3.0',xp:50},
+  {id:'gpa_35',ico:'🌟',name:'Honor Roll',desc:'Achieved a semester GPA ≥ 3.5',xp:100},
+  {id:'gpa_4',ico:'🏆',name:'Perfect GPA',desc:'Achieved a semester GPA of 4.0',xp:200},
+  {id:'streak_3',ico:'🔥',name:'On Fire',desc:'3-day activity streak',xp:30},
+  {id:'streak_7',ico:'💥',name:'Unstoppable',desc:'7-day activity streak',xp:75},
+  {id:'streak_30',ico:'⚡',name:'Legend',desc:'30-day activity streak',xp:300},
+  {id:'courses_5',ico:'📚',name:'Bookworm',desc:'Tracked 5+ courses total',xp:40},
+  {id:'courses_20',ico:'🧠',name:'Genius',desc:'Tracked 20+ courses total',xp:150},
+  {id:'sems_3',ico:'🗓️',name:'Veteran',desc:'Completed 3 semesters',xp:80},
+  {id:'sems_6',ico:'🎖️',name:'Senior',desc:'Completed 6 semesters',xp:160},
+  {id:'pomodoro_1',ico:'🍅',name:'First Pomo',desc:'Completed your first Pomodoro',xp:15},
+  {id:'pomodoro_10',ico:'⏰',name:'Focus Master',desc:'10 Pomodoro sessions completed',xp:60},
+  {id:'pomodoro_50',ico:'🧘',name:'Deep Work',desc:'50 Pomodoro sessions',xp:200},
+  {id:'deadlines_1',ico:'📌',name:'Planner',desc:'Added your first deadline',xp:10},
+  {id:'deadlines_done_5',ico:'✅',name:'Task Crusher',desc:'Completed 5 deadlines',xp:50},
+  {id:'mood_10',ico:'😊',name:'Self-Aware',desc:'Logged mood 10 times',xp:30},
+  {id:'degree_setup',ico:'🎓',name:'Goal Setter',desc:'Set up your degree plan',xp:25},
+  {id:'req_done_10',ico:'📋',name:'On Track',desc:'Completed 10 course requirements',xp:100},
+  {id:'simulator',ico:'🎯',name:'Strategist',desc:'Used the grade simulator',xp:15},
+  {id:'time_machine',ico:'⏮️',name:'Time Traveler',desc:'Used the GPA time machine',xp:15},
+];
+function getUnlockedBadges(){ return getNS(userKey('gradintel_badges'),{}); }
+function unlockBadge(id){
+  const badges=getUnlockedBadges();
+  if(badges[id]) return;
+  const b=ALL_BADGES.find(x=>x.id===id); if(!b) return;
+  badges[id]=new Date().toISOString();
+  setNS(userKey('gradintel_badges'),badges);
+  setTimeout(()=>{ showXPPopup(`🏆 Badge: ${b.name}!`); addXP(b.xp, b.name); },800);
+}
+function checkBadges(){
+  const badges=getUnlockedBadges();
+  // activity streaks
+  const streak=getStreak();
+  if(streak>=3) unlockBadge('streak_3');
+  if(streak>=7) unlockBadge('streak_7');
+  if(streak>=30) unlockBadge('streak_30');
+  // courses
+  let totalCourses=0; semesters.forEach(s=>totalCourses+=s.subjects.length);
+  if(totalCourses>=1) unlockBadge('first_grade');
+  if(totalCourses>=5) unlockBadge('courses_5');
+  if(totalCourses>=20) unlockBadge('courses_20');
+  // semesters
+  if(semesters.length>=3) unlockBadge('sems_3');
+  if(semesters.length>=6) unlockBadge('sems_6');
+  // GPA
+  semesters.forEach(sem=>{
+    const g=sem._gpa||0;
+    if(g>=3.0) unlockBadge('gpa_3');
+    if(g>=3.5) unlockBadge('gpa_35');
+    if(g>=3.99) unlockBadge('gpa_4');
+  });
+  // pomodoro
+  const pomoSessions=getNS(userKey('gradintel_pomo_total'),0);
+  if(pomoSessions>=1) unlockBadge('pomodoro_1');
+  if(pomoSessions>=10) unlockBadge('pomodoro_10');
+  if(pomoSessions>=50) unlockBadge('pomodoro_50');
+  // deadlines
+  const dls=getNS(userKey('gradintel_deadlines'),[]);
+  if(dls.length>=1) unlockBadge('deadlines_1');
+  const doneDls=dls.filter(d=>d.done).length;
+  if(doneDls>=5) unlockBadge('deadlines_done_5');
+  // mood
+  const moods=getNS(userKey('gradintel_mood'),[]);
+  if(moods.length>=10) unlockBadge('mood_10');
+  // degree
+  const degSetup=getNS(userKey('gradintel_degree'),{});
+  if(degSetup.name) unlockBadge('degree_setup');
+  const reqs=getNS(userKey('gradintel_requirements'),[]);
+  const doneReqs=reqs.filter(r=>r.status==='completed').length;
+  if(doneReqs>=10) unlockBadge('req_done_10');
+}
+
+// ─── RENDER ACHIEVEMENTS ─────────────────────────────────
+function renderAchievements(){
+  logActivity();
+  unlockBadge('first_login');
+  checkBadges();
+  const xp=getXP();
+  const level=getLevel(xp);
+  const nextLevel=XP_LEVELS.find(l=>l.xp>xp)||XP_LEVELS[XP_LEVELS.length-1];
+  const prevLvlXP=level.xp;
+  const nextLvlXP=nextLevel.xp;
+  const pct=nextLvlXP>prevLvlXP?Math.min(100,Math.round((xp-prevLvlXP)/(nextLvlXP-prevLvlXP)*100)):100;
+  document.getElementById('xp-total').textContent=xp.toLocaleString();
+  document.getElementById('xp-level').textContent=level.lvl;
+  document.getElementById('xp-title-lbl').textContent=level.title;
+  document.getElementById('xp-level-label').textContent=`Level ${level.lvl} — ${level.title}`;
+  document.getElementById('xp-next-label').textContent=`${xp} / ${nextLvlXP} XP`;
+  setTimeout(()=>{ document.getElementById('xp-bar-fill').style.width=pct+'%'; },100);
+  const activities=[
+    'Log a grade → +20 XP','Complete a Pomodoro → +15 XP','Log mood → +5 XP',
+    'Complete a deadline → +10 XP','Unlock a badge → bonus XP','Add a course → +5 XP'
+  ];
+  document.getElementById('xp-activities').innerHTML='<strong>How to earn XP:</strong> '+activities.join(' &nbsp;·&nbsp; ');
+  const unlocked=getUnlockedBadges();
+  document.getElementById('badges-count').textContent=Object.keys(unlocked).length;
+  document.getElementById('badges-total').textContent=ALL_BADGES.length;
+  const grid=document.getElementById('badges-grid'); grid.innerHTML='';
+  ALL_BADGES.forEach(b=>{
+    const isUnlocked=!!unlocked[b.id];
+    const div=document.createElement('div'); div.className='badge-card'+(isUnlocked?' unlocked':'');
+    const dateStr=isUnlocked?new Date(unlocked[b.id]).toLocaleDateString():'Locked';
+    div.innerHTML=`<span class="badge-ico">${isUnlocked?b.ico:'🔒'}</span><div class="badge-name">${b.name}</div><div class="badge-desc">${b.desc}</div><div class="badge-date">${isUnlocked?'Earned '+dateStr:'???'}</div>`;
+    if(isUnlocked) div.style.cursor='pointer'; div.title=b.desc;
+    grid.appendChild(div);
+  });
+  // GPA streak
+  const gpaStreakSems=[];
+  const goalGpa=policies.goalGpa||3.0;
+  let streak=0; let max=0;
+  semesters.forEach(sem=>{
+    if((sem._gpa||0)>=goalGpa){ streak++; max=Math.max(max,streak); }
+    else streak=0;
+    gpaStreakSems.push({name:sem.name,gpa:sem._gpa||0,above:(sem._gpa||0)>=goalGpa});
+  });
+  const gsc=document.getElementById('gpa-streak-content');
+  gsc.innerHTML=`<div style="font-size:13px;color:var(--muted2);margin-bottom:12px">Goal GPA: <strong>${goalGpa}</strong> · Current streak: <strong style="color:var(--accent)">${streak}</strong> semester${streak!==1?'s':''} · Best: <strong>${max}</strong></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">${gpaStreakSems.map(s=>`<div style="background:${s.above?'rgba(52,211,153,.12)':'rgba(248,113,113,.08)'};border:1px solid ${s.above?'rgba(52,211,153,.3)':'rgba(248,113,113,.25)'};border-radius:var(--r-sm);padding:8px 12px;font-size:12px"><div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:15px;color:${s.above?'var(--green)':'var(--red)'}">${(s.gpa||0).toFixed(2)}</div><div style="color:var(--muted)">${s.name||'Sem'}</div></div>`).join('')}</div>`;
+}
+
+// ─── GRADE SIMULATOR ─────────────────────────────────────
+let simCharts={};
+function getAllActiveCourses(){
+  if(!semesters.length) return [];
+  return semesters.flatMap(sem=>sem.subjects.map(s=>({...s,semId:sem.id,semName:sem.name})));
+}
+function getRemExams(course){
+  return (course.exams||[]).filter(e=>!e.taken);
+}
+function simGPAWithScores(scoreMap){
+  // scoreMap: { subjectId: { examId: score } }
+  let totalCP=0, totalCR=0;
+  semesters.forEach(sem=>{
+    sem.subjects.forEach(s=>{
+      const simExams=(s.exams||[]).map(e=>{
+        if(!e.taken && scoreMap[s.id]?.[e.id]!=null){
+          return {...e,taken:true,score:scoreMap[s.id][e.id]};
+        }
+        return e;
+      });
+      const simS={...s,exams:simExams};
+      const res=computeSubject(simS);
+      totalCP+=s.credits*(res.curG?.p||0);
+      totalCR+=s.credits;
+    });
+  });
+  return totalCR?totalCP/totalCR:0;
+}
+function buildScoreMap(defaultScore){
+  const map={};
+  getAllActiveCourses().forEach(s=>{
+    getRemExams(s).forEach(e=>{
+      if(!map[s.id]) map[s.id]={};
+      map[s.id][e.id]=defaultScore;
+    });
+  });
+  return map;
+}
+function renderSimulator(){
+  unlockBadge('simulator');
+  const courses=getAllActiveCourses();
+  const hasRem=courses.some(c=>getRemExams(c).length>0);
+  document.getElementById('sim-no-data').style.display=hasRem?'none':'block';
+  document.getElementById('sim-content').style.display=hasRem?'block':'none';
+  if(!hasRem) return;
+  // Scenarios
+  const scenarios=[
+    {id:'sim-s0-gpa',score:50,label:'All remaining = 50%'},
+    {id:'sim-s1-gpa',score:75,label:'All remaining = 75%'},
+    {id:'sim-s2-gpa',score:95,label:'All remaining = 95%'},
+  ];
+  scenarios.forEach(sc=>{
+    const map=buildScoreMap(sc.score);
+    const gpa=simGPAWithScores(map);
+    document.getElementById(sc.id).textContent=gpa.toFixed(2);
+    document.getElementById(sc.id).style.color=gpa>=3.5?'var(--green)':gpa>=2.5?'var(--accent)':'var(--red)';
+  });
+  // Custom sliders
+  const sliderWrap=document.getElementById('sim-sliders');
+  const simCourses=courses.filter(c=>getRemExams(c).length>0);
+  sliderWrap.innerHTML=simCourses.map(c=>`
+    <div style="margin-bottom:14px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:14px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+        <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:13px">${c.name}</div>
+        <div style="font-size:13px;color:var(--accent);font-weight:700" id="sim-score-${c.id}">75%</div>
+      </div>
+      <input type="range" min="0" max="100" value="75" oninput="updateSimScore('${c.id}',this.value)"
+        style="width:100%"/>
+      <div class="slider-labels"><span>0%</span><span>50%</span><span>100%</span></div>
+    </div>`).join('');
+  updateCustomScenario();
+  renderSafeZone();
+  renderMinCalc();
+}
+function updateSimScore(courseId, val){
+  document.getElementById('sim-score-'+courseId).textContent=val+'%';
+  updateCustomScenario();
+}
+function updateCustomScenario(){
+  const map={};
+  getAllActiveCourses().forEach(s=>{
+    getRemExams(s).forEach(e=>{
+      const slider=document.querySelector(`[oninput*="updateSimScore('${s.id}'"]`);
+      const score=slider?parseInt(slider.value):75;
+      if(!map[s.id]) map[s.id]={};
+      map[s.id][e.id]=score;
+    });
+  });
+  const gpa=simGPAWithScores(map);
+  const el=document.getElementById('sim-s3-gpa');
+  if(el){ el.textContent=gpa.toFixed(2); el.style.color=gpa>=3.5?'var(--green)':gpa>=2.5?'var(--accent)':'var(--red)'; }
+}
+function renderSafeZone(){
+  const c=document.getElementById('sim-safezone'); if(!c) return;
+  const courses=getAllActiveCourses().filter(x=>getRemExams(x).length>0);
+  c.innerHTML=courses.map(s=>{
+    const gpa=s.credits>0?((s._gpa||computeSubject(s).curG.p)):0;
+    const isGreen=gpa>=3.5; const isYellow=gpa>=2.5&&gpa<3.5;
+    const zone=isGreen?'🟢 Safe Zone':isYellow?'🟡 Caution Zone':'🔴 Danger Zone';
+    const zc=isGreen?'var(--green)':isYellow?'var(--yellow)':'var(--red)';
+    return `<div class="safe-zone-bar"><div class="sz-name">${s.name}</div><div class="sz-indicator" style="background:${zc}22;color:${zc};border:1px solid ${zc}44">${zone}</div></div>`;
+  }).join('');
+}
+function renderMinCalc(){
+  const c=document.getElementById('sim-minimum'); if(!c) return;
+  const goalGpa=policies.goalGpa||3.0;
+  const courses=getAllActiveCourses().filter(x=>getRemExams(x).length>0);
+  c.innerHTML=courses.map(s=>{
+    const remExams=getRemExams(s);
+    if(!remExams.length) return '';
+    // rough minimum: what average score on remaining exams to hit goal
+    const res=computeSubject(s);
+    const targets=res.targets||[];
+    const tgt=targets.find(t=>Math.abs(t.gpa-goalGpa)<0.1)||targets[0];
+    const min=tgt?.perExam?.[0]?.needed??null;
+    let label; let col;
+    if(min===null) { label='N/A'; col='var(--muted)'; }
+    else if(min<=0) { label='Already secured ✅'; col='var(--green)'; }
+    else if(min>100) { label='Not achievable ❌'; col='var(--red)'; }
+    else { label=`Need ≥ ${min.toFixed(1)}% average`; col=min<70?'var(--green)':min<85?'var(--yellow)':'var(--red)'; }
+    return `<div class="safe-zone-bar"><div class="sz-name">${s.name}<div style="font-size:10px;color:var(--muted)">${remExams.length} exam${remExams.length>1?'s':''} left</div></div><div style="color:${col};font-family:'Clash Display',sans-serif;font-weight:700;font-size:13px">${label}</div></div>`;
+  }).join('') || '<div style="color:var(--muted);font-size:13px">No remaining exams found.</div>';
+}
+
+// ─── TIME MACHINE ─────────────────────────────────────────
+function renderTimeMachine(){
+  const slider=document.getElementById('tm-slider');
+  const val=parseInt(slider.value);
+  document.getElementById('tm-val').textContent=(val>=0?'+':'')+val+'%';
+  unlockBadge('time_machine');
+  // compute actual GPA
+  let totalCP=0, totalCR=0;
+  semesters.forEach(sem=>sem.subjects.forEach(s=>{
+    const res=computeSubject(s);
+    totalCP+=s.credits*(res.curG?.p||0); totalCR+=s.credits;
+  }));
+  const actualGPA=totalCR?totalCP/totalCR:0;
+  document.getElementById('tm-actual').textContent=actualGPA.toFixed(2);
+  // compute hypothetical
+  let hypCP=0, hypCR=0;
+  semesters.forEach(sem=>sem.subjects.forEach(s=>{
+    const hypExams=(s.exams||[]).map(e=>e.taken?{...e,score:Math.min(100,e.score+val)}:e);
+    const hypS={...s,exams:hypExams};
+    const res=computeSubject(hypS);
+    hypCP+=s.credits*(res.curG?.p||0); hypCR+=s.credits;
+  }));
+  const hypGPA=hypCR?hypCP/hypCR:0;
+  const el=document.getElementById('tm-hyp');
+  el.textContent=hypGPA.toFixed(2);
+  el.style.color=hypGPA>actualGPA?'var(--green)':hypGPA<actualGPA?'var(--red)':'var(--accent)';
+}
+
+// ─── ANALYTICS ─────────────────────────────────────────────
+let dnaChartInst=null, distChartInst=null;
+const SUBJECT_CATS={
+  'math':['math','calculus','algebra','statistics','stat','linear','discrete'],
+  'science':['physics','chemistry','biology','chem','bio','lab','engineering'],
+  'cs':['computer','programming','algorithm','software','data','network','database','coding'],
+  'humanities':['history','philosophy','english','writing','literature','art','music','language'],
+  'business':['economics','finance','accounting','management','marketing','business'],
+  'other':[]
+};
+function guessCategory(name){
+  const n=name.toLowerCase();
+  for(const [cat,kws] of Object.entries(SUBJECT_CATS)){
+    if(cat==='other') continue;
+    if(kws.some(k=>n.includes(k))) return cat;
+  }
+  return 'other';
+}
+function renderAnalytics(){
+  const allSubjects=[];
+  semesters.forEach(sem=>sem.subjects.forEach(s=>allSubjects.push({...s,semName:sem.name})));
+  if(!allSubjects.length){ ['sem-delta-cards','heatmap-wrap','best-subjects-list','worst-subjects-list','danger-zone-content'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML='<div style="color:var(--muted);font-size:13px;padding:8px 0">No data yet.</div>';});return;}
+  // Sem delta
+  const deltaEl=document.getElementById('sem-delta-cards');
+  if(deltaEl){
+    let deltaHTML='';
+    semesters.forEach((sem,i)=>{
+      const g=sem._gpa||0;
+      const prev=semesters[i-1]?._gpa||0;
+      const delta=i>0?g-prev:null;
+      const sign=delta===null?'':delta>=0?'+':'';
+      const col=delta===null?'var(--muted)':delta>0?'var(--green)':delta<0?'var(--red)':'var(--muted)';
+      deltaHTML+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+        <div style="font-size:13px;font-weight:600">${sem.name||'Sem '+(i+1)}</div>
+        <div style="display:flex;gap:12px;align-items:center">
+          <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:18px">${g.toFixed(2)}</div>
+          ${delta!==null?`<div style="font-size:12px;font-weight:700;color:${col}">${sign}${delta.toFixed(2)}</div>`:''}
+        </div>
+      </div>`;
+    });
+    deltaEl.innerHTML=deltaHTML||'<div style="color:var(--muted)">Add semesters to see trends.</div>';
+  }
+  // DNA radar chart
+  const catScores={math:[], science:[], cs:[], humanities:[], business:[], other:[]};
+  allSubjects.forEach(s=>{
+    const res=computeSubject(s); const cat=guessCategory(s.name);
+    catScores[cat].push(res.cur);
+  });
+  const labels=['Math','Science','CS','Humanities','Business','Other'];
+  const catKeys=['math','science','cs','humanities','business','other'];
+  const data=catKeys.map(k=>catScores[k].length?Math.round(catScores[k].reduce((a,b)=>a+b,0)/catScores[k].length):null);
+  const hasData=data.some(d=>d!==null);
+  const dnaCtx=document.getElementById('dnaChart');
+  if(dnaCtx){
+    if(dnaChartInst){dnaChartInst.destroy();dnaChartInst=null;}
+    if(hasData){
+      dnaChartInst=new Chart(dnaCtx,{
+        type:'radar',
+        data:{labels,datasets:[{label:'Avg Score',data:data.map(d=>d||0),
+          backgroundColor:'rgba(129,140,248,.15)',borderColor:'rgba(129,140,248,.8)',
+          pointBackgroundColor:'rgba(244,114,182,.9)',pointRadius:4,borderWidth:2}]},
+        options:{responsive:true,maintainAspectRatio:false,scales:{r:{beginAtZero:true,max:100,
+          ticks:{color:'rgba(255,255,255,.3)',font:{size:9}},
+          pointLabels:{color:'rgba(255,255,255,.7)',font:{size:10}},
+          grid:{color:'rgba(255,255,255,.07)'},angleLines:{color:'rgba(255,255,255,.07)'}}},
+          plugins:{legend:{display:false}}}
+      });
+    }
+  }
+  // Heatmap
+  const hmWrap=document.getElementById('heatmap-wrap');
+  if(hmWrap){
+    let hmHTML='';
+    semesters.forEach(sem=>{
+      hmHTML+=`<div class="hm-row"><div class="hm-label">${(sem.name||'').slice(0,12)}</div><div>`;
+      sem.subjects.forEach(s=>{
+        const res=computeSubject(s); const sc=res.cur;
+        const alpha=Math.max(0.15,sc/100);
+        const col=sc>=87?`rgba(52,211,153,${alpha})`:sc>=73?`rgba(251,191,36,${alpha})`:sc>=60?`rgba(129,140,248,${alpha})`:`rgba(248,113,113,${alpha})`;
+        hmHTML+=`<div class="hm-cell" style="background:${col};width:${Math.max(18,s.credits*10)}px" title="${s.name}: ${sc.toFixed(1)}%"></div>`;
+      });
+      hmHTML+='</div></div>';
+    });
+    hmWrap.innerHTML=hmHTML||'<div style="color:var(--muted);font-size:13px">No data.</div>';
+  }
+  // Best / worst
+  const scored=allSubjects.map(s=>({...s,score:computeSubject(s).cur})).filter(s=>s.score>0);
+  scored.sort((a,b)=>b.score-a.score);
+  const bestEl=document.getElementById('best-subjects-list');
+  if(bestEl) bestEl.innerHTML=scored.slice(0,5).map((s,i)=>`<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)">
+    <div style="font-size:15px">${['🥇','🥈','🥉','4️⃣','5️⃣'][i]}</div>
+    <div style="flex:1;font-size:13px;font-weight:600">${s.name}<div style="font-size:10px;color:var(--muted)">${s.semName}</div></div>
+    <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:16px;color:var(--green)">${s.score.toFixed(1)}%</div>
+  </div>`).join('')||'<div style="color:var(--muted);font-size:13px">No data.</div>';
+  const worstEl=document.getElementById('worst-subjects-list');
+  if(worstEl) worstEl.innerHTML=[...scored].reverse().slice(0,5).map((s,i)=>`<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)">
+    <div style="font-size:15px">⚠️</div>
+    <div style="flex:1;font-size:13px;font-weight:600">${s.name}<div style="font-size:10px;color:var(--muted)">${s.semName}</div></div>
+    <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:16px;color:var(--red)">${s.score.toFixed(1)}%</div>
+  </div>`).join('')||'<div style="color:var(--muted);font-size:13px">No data.</div>';
+  // Grade distribution
+  const gradeCounts={};
+  GPA.forEach(g=>gradeCounts[g.l]=0);
+  allSubjects.forEach(s=>{ const l=computeSubject(s).curG.l; if(gradeCounts[l]!=null) gradeCounts[l]++; });
+  const distCtx=document.getElementById('distChart');
+  if(distCtx){
+    if(distChartInst){distChartInst.destroy();distChartInst=null;}
+    const dLabels=Object.keys(gradeCounts); const dData=Object.values(gradeCounts);
+    distChartInst=new Chart(distCtx,{
+      type:'bar',
+      data:{labels:dLabels,datasets:[{data:dData,backgroundColor:dLabels.map(l=>gCol(l)+'aa'),borderColor:dLabels.map(l=>gCol(l)),borderWidth:1,borderRadius:4}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+        scales:{x:{ticks:{color:'rgba(255,255,255,.5)',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'}},
+                y:{ticks:{color:'rgba(255,255,255,.5)',font:{size:10},stepSize:1},grid:{color:'rgba(255,255,255,.04)'}}}}
+    });
+  }
+  // Danger zone
+  const dzEl=document.getElementById('danger-zone-content');
+  if(dzEl&&semesters.length){
+    const activeSem=semesters[semesters.length-1];
+    const goalGpa=policies.goalGpa||3.0;
+    dzEl.innerHTML=activeSem.subjects.map(s=>{
+      const res=computeSubject(s); const cur=res.curG.p;
+      const isAt=cur>=goalGpa; const isPossible=res.maxGpa>=goalGpa;
+      return `<div class="safe-zone-bar">
+        <div class="sz-name">${s.name}<div style="font-size:10px;color:var(--muted)">Current: ${res.cur.toFixed(1)}%</div></div>
+        <div class="sz-indicator" style="background:${isAt?'rgba(52,211,153,.12)':isPossible?'rgba(251,191,36,.12)':'rgba(248,113,113,.12)'};
+          color:${isAt?'var(--green)':isPossible?'var(--yellow)':'var(--red)'};border:1px solid ${isAt?'rgba(52,211,153,.3)':isPossible?'rgba(251,191,36,.3)':'rgba(248,113,113,.3)'}">
+          ${isAt?'✅ On Track':isPossible?'⚠️ At Risk':'❌ Off Track'}</div>
+      </div>`;
+    }).join('')||'No active semester courses.';
+  }
+}
+
+// ─── DEADLINES ────────────────────────────────────────────
+let deadlineFilter='all';
+function getDeadlines(){ return getNS(userKey('gradintel_deadlines'),[]); }
+function saveDeadlines(dls){ setNS(userKey('gradintel_deadlines'),dls); }
+function openAddDeadlineModal(){
+  // populate course select
+  const sel=document.getElementById('dl-course');
+  sel.innerHTML='<option value="">— None —</option>';
+  semesters.forEach(sem=>sem.subjects.forEach(s=>{
+    const o=document.createElement('option'); o.value=s.id; o.textContent=s.name; sel.appendChild(o);
+  }));
+  document.getElementById('dl-title').value='';
+  document.getElementById('dl-date').value='';
+  document.getElementById('dl-weight').value='';
+  document.getElementById('dl-type').value='assignment';
+  document.getElementById('deadline-modal').classList.add('show');
+}
+function saveDeadline(){
+  const title=document.getElementById('dl-title').value.trim();
+  if(!title){ showToast('Add a title!'); return; }
+  const dls=getDeadlines();
+  dls.push({
+    id:'dl_'+Date.now(), title,
+    date:document.getElementById('dl-date').value,
+    course:document.getElementById('dl-course').value,
+    weight:parseFloat(document.getElementById('dl-weight').value)||0,
+    type:document.getElementById('dl-type').value,
+    done:false, created:new Date().toISOString()
+  });
+  saveDeadlines(dls);
+  document.getElementById('deadline-modal').classList.remove('show');
+  renderDeadlines(); checkBadges(); unlockBadge('deadlines_1');
+  addXP(5,'Added deadline');
+  showToast('📌 Deadline saved!');
+}
+function filterDeadlines(f){
+  deadlineFilter=f;
+  ['all','upcoming','overdue'].forEach(x=>{
+    const el=document.getElementById('dl-filter-'+x);
+    if(el){ el.style.borderColor=x===f?'var(--accent)':''; el.style.color=x===f?'var(--accent)':''; }
+  });
+  renderDeadlines();
+}
+function renderDeadlines(){
+  let dls=getDeadlines();
+  const now=new Date();
+  const typeIco={assignment:'📝',exam:'📋',quiz:'⚡',project:'🚀',other:'📌'};
+  if(deadlineFilter==='upcoming') dls=dls.filter(d=>!d.done&&new Date(d.date)>now);
+  if(deadlineFilter==='overdue') dls=dls.filter(d=>!d.done&&d.date&&new Date(d.date)<now);
+  dls.sort((a,b)=>new Date(a.date||0)-new Date(b.date||0));
+  const el=document.getElementById('deadline-list');
+  if(!el) return;
+  if(!dls.length){ el.innerHTML='<div style="color:var(--muted);font-size:13px;padding:12px 0">No deadlines yet. Click + Add Deadline!</div>'; return; }
+  el.innerHTML=dls.map(d=>{
+    const due=d.date?new Date(d.date):null;
+    const isOverdue=due&&due<now&&!d.done;
+    const isSoon=due&&!isOverdue&&(due-now)<86400000*3;
+    const cls=isOverdue?'overdue':isSoon?'due-soon':d.done?'done':'';
+    const urgency=d.done?'<span style="color:var(--green);font-weight:700">Done ✓</span>':isOverdue?`<span style="color:var(--red);font-weight:700">Overdue</span>`:due?`<span style="color:${isSoon?'var(--yellow)':'var(--muted)'}">${Math.ceil((due-now)/86400000)}d left</span>`:'';
+    const courseName=d.course?semesters.flatMap(s=>s.subjects).find(s=>s.id===d.course)?.name||'':'';
+    return `<div class="deadline-item ${cls}">
+      <div class="dl-ico">${typeIco[d.type]||'📌'}</div>
+      <div class="dl-info">
+        <div class="dl-title-text" style="${d.done?'text-decoration:line-through':''}">${d.title}${d.weight?` <span style="font-size:10px;color:var(--accent);background:rgba(129,140,248,.12);padding:1px 6px;border-radius:4px">${d.weight}%</span>`:''}</div>
+        <div class="dl-meta">${courseName?courseName+' · ':''}${due?due.toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):'No date'}</div>
+      </div>
+      <div class="dl-urgency">${urgency}</div>
+      <div class="dl-actions">
+        <button class="ca-btn" onclick="toggleDeadlineDone('${d.id}')" title="Toggle done" style="${d.done?'color:var(--muted)':'color:var(--green)'}">✓</button>
+        <button class="ca-btn" onclick="deleteDeadline('${d.id}')" title="Delete" style="color:var(--red)">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function toggleDeadlineDone(id){
+  const dls=getDeadlines();
+  const dl=dls.find(d=>d.id===id); if(!dl) return;
+  dl.done=!dl.done;
+  saveDeadlines(dls);
+  if(dl.done){ addXP(10,'Completed deadline'); checkBadges(); }
+  renderDeadlines();
+  showToast(dl.done?'✅ Deadline done!':'↩️ Marked undone');
+}
+function deleteDeadline(id){
+  const dls=getDeadlines().filter(d=>d.id!==id);
+  saveDeadlines(dls); renderDeadlines(); showToast('🗑 Deadline removed');
+}
+
+// ─── POMODORO ─────────────────────────────────────────────
+let pomoState={mode:'focus',running:false,remaining:25*60,sessions:0,interval:null};
+const POMO_DURATIONS={focus:25*60,short:5*60,long:15*60};
+function setPomoMode(m){
+  clearInterval(pomoState.interval); pomoState.running=false;
+  pomoState.mode=m; pomoState.remaining=POMO_DURATIONS[m];
+  ['focus','short','long'].forEach(x=>{
+    const el=document.getElementById('pomo-'+x);
+    if(el){ el.style.borderColor=x===m?'var(--accent)':''; el.style.color=x===m?'var(--accent)':''; }
+  });
+  const labels={focus:'🍅 Focus Session',short:'☕ Short Break',long:'🌿 Long Break'};
+  const el=document.getElementById('pomo-mode-label'); if(el) el.textContent=labels[m];
+  const btn=document.getElementById('pomo-btn'); if(btn) btn.textContent='▶ Start';
+  updatePomoDisplay();
+}
+function updatePomoDisplay(){
+  const mins=Math.floor(pomoState.remaining/60);
+  const secs=pomoState.remaining%60;
+  const el=document.getElementById('pomo-display');
+  if(el) el.textContent=`${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+}
+function togglePomo(){
+  if(pomoState.running){
+    clearInterval(pomoState.interval); pomoState.running=false;
+    document.getElementById('pomo-btn').textContent='▶ Start';
+  } else {
+    pomoState.running=true;
+    document.getElementById('pomo-btn').textContent='⏸ Pause';
+    pomoState.interval=setInterval(()=>{
+      pomoState.remaining--;
+      updatePomoDisplay();
+      if(pomoState.remaining<=0){
+        clearInterval(pomoState.interval); pomoState.running=false;
+        if(pomoState.mode==='focus'){
+          pomoState.sessions++;
+          const total=getNS(userKey('gradintel_pomo_total'),0)+1;
+          setNS(userKey('gradintel_pomo_total'),total);
+          addXP(15,'Pomodoro session');
+          // log session
+          const course=document.getElementById('pomo-course-select')?.value||'';
+          const courseName=course?semesters.flatMap(s=>s.subjects).find(s=>s.id===course)?.name||'General':'General';
+          const logs=getNS(userKey('gradintel_pomo_log'),[]);
+          logs.unshift({time:new Date().toISOString(),course:courseName});
+          setNS(userKey('gradintel_pomo_log'),logs.slice(0,20));
+          renderPomoLog(); checkBadges();
+        }
+        document.getElementById('pomo-btn').textContent='▶ Start';
+        document.getElementById('pomo-session-count').textContent=pomoState.sessions;
+        setPomoMode(pomoState.mode==='focus'?'short':'focus');
+        showToast(pomoState.mode==='short'?'🍅 Focus time!':'☕ Break time!');
+        if(!document.body.classList.contains('reduced-motion')) fireConfetti();
+      }
+    },1000);
+  }
+}
+function resetPomo(){ clearInterval(pomoState.interval); pomoState.running=false; pomoState.remaining=POMO_DURATIONS[pomoState.mode]; updatePomoDisplay(); document.getElementById('pomo-btn').textContent='▶ Start'; }
+function skipPomo(){ clearInterval(pomoState.interval); pomoState.running=false; setPomoMode(pomoState.mode==='focus'?'short':'focus'); }
+function renderPomoCoursePicker(){
+  const sel=document.getElementById('pomo-course-select'); if(!sel) return;
+  const cur=sel.value;
+  sel.innerHTML='<option value="">— None —</option>';
+  semesters.forEach(sem=>sem.subjects.forEach(s=>{
+    const o=document.createElement('option'); o.value=s.id; o.textContent=s.name; sel.appendChild(o);
+  }));
+  if(cur) sel.value=cur;
+  renderPomoLog();
+}
+function renderPomoLog(){
+  const el=document.getElementById('pomo-log-list'); if(!el) return;
+  const logs=getNS(userKey('gradintel_pomo_log'),[]);
+  if(!logs.length){ el.innerHTML='<div style="font-size:11px;color:var(--muted)">No sessions yet today.</div>'; return; }
+  el.innerHTML=logs.slice(0,5).map(l=>`<div class="pomo-log-item"><span>${new Date(l.time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span><span>${l.course}</span></div>`).join('');
+}
+
+// ─── COURSE NOTES ─────────────────────────────────────────
+function renderNotesCourseList(){
+  const sel=document.getElementById('notes-course-select'); if(!sel) return;
+  const cur=sel.value;
+  sel.innerHTML='<option value="">Select course…</option>';
+  semesters.forEach(sem=>sem.subjects.forEach(s=>{
+    const o=document.createElement('option'); o.value=s.id; o.textContent=s.name+' ('+sem.name+')'; sel.appendChild(o);
+  }));
+  if(cur) sel.value=cur;
+}
+function loadCourseNotes(){
+  const id=document.getElementById('notes-course-select')?.value;
+  const area=document.getElementById('notes-area'); if(!area) return;
+  area.value=id?getNS(userKey('gradintel_notes_'+id),''):'';
+  document.getElementById('notes-save-status').textContent='Auto-saved';
+}
+let notesTimer=null;
+function saveCourseNotes(){
+  const id=document.getElementById('notes-course-select')?.value; if(!id) return;
+  const val=document.getElementById('notes-area')?.value||'';
+  clearTimeout(notesTimer);
+  notesTimer=setTimeout(()=>{ setNS(userKey('gradintel_notes_'+id),val); document.getElementById('notes-save-status').textContent='Saved ✓ '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}); },600);
+}
+
+// ─── STREAK GRID ─────────────────────────────────────────
+function renderStreakGrid(){
+  const el=document.getElementById('streak-grid'); if(!el) return;
+  const data=getNS(userKey('gradintel_activity'),{});
+  const days=140; // ~20 weeks
+  const cells=[];
+  for(let i=days-1;i>=0;i--){
+    const d=new Date(); d.setDate(d.getDate()-i);
+    const s=d.toISOString().slice(0,10);
+    const v=data[s]||0;
+    const alpha=v===0?0:v===1?0.3:v<=3?0.6:1;
+    const col=v===0?'var(--surface3)':`rgba(129,140,248,${alpha})`;
+    cells.push(`<div class="streak-cell" style="background:${col}" title="${s}: ${v} activities"></div>`);
+  }
+  // Group into rows of 7
+  let html='<div style="display:flex;flex-wrap:wrap;gap:2px;max-width:100%;overflow-x:auto">';
+  html+=cells.join('')+'</div>';
+  el.innerHTML=html;
+  const streak=getStreak();
+  const sc=document.getElementById('streak-count'); if(sc) sc.textContent=streak;
+  checkBadges();
+}
+
+// ─── MOOD LOG ─────────────────────────────────────────────
+let moodChartInst=null;
+function logMood(val){
+  const moods=getNS(userKey('gradintel_mood'),[]);
+  moods.push({date:todayStr(),mood:val,time:new Date().toISOString()});
+  setNS(userKey('gradintel_mood'),moods);
+  document.querySelectorAll('.mood-btn').forEach(b=>b.classList.toggle('selected',parseInt(b.dataset.mood)===val));
+  addXP(5,'Mood logged'); checkBadges();
+  renderMoodChart(); showToast('😊 Mood logged!');
+}
+function renderMoodChart(){
+  const moods=getNS(userKey('gradintel_mood'),[]);
+  // Show today's logged mood
+  const today=todayStr();
+  const todayMood=moods.filter(m=>m.date===today).pop();
+  if(todayMood) document.querySelectorAll('.mood-btn').forEach(b=>b.classList.toggle('selected',parseInt(b.dataset.mood)===todayMood.mood));
+  // Chart last 14 days
+  const days=14; const labels=[]; const data=[];
+  for(let i=days-1;i>=0;i--){
+    const d=new Date(); d.setDate(d.getDate()-i);
+    const s=d.toISOString().slice(0,10);
+    labels.push(d.toLocaleDateString('en',{month:'short',day:'numeric'}));
+    const dayMoods=moods.filter(m=>m.date===s);
+    data.push(dayMoods.length?Math.round(dayMoods.reduce((a,b)=>a+b.mood,0)/dayMoods.length):null);
+  }
+  const ctx=document.getElementById('moodChart'); if(!ctx) return;
+  if(moodChartInst){moodChartInst.destroy();moodChartInst=null;}
+  moodChartInst=new Chart(ctx,{
+    type:'line',
+    data:{labels,datasets:[{label:'Mood',data,borderColor:'rgba(244,114,182,.8)',backgroundColor:'rgba(244,114,182,.1)',
+      pointBackgroundColor:'rgba(244,114,182,.9)',tension:.4,fill:true,spanGaps:true,pointRadius:4,borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{y:{min:1,max:5,ticks:{color:'rgba(255,255,255,.4)',font:{size:9},callback:v=>['😞','😰','😐','🙂','😄'][v-1]||v},
+        grid:{color:'rgba(255,255,255,.04)'}},
+        x:{ticks:{color:'rgba(255,255,255,.4)',font:{size:9}},grid:{display:false}}}}
+  });
+}
+
+// ─── DEGREE PROGRESS ──────────────────────────────────────
+let currentPnRating=3;
+function getDegree(){ return getNS(userKey('gradintel_degree'),{name:'',totalCredits:120,targetGpa:3.5}); }
+function saveDegreeSetup(){
+  const deg={
+    name:document.getElementById('deg-name')?.value||'',
+    totalCredits:parseFloat(document.getElementById('deg-total-credits')?.value)||120,
+    targetGpa:parseFloat(document.getElementById('deg-target-gpa')?.value)||3.5
+  };
+  setNS(userKey('gradintel_degree'),deg);
+  renderDegProgress(deg); checkBadges();
+}
+function renderDegProgress(deg){
+  const el=document.getElementById('deg-progress-wrap'); if(!el) return;
+  let totalCP=0, totalCR=0;
+  semesters.forEach(sem=>sem.subjects.forEach(s=>{
+    const res=computeSubject(s); totalCP+=s.credits*(res.curG?.p||0); totalCR+=s.credits;
+  }));
+  const credPct=deg.totalCredits?Math.min(100,Math.round(totalCR/deg.totalCredits*100)):0;
+  const curGpa=totalCR?totalCP/totalCR:0;
+  const gpaPct=deg.targetGpa?Math.min(100,Math.round(curGpa/deg.targetGpa*100)):0;
+  el.innerHTML=`
+    <div class="deg-prog-wrap">
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted)">
+        <span>Credits: ${totalCR} / ${deg.totalCredits}</span><span>${credPct}%</span></div>
+      <div class="deg-prog-bar"><div class="deg-prog-fill" style="width:${credPct}%"></div></div>
+    </div>
+    <div class="deg-prog-wrap">
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted)">
+        <span>GPA Progress: ${curGpa.toFixed(2)} / ${deg.targetGpa}</span><span>${gpaPct}%</span></div>
+      <div class="deg-prog-bar"><div class="deg-prog-fill" style="width:${gpaPct}%;background:linear-gradient(90deg,var(--accent2),var(--accent))"></div></div>
+    </div>
+    <div style="margin-top:10px;font-size:12px;color:var(--muted2)">
+      Estimated semesters remaining: <strong>${Math.max(0,Math.ceil((deg.totalCredits-totalCR)/18))}</strong>
+      &nbsp;·&nbsp; Credits remaining: <strong>${Math.max(0,deg.totalCredits-totalCR)}</strong>
+    </div>`;
+}
+function renderDegree(){
+  const deg=getDegree();
+  if(deg.name) document.getElementById('deg-name').value=deg.name;
+  if(deg.totalCredits) document.getElementById('deg-total-credits').value=deg.totalCredits;
+  if(deg.targetGpa) document.getElementById('deg-target-gpa').value=deg.targetGpa;
+  renderDegProgress(deg);
+  renderRequirements();
+  renderProfNotes();
+}
+// Requirements
+function getRequirements(){ return getNS(userKey('gradintel_requirements'),[]); }
+function openAddRequirementModal(){
+  ['req-name','req-credits','req-category'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('req-status').value='pending';
+  document.getElementById('req-modal').classList.add('show');
+}
+function saveRequirement(){
+  const name=document.getElementById('req-name')?.value.trim();
+  if(!name){ showToast('Add a course name!'); return; }
+  const reqs=getRequirements();
+  reqs.push({ id:'req_'+Date.now(), name,
+    credits:parseFloat(document.getElementById('req-credits')?.value)||3,
+    category:document.getElementById('req-category')?.value.trim()||'General',
+    status:document.getElementById('req-status')?.value||'pending' });
+  setNS(userKey('gradintel_requirements'),reqs);
+  document.getElementById('req-modal').classList.remove('show');
+  renderRequirements(); checkBadges(); showToast('📋 Requirement added!');
+}
+function renderRequirements(){
+  const reqs=getRequirements();
+  const el=document.getElementById('requirements-list'); if(!el) return;
+  if(!reqs.length){ el.innerHTML='<div style="color:var(--muted);font-size:13px">No requirements added yet.</div>'; return; }
+  const statusConfig={
+    pending:{label:'Pending',bg:'rgba(107,114,128,.12)',col:'var(--muted)'},
+    in_progress:{label:'In Progress',bg:'rgba(129,140,248,.12)',col:'var(--accent)'},
+    completed:{label:'Completed',bg:'rgba(52,211,153,.12)',col:'var(--green)'},
+    waived:{label:'Waived',bg:'rgba(251,191,36,.12)',col:'var(--yellow)'}
+  };
+  el.innerHTML=reqs.map(r=>{
+    const sc=statusConfig[r.status]||statusConfig.pending;
+    return `<div class="req-item">
+      <div style="flex:1"><div style="font-weight:700;font-size:13px">${r.name}</div>
+        <div style="font-size:11px;color:var(--muted)">${r.category} · ${r.credits} credits</div></div>
+      <div class="req-status-badge" style="background:${sc.bg};color:${sc.col}">${sc.label}</div>
+      <select onchange="updateReqStatus('${r.id}',this.value)" style="font-size:11px;background:var(--surface3);border:1px solid var(--border2);border-radius:6px;padding:3px 6px;color:var(--text)">
+        ${['pending','in_progress','completed','waived'].map(s=>`<option value="${s}" ${s===r.status?'selected':''}>${s.replace('_',' ')}</option>`).join('')}
+      </select>
+      <button onclick="deleteRequirement('${r.id}')" style="background:transparent;border:none;color:var(--red);cursor:pointer;font-size:13px">🗑</button>
+    </div>`;
+  }).join('');
+}
+function updateReqStatus(id, status){
+  const reqs=getRequirements(); const r=reqs.find(x=>x.id===id); if(!r) return;
+  r.status=status; setNS(userKey('gradintel_requirements'),reqs);
+  if(status==='completed') addXP(10,'Course requirement completed');
+  renderRequirements(); checkBadges();
+}
+function deleteRequirement(id){ const reqs=getRequirements().filter(r=>r.id!==id); setNS(userKey('gradintel_requirements'),reqs); renderRequirements(); }
+
+// Prof Notes
+function getProfNotes(){ return getNS(userKey('gradintel_prof_notes'),[]); }
+function openAddProfNoteModal(){
+  document.getElementById('pn-course').value='';
+  document.getElementById('pn-notes').value='';
+  document.getElementById('pn-sem').value='';
+  currentPnRating=3; setPnRating(3);
+  document.getElementById('profnote-modal').classList.add('show');
+}
+function setPnRating(val){
+  currentPnRating=val;
+  document.querySelectorAll('.pn-star').forEach(s=>{ s.style.opacity=parseInt(s.dataset.v)<=val?'1':'0.3'; });
+}
+function saveProfNote(){
+  const course=document.getElementById('pn-course')?.value.trim();
+  if(!course){ showToast('Add a course/professor name!'); return; }
+  const notes=getProfNotes();
+  notes.unshift({ id:'pn_'+Date.now(), course,
+    rating:currentPnRating,
+    notes:document.getElementById('pn-notes')?.value.trim()||'',
+    sem:document.getElementById('pn-sem')?.value.trim()||'' });
+  setNS(userKey('gradintel_prof_notes'),notes);
+  document.getElementById('profnote-modal').classList.remove('show');
+  renderProfNotes(); showToast('📝 Note saved!');
+}
+function renderProfNotes(){
+  const notes=getProfNotes();
+  const el=document.getElementById('prof-notes-list'); if(!el) return;
+  if(!notes.length){ el.innerHTML='<div style="color:var(--muted);font-size:13px">No notes yet.</div>'; return; }
+  el.innerHTML=notes.map(n=>`<div class="profnote-item">
+    <div class="profnote-header">
+      <div class="profnote-course">${n.course}</div>
+      <div class="profnote-stars">${'⭐'.repeat(n.rating)}${'☆'.repeat(5-n.rating)}</div>
+    </div>
+    ${n.notes?`<div class="profnote-notes">${n.notes}</div>`:''}
+    <div class="profnote-meta">${n.sem?'📅 '+n.sem:''} &nbsp;
+      <button onclick="deleteProfNote('${n.id}')" style="background:transparent;border:none;color:var(--red);cursor:pointer;font-size:11px">🗑 Delete</button>
+    </div>
+  </div>`).join('');
+}
+function deleteProfNote(id){ const notes=getProfNotes().filter(n=>n.id!==id); setNS(userKey('gradintel_prof_notes'),notes); renderProfNotes(); }
+
+// ─── INIT NEW FEATURES ON AUTH SUCCESS ─────────────────────
+// Hook into existing onAuthSuccess by patching the activity log
+const _origOnAuthSuccess = typeof onAuthSuccess === 'function' ? onAuthSuccess : null;
+// Patch logActivity into the boot
+document.addEventListener('DOMContentLoaded', ()=>{
+  logActivity();
+});
+// Patch addXP into grade saving — hook checkBadges into existing save flow
+const origSaveEditModal = typeof saveEditModal === 'function' ? saveEditModal : null;
 </script>
+
+<script>
+// ── Sidebar nav wiring ──────────────────────────────────────
+(function() {
+  // Wire sidebar items to call the existing showTab()
+  document.querySelectorAll('.g3d-item[data-tab]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var tab = this.getAttribute('data-tab');
+      if (typeof showTab === 'function') showTab(tab);
+      document.querySelectorAll('.g3d-item').forEach(function(b) { b.classList.remove('g3d-active'); });
+      this.classList.add('g3d-active');
+      g3dCloseNav();
+    });
+  });
+
+  // Patch showTab to keep sidebar in sync
+  var _orig = window.showTab;
+  window.showTab = function(tab) {
+    if (_orig) _orig(tab);
+    document.querySelectorAll('.g3d-item[data-tab]').forEach(function(b) {
+      b.classList.toggle('g3d-active', b.getAttribute('data-tab') === tab);
+    });
+  };
+})();
+
+function g3dToggleNav() {
+  document.getElementById('g3d-sidebar').classList.toggle('g3d-open');
+  document.getElementById('g3d-mob-overlay').classList.toggle('g3d-show');
+}
+function g3dCloseNav() {
+  document.getElementById('g3d-sidebar').classList.remove('g3d-open');
+  document.getElementById('g3d-mob-overlay').classList.remove('g3d-show');
+}
+
+// ── 3D tilt on cards ───────────────────────────────────────
+function g3dInitTilt() {
+  document.querySelectorAll('.card, .stat-card, .export-card, .ai-prov-card').forEach(function(card) {
+    if (card._g3dTilt) return;
+    card._g3dTilt = true;
+    card.addEventListener('mousemove', function(e) {
+      var r = card.getBoundingClientRect();
+      var dx = (e.clientX - r.left - r.width/2) / (r.width/2);
+      var dy = (e.clientY - r.top - r.height/2) / (r.height/2);
+      var max = card.classList.contains('stat-card') ? 7 : 4;
+      card.style.transform = 'perspective(650px) rotateX('+(-dy*max)+'deg) rotateY('+(dx*max)+'deg) translateZ(4px)';
+      var px = ((e.clientX - r.left) / r.width * 100).toFixed(1);
+      var py = ((e.clientY - r.top) / r.height * 100).toFixed(1);
+      var shine = card.querySelector('.tilt-shine');
+      if (!shine) { shine = document.createElement('div'); shine.className = 'tilt-shine'; card.appendChild(shine); }
+      shine.style.background = 'radial-gradient(circle at '+px+'% '+py+'%, rgba(255,255,255,0.07), transparent 55%)';
+      shine.style.opacity = '1';
+    });
+    card.addEventListener('mouseleave', function() {
+      card.style.transform = '';
+      var shine = card.querySelector('.tilt-shine');
+      if (shine) shine.style.opacity = '0';
+    });
+  });
+}
+setInterval(g3dInitTilt, 1500);
+document.addEventListener('DOMContentLoaded', function() { setTimeout(g3dInitTilt, 600); });
+</script>
+
 </body>
 </html>
