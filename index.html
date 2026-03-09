@@ -2824,25 +2824,23 @@ input:not(.af input):focus, select:focus {
 <!-- DEGREE PROGRESS TAB -->
 <!-- ═══════════════════════════════════════════════════════════ -->
 <div id="tc-degree" class="hidden">
+
+  <!-- Degree selector header -->
   <div class="card" style="margin-bottom:14px">
-    <div class="card-title">🎓 Degree Setup</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px">
-      <div class="field"><label>Degree Name</label><input type="text" id="deg-name" placeholder="e.g. B.Sc. Computer Science" oninput="saveDegreeSetup()"/></div>
-      <div class="field"><label>Total Credits Required</label><input type="number" id="deg-total-credits" placeholder="e.g. 120" min="1" oninput="saveDegreeSetup()"/></div>
-      <div class="field"><label>Target Graduation GPA</label><input type="number" id="deg-target-gpa" placeholder="e.g. 3.5" min="0" max="5" step="0.01" oninput="saveDegreeSetup()"/></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+      <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:17px;display:flex;align-items:center;gap:8px">🎓 My Degrees</div>
+      <button class="btn btn-primary" onclick="addNewDegree()" style="font-size:13px;padding:8px 18px">+ Add Degree</button>
     </div>
-    <div id="deg-progress-wrap"></div>
+    <div id="degree-tabs" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px"></div>
   </div>
-  <div class="card" style="margin-bottom:14px">
-    <div class="card-title">📋 Course Requirements</div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Track which required courses you've completed or still need</div>
-    <button class="btn btn-primary" onclick="openAddRequirementModal()" style="margin-bottom:14px">+ Add Requirement</button>
-    <div id="requirements-list"></div>
-  </div>
+
+  <!-- Active degree content (rendered dynamically) -->
+  <div id="degree-content"></div>
+
   <!-- PDF AUTO-FILL CARD -->
   <div class="card" style="margin-bottom:14px;border:1px solid rgba(129,140,248,.3);background:linear-gradient(135deg,rgba(129,140,248,.04),rgba(244,114,182,.02))">
     <div class="card-title">🤖 AI Degree Auto-Fill <span style="font-size:10px;background:rgba(129,140,248,.18);color:var(--accent);padding:2px 8px;border-radius:100px;font-weight:600;letter-spacing:.04em;vertical-align:middle">BETA</span></div>
-    <div class="infobox" style="margin-bottom:14px">Upload your university's degree requirements PDF — AI will read it and auto-populate your course requirements list. Works best with text-based PDFs.</div>
+    <div class="infobox" style="margin-bottom:14px">Upload your university's degree requirements PDF — AI will read it and auto-populate the selected degree's course requirements list.</div>
     <div id="pdf-drop-zone" onclick="document.getElementById('pdf-upload-input').click()"
       style="border:2px dashed var(--border2);border-radius:var(--r);padding:28px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s"
       ondragover="event.preventDefault();this.style.borderColor='var(--accent)';this.style.background='rgba(129,140,248,.06)'"
@@ -5503,10 +5501,10 @@ function checkBadges(){
   const moods=getNS(userKey('gradintel_mood'),[]);
   if(moods.length>=10) unlockBadge('mood_10');
   // degree
-  const degSetup=getNS(userKey('gradintel_degree'),{});
-  if(degSetup.name) unlockBadge('degree_setup');
-  const reqs=getNS(userKey('gradintel_requirements'),[]);
-  const doneReqs=reqs.filter(r=>r.status==='completed').length;
+  const degrees = getDegrees();
+  if(degrees.some(d => d.name && d.name !== 'My Degree' && d.name !== 'New Degree')) unlockBadge('degree_setup');
+  const allReqs = degrees.flatMap(d => d.requirements || []);
+  const doneReqs = allReqs.filter(r => r.status === 'completed').length;
   if(doneReqs>=10) unlockBadge('req_done_10');
 }
 
@@ -6177,26 +6175,106 @@ function renderMoodChart(){
 
 // ─── DEGREE PROGRESS ──────────────────────────────────────
 let currentPnRating=3;
-function getDegree(){ return getNS(userKey('gradintel_degree'),{name:'',totalCredits:120,targetGpa:3.5}); }
-function saveDegreeSetup(){
-  const deg={
-    name:document.getElementById('deg-name')?.value||'',
-    totalCredits:parseFloat(document.getElementById('deg-total-credits')?.value)||120,
-    targetGpa:parseFloat(document.getElementById('deg-target-gpa')?.value)||3.5
-  };
-  setNS(userKey('gradintel_degree'),deg);
-  renderDegProgress(deg); checkBadges();
+// ══════════════════════════════════════════════════════════════
+// MULTI-DEGREE SYSTEM
+// ══════════════════════════════════════════════════════════════
+let activeDegreeId = null;
+
+function getDegrees() {
+  let degrees = getNS(userKey('gradintel_degrees'), null);
+  // Migrate legacy single-degree data on first load
+  if (!degrees) {
+    const legacy = getNS(userKey('gradintel_degree'), {});
+    const legacyReqs = getNS(userKey('gradintel_requirements'), []);
+    const id = 'deg_' + Date.now();
+    degrees = [{
+      id, name: legacy.name || 'My Degree',
+      totalCredits: legacy.totalCredits || 120,
+      targetGpa: legacy.targetGpa || 3.5,
+      requirements: legacyReqs
+    }];
+    setNS(userKey('gradintel_degrees'), degrees);
+  }
+  return degrees;
 }
-function renderDegProgress(deg){
-  const el=document.getElementById('deg-progress-wrap'); if(!el) return;
-  let totalCP=0, totalCR=0;
-  semesters.forEach(sem=>sem.subjects.forEach(s=>{
-    const res=computeSubject(s); totalCP+=s.credits*(res.curG?.p||0); totalCR+=s.credits;
+function saveDegrees(degrees) { setNS(userKey('gradintel_degrees'), degrees); }
+function getActiveDegree() {
+  const degrees = getDegrees();
+  return degrees.find(d => d.id === activeDegreeId) || degrees[0] || null;
+}
+
+function addNewDegree() {
+  const degrees = getDegrees();
+  const id = 'deg_' + Date.now();
+  degrees.push({ id, name: 'New Degree', totalCredits: 120, targetGpa: 3.5, requirements: [] });
+  saveDegrees(degrees);
+  activeDegreeId = id;
+  renderDegree();
+  // Focus the name input of the new degree
+  setTimeout(() => { const el = document.getElementById('deg-name'); if (el) { el.focus(); el.select(); } }, 100);
+}
+
+function switchDegree(id) {
+  activeDegreeId = id;
+  renderDegree();
+}
+
+function deleteDegree(id) {
+  const degrees = getDegrees();
+  if (degrees.length <= 1) { showToast('⚠️ You need at least one degree.'); return; }
+  if (!confirm('Delete this degree and all its requirements?')) return;
+  const filtered = degrees.filter(d => d.id !== id);
+  saveDegrees(filtered);
+  if (activeDegreeId === id) activeDegreeId = filtered[0].id;
+  renderDegree();
+}
+
+function saveDegreeSetup() {
+  const degrees = getDegrees();
+  const deg = degrees.find(d => d.id === activeDegreeId) || degrees[0];
+  if (!deg) return;
+  deg.name = document.getElementById('deg-name')?.value || deg.name;
+  deg.totalCredits = parseFloat(document.getElementById('deg-total-credits')?.value) || 120;
+  deg.targetGpa = parseFloat(document.getElementById('deg-target-gpa')?.value) || 3.5;
+  saveDegrees(degrees);
+  renderDegreeTabs();
+  renderDegProgress(deg);
+  checkBadges();
+}
+
+function renderDegreeTabs() {
+  const degrees = getDegrees();
+  const tabsEl = document.getElementById('degree-tabs');
+  if (!tabsEl) return;
+  if (!activeDegreeId || !degrees.find(d => d.id === activeDegreeId)) {
+    activeDegreeId = degrees[0]?.id;
+  }
+  tabsEl.innerHTML = degrees.map(d => `
+    <div style="display:flex;align-items:center;gap:0;border-radius:10px;overflow:hidden;
+      border:1px solid ${d.id === activeDegreeId ? 'var(--accent)' : 'var(--border2)'};
+      background:${d.id === activeDegreeId ? 'rgba(129,140,248,.12)' : 'var(--surface2)'}">
+      <button onclick="switchDegree('${d.id}')"
+        style="padding:8px 16px;border:none;background:transparent;cursor:pointer;
+               font-family:'Clash Display',sans-serif;font-weight:700;font-size:13px;
+               color:${d.id === activeDegreeId ? 'var(--accent)' : 'var(--muted2)'}">
+        🎓 ${d.name || 'Unnamed Degree'}
+      </button>
+      ${degrees.length > 1 ? `<button onclick="deleteDegree('${d.id}')"
+        style="padding:8px 10px;border:none;border-left:1px solid var(--border2);background:transparent;
+               cursor:pointer;color:var(--red);font-size:12px;line-height:1">✕</button>` : ''}
+    </div>`).join('');
+}
+
+function renderDegProgress(deg) {
+  const el = document.getElementById('deg-progress-wrap'); if (!el) return;
+  let totalCP = 0, totalCR = 0;
+  semesters.forEach(sem => sem.subjects.forEach(s => {
+    const res = computeSubject(s); totalCP += s.credits * (res.curG?.p || 0); totalCR += s.credits;
   }));
-  const credPct=deg.totalCredits?Math.min(100,Math.round(totalCR/deg.totalCredits*100)):0;
-  const curGpa=totalCR?totalCP/totalCR:0;
-  const gpaPct=deg.targetGpa?Math.min(100,Math.round(curGpa/deg.targetGpa*100)):0;
-  el.innerHTML=`
+  const credPct = deg.totalCredits ? Math.min(100, Math.round(totalCR / deg.totalCredits * 100)) : 0;
+  const curGpa = totalCR ? totalCP / totalCR : 0;
+  const gpaPct = deg.targetGpa ? Math.min(100, Math.round(curGpa / deg.targetGpa * 100)) : 0;
+  el.innerHTML = `
     <div class="deg-prog-wrap">
       <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted)">
         <span>Credits: ${totalCR} / ${deg.totalCredits}</span><span>${credPct}%</span></div>
@@ -6208,19 +6286,138 @@ function renderDegProgress(deg){
       <div class="deg-prog-bar"><div class="deg-prog-fill" style="width:${gpaPct}%;background:linear-gradient(90deg,var(--accent2),var(--accent))"></div></div>
     </div>
     <div style="margin-top:10px;font-size:12px;color:var(--muted2)">
-      Estimated semesters remaining: <strong>${Math.max(0,Math.ceil((deg.totalCredits-totalCR)/18))}</strong>
-      &nbsp;·&nbsp; Credits remaining: <strong>${Math.max(0,deg.totalCredits-totalCR)}</strong>
+      Estimated semesters remaining: <strong>${Math.max(0, Math.ceil((deg.totalCredits - totalCR) / 18))}</strong>
+      &nbsp;·&nbsp; Credits remaining: <strong>${Math.max(0, deg.totalCredits - totalCR)}</strong>
     </div>`;
 }
-function renderDegree(){
-  const deg=getDegree();
-  if(deg.name) document.getElementById('deg-name').value=deg.name;
-  if(deg.totalCredits) document.getElementById('deg-total-credits').value=deg.totalCredits;
-  if(deg.targetGpa) document.getElementById('deg-target-gpa').value=deg.targetGpa;
+
+function renderDegree() {
+  const degrees = getDegrees();
+  if (!activeDegreeId || !degrees.find(d => d.id === activeDegreeId)) {
+    activeDegreeId = degrees[0]?.id;
+  }
+  renderDegreeTabs();
+  const deg = getActiveDegree();
+  if (!deg) { document.getElementById('degree-content').innerHTML = '<div style="color:var(--muted);padding:20px">No degree found.</div>'; return; }
+
+  document.getElementById('degree-content').innerHTML = `
+    <div class="card" style="margin-bottom:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+        <div class="card-title" style="margin-bottom:0">⚙️ Degree Setup</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px">
+        <div class="field"><label>Degree Name</label>
+          <input type="text" id="deg-name" placeholder="e.g. B.Sc. Computer Science" value="${deg.name || ''}" oninput="saveDegreeSetup()"/></div>
+        <div class="field"><label>Total Credits Required</label>
+          <input type="number" id="deg-total-credits" placeholder="e.g. 120" min="1" value="${deg.totalCredits || 120}" oninput="saveDegreeSetup()"/></div>
+        <div class="field"><label>Target Graduation GPA</label>
+          <input type="number" id="deg-target-gpa" placeholder="e.g. 3.5" min="0" max="5" step="0.01" value="${deg.targetGpa || 3.5}" oninput="saveDegreeSetup()"/></div>
+      </div>
+      <div id="deg-progress-wrap"></div>
+    </div>
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-title">📋 Course Requirements — ${deg.name || 'This Degree'}</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Track which required courses you've completed or still need</div>
+      <button class="btn btn-primary" onclick="openAddRequirementModal()" style="margin-bottom:14px">+ Add Requirement</button>
+      <div id="requirements-list"></div>
+    </div>`;
+
   renderDegProgress(deg);
   renderRequirements();
   renderProfNotes();
 }
+
+// ── REQUIREMENTS (now scoped to active degree) ────────────────
+function getRequirements() {
+  const deg = getActiveDegree();
+  return deg ? (deg.requirements || []) : [];
+}
+function saveRequirementsForDegree(reqs) {
+  const degrees = getDegrees();
+  const deg = degrees.find(d => d.id === activeDegreeId) || degrees[0];
+  if (!deg) return;
+  deg.requirements = reqs;
+  saveDegrees(degrees);
+}
+
+function openAddRequirementModal() {
+  ['req-name', 'req-credits', 'req-category'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  document.getElementById('req-status').value = 'pending';
+  document.getElementById('req-modal').classList.add('show');
+}
+function saveRequirement() {
+  const name = document.getElementById('req-name')?.value.trim();
+  if (!name) { showToast('Add a course name!'); return; }
+  const reqs = getRequirements();
+  reqs.push({ id: 'req_' + Date.now(), name,
+    credits: parseFloat(document.getElementById('req-credits')?.value) || 3,
+    category: document.getElementById('req-category')?.value.trim() || 'General',
+    status: document.getElementById('req-status')?.value || 'pending' });
+  saveRequirementsForDegree(reqs);
+  document.getElementById('req-modal').classList.remove('show');
+  renderRequirements(); checkBadges(); showToast('📋 Requirement added!');
+}
+function renderRequirements() {
+  const reqs = getRequirements();
+  const el = document.getElementById('requirements-list'); if (!el) return;
+  if (!reqs.length) { el.innerHTML = '<div style="color:var(--muted);font-size:13px">No requirements added yet.</div>'; return; }
+  const statusConfig = {
+    pending: { label: 'Pending', bg: 'rgba(107,114,128,.12)', col: 'var(--muted)' },
+    in_progress: { label: 'In Progress', bg: 'rgba(129,140,248,.12)', col: 'var(--accent)' },
+    completed: { label: 'Completed', bg: 'rgba(52,211,153,.12)', col: 'var(--green)' },
+    waived: { label: 'Waived', bg: 'rgba(251,191,36,.12)', col: 'var(--yellow)' }
+  };
+  el.innerHTML = reqs.map(r => {
+    const sc = statusConfig[r.status] || statusConfig.pending;
+    return `<div class="req-item">
+      <div style="flex:1"><div style="font-weight:700;font-size:13px">${r.name}</div>
+        <div style="font-size:11px;color:var(--muted)">${r.category} · ${r.credits} credits</div></div>
+      <div class="req-status-badge" style="background:${sc.bg};color:${sc.col}">${sc.label}</div>
+      <select onchange="updateReqStatus('${r.id}',this.value)" style="font-size:11px;background:var(--surface3);border:1px solid var(--border2);border-radius:6px;padding:3px 6px;color:var(--text)">
+        ${['pending', 'in_progress', 'completed', 'waived'].map(s => `<option value="${s}" ${s === r.status ? 'selected' : ''}>${s.replace('_', ' ')}</option>`).join('')}
+      </select>
+      <button onclick="deleteRequirement('${r.id}')" style="background:transparent;border:none;color:var(--red);cursor:pointer;font-size:13px">🗑</button>
+    </div>`;
+  }).join('');
+}
+function updateReqStatus(id, status) {
+  const reqs = getRequirements(); const r = reqs.find(x => x.id === id); if (!r) return;
+  r.status = status; saveRequirementsForDegree(reqs);
+  if (status === 'completed') addXP(10, 'Course requirement completed');
+  renderRequirements(); checkBadges();
+}
+function deleteRequirement(id) {
+  saveRequirementsForDegree(getRequirements().filter(r => r.id !== id));
+  renderRequirements();
+}
+
+function importDegreePdfCourses(courses, degreeName, totalCredits) {
+  const reqs = getRequirements();
+  let added = 0;
+  courses.forEach(function(c) {
+    if (!reqs.some(r => r.name.toLowerCase() === (c.name || '').toLowerCase())) {
+      reqs.push({ id: 'req_' + Date.now() + '_' + Math.random().toString(36).slice(2), name: c.name || 'Unnamed', credits: parseFloat(c.credits) || 3, category: c.category || 'General', status: 'pending' });
+      added++;
+    }
+  });
+  saveRequirementsForDegree(reqs);
+  // Update active degree name/credits if not already set
+  const degrees = getDegrees();
+  const deg = degrees.find(d => d.id === activeDegreeId) || degrees[0];
+  if (deg) {
+    if (degreeName && (!deg.name || deg.name === 'New Degree' || deg.name === 'My Degree')) deg.name = degreeName;
+    if (totalCredits && deg.totalCredits === 120) deg.totalCredits = totalCredits;
+    saveDegrees(degrees);
+  }
+  renderDegree();
+  document.getElementById('pdf-ai-preview').style.display = 'none';
+  document.getElementById('pdf-ai-status').style.display = 'none';
+  showToast('🎓 Imported ' + added + ' course requirements into "' + (deg?.name || 'degree') + '"!');
+  checkBadges();
+}
+
+// Legacy compatibility shims
+function getDegree() { return getActiveDegree() || { name: '', totalCredits: 120, targetGpa: 3.5 }; }
 
 // ── PDF DEGREE AUTO-FILL ──────────────────────────────────────
 function handleDegreePdfDrop(event) {
@@ -6337,75 +6534,6 @@ function handleDegreePdfFile(file) {
   reader.readAsDataURL(file);
 }
 
-function importDegreePdfCourses(courses, degreeName, totalCredits) {
-  const reqs = getRequirements();
-  let added = 0;
-  courses.forEach(function(c) {
-    if (!reqs.some(r => r.name.toLowerCase() === (c.name||'').toLowerCase())) {
-      reqs.push({ id:'req_'+Date.now()+'_'+Math.random().toString(36).slice(2), name:c.name||'Unnamed', credits:parseFloat(c.credits)||3, category:c.category||'General', status:'pending' });
-      added++;
-    }
-  });
-  setNS(userKey('gradintel_requirements'), reqs);
-  // Update degree name/credits if not already set
-  const deg = getDegree();
-  if (degreeName && !deg.name) { document.getElementById('deg-name').value = degreeName; saveDegreeSetup(); }
-  if (totalCredits && !deg.totalCredits) { document.getElementById('deg-total-credits').value = totalCredits; saveDegreeSetup(); }
-  renderRequirements();
-  document.getElementById('pdf-ai-preview').style.display = 'none';
-  document.getElementById('pdf-ai-status').style.display = 'none';
-  showToast('🎓 Imported ' + added + ' course requirements!');
-  checkBadges();
-}
-// Requirements
-function getRequirements(){ return getNS(userKey('gradintel_requirements'),[]); }
-function openAddRequirementModal(){
-  ['req-name','req-credits','req-category'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
-  document.getElementById('req-status').value='pending';
-  document.getElementById('req-modal').classList.add('show');
-}
-function saveRequirement(){
-  const name=document.getElementById('req-name')?.value.trim();
-  if(!name){ showToast('Add a course name!'); return; }
-  const reqs=getRequirements();
-  reqs.push({ id:'req_'+Date.now(), name,
-    credits:parseFloat(document.getElementById('req-credits')?.value)||3,
-    category:document.getElementById('req-category')?.value.trim()||'General',
-    status:document.getElementById('req-status')?.value||'pending' });
-  setNS(userKey('gradintel_requirements'),reqs);
-  document.getElementById('req-modal').classList.remove('show');
-  renderRequirements(); checkBadges(); showToast('📋 Requirement added!');
-}
-function renderRequirements(){
-  const reqs=getRequirements();
-  const el=document.getElementById('requirements-list'); if(!el) return;
-  if(!reqs.length){ el.innerHTML='<div style="color:var(--muted);font-size:13px">No requirements added yet.</div>'; return; }
-  const statusConfig={
-    pending:{label:'Pending',bg:'rgba(107,114,128,.12)',col:'var(--muted)'},
-    in_progress:{label:'In Progress',bg:'rgba(129,140,248,.12)',col:'var(--accent)'},
-    completed:{label:'Completed',bg:'rgba(52,211,153,.12)',col:'var(--green)'},
-    waived:{label:'Waived',bg:'rgba(251,191,36,.12)',col:'var(--yellow)'}
-  };
-  el.innerHTML=reqs.map(r=>{
-    const sc=statusConfig[r.status]||statusConfig.pending;
-    return `<div class="req-item">
-      <div style="flex:1"><div style="font-weight:700;font-size:13px">${r.name}</div>
-        <div style="font-size:11px;color:var(--muted)">${r.category} · ${r.credits} credits</div></div>
-      <div class="req-status-badge" style="background:${sc.bg};color:${sc.col}">${sc.label}</div>
-      <select onchange="updateReqStatus('${r.id}',this.value)" style="font-size:11px;background:var(--surface3);border:1px solid var(--border2);border-radius:6px;padding:3px 6px;color:var(--text)">
-        ${['pending','in_progress','completed','waived'].map(s=>`<option value="${s}" ${s===r.status?'selected':''}>${s.replace('_',' ')}</option>`).join('')}
-      </select>
-      <button onclick="deleteRequirement('${r.id}')" style="background:transparent;border:none;color:var(--red);cursor:pointer;font-size:13px">🗑</button>
-    </div>`;
-  }).join('');
-}
-function updateReqStatus(id, status){
-  const reqs=getRequirements(); const r=reqs.find(x=>x.id===id); if(!r) return;
-  r.status=status; setNS(userKey('gradintel_requirements'),reqs);
-  if(status==='completed') addXP(10,'Course requirement completed');
-  renderRequirements(); checkBadges();
-}
-function deleteRequirement(id){ const reqs=getRequirements().filter(r=>r.id!==id); setNS(userKey('gradintel_requirements'),reqs); renderRequirements(); }
 
 // Prof Notes
 function getProfNotes(){ return getNS(userKey('gradintel_prof_notes'),[]); }
