@@ -758,7 +758,7 @@ body.gv3-collapsed #gv3-main {
   position: fixed; left: 0; top: 0; bottom: 0;
   width: var(--nav-w);
   z-index: 200;
-  display: flex; flex-direction: column;
+  display: none; flex-direction: column;
   /* Glass effect that adapts to both themes */
   background: color-mix(in srgb, var(--c-bg) 92%, transparent);
   backdrop-filter: blur(20px) saturate(1.4);
@@ -2449,9 +2449,9 @@ input:not(.af input):focus, select:focus {
     <div class="card-title">📅 Deadline Tracker</div>
     <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
       <button class="btn btn-primary" onclick="openAddDeadlineModal()">+ Add Deadline</button>
-      <button class="btn btn-secondary" onclick="openAssignmentBookmarkletModal()" style="font-size:12px;display:flex;align-items:center;gap:6px">
+      <button class="btn btn-secondary" onclick="openAssignBmPanel()" style="font-size:12px;display:flex;align-items:center;gap:6px">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3a2 2 0 012-2h10a2 2 0 012 2v18l-7-3-7 3V3z"/></svg>
-        Sync Assignments from Canvas
+        Import Assignments from Canvas
       </button>
       <div style="display:flex;gap:6px">
         <button class="chip" id="dl-filter-all" onclick="filterDeadlines('all')" style="border-color:var(--accent);color:var(--accent)">All</button>
@@ -2459,9 +2459,57 @@ input:not(.af input):focus, select:focus {
         <button class="chip" id="dl-filter-overdue" onclick="filterDeadlines('overdue')">Overdue</button>
       </div>
     </div>
-    <div id="dl-canvas-status" style="display:none;margin-bottom:10px;padding:10px 14px;background:rgba(129,140,248,.08);border:1px solid rgba(129,140,248,.25);border-radius:var(--r);font-size:12px;color:var(--muted2)">
-      📡 Listening for Canvas assignments… Go to Canvas (logged in) → click your <strong>Gradintel Assignments</strong> bookmark. Assignments will be added automatically.
-      <button onclick="document.getElementById('dl-canvas-status').style.display='none'" style="float:right;background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1">✕</button>
+    <!-- ASSIGNMENTS BOOKMARKLET PANEL -->
+    <div id="dl-canvas-status" style="display:none;margin-bottom:14px">
+      <div class="card" style="padding:18px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <div class="card-title" style="margin:0">🔖 Import Assignments from Canvas</div>
+          <button onclick="document.getElementById('dl-canvas-status').style.display='none'" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;padding:0">✕</button>
+        </div>
+
+        <div class="infobox" style="margin-bottom:16px">
+          A <strong>bookmarklet</strong> is a bookmark containing JavaScript. Drag it to your browser bar <strong>once</strong>. Then whenever you're logged into Canvas, click it — your upcoming assignments are sent to Gradintel automatically via your account. Works on Chrome, Firefox, Safari, Edge.
+        </div>
+
+        <div class="ci-bm-dragzone" style="margin-bottom:16px">
+          <div style="font-size:12px;color:var(--muted2);margin-bottom:14px">👇 Drag this button to your bookmarks bar</div>
+          <a id="abm-bm-link" href="#" class="ci-bm-pill" draggable="true" onclick="return false">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:5px"><path d="M5 3a2 2 0 012-2h10a2 2 0 012 2v18l-7-3-7 3V3z"/></svg>
+            📝 Gradintel Assignments
+          </a>
+          <div style="font-size:11px;color:var(--muted);margin-top:10px">
+            Can't drag? <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="abmCopyCode()">Copy bookmarklet code</button>
+          </div>
+        </div>
+
+        <div class="ci-steps">
+          <div class="ci-step">
+            <div class="ci-step-num ci-step-accent">1</div>
+            <div class="ci-step-body">
+              <div class="ci-step-title">Show your bookmarks bar</div>
+              <div class="ci-step-desc">Press <code>Ctrl+Shift+B</code> (Windows/Linux) or <code>Cmd+Shift+B</code> (Mac) to show the bookmarks bar</div>
+            </div>
+          </div>
+          <div class="ci-step">
+            <div class="ci-step-num ci-step-accent">2</div>
+            <div class="ci-step-body">
+              <div class="ci-step-title">Drag "📝 Gradintel Assignments" to the bar</div>
+              <div class="ci-step-desc">Drag the button above into your bookmarks bar. You only need to do this once.</div>
+            </div>
+          </div>
+          <div class="ci-step">
+            <div class="ci-step-num ci-step-accent">3</div>
+            <div class="ci-step-body">
+              <div class="ci-step-title">Go to Canvas → click the bookmark</div>
+              <div class="ci-step-desc">Log into Canvas in the same browser, go to any page (Assignments, Dashboard, etc.), and click the bookmark. Your upcoming assignments will appear here within seconds.</div>
+            </div>
+          </div>
+        </div>
+
+        <div id="abm-listen-banner" style="margin-top:12px;padding:8px 12px;background:rgba(129,140,248,.08);border:1px solid rgba(129,140,248,.25);border-radius:8px;font-size:12px;color:var(--muted2)">
+          📡 Listening… Once you click the bookmark on Canvas, assignments will appear here automatically.
+        </div>
+      </div>
     </div>
     <div id="deadline-list"></div>
   </div>
@@ -3035,6 +3083,9 @@ async function obFinish() {
 // ══════════════════════════════════════════════════════════════
 function launchApp() {
   document.getElementById('app').style.display = 'block';
+  document.getElementById('gv3-sb').style.display = 'flex';
+  document.getElementById('ai-bubble').style.display = 'flex';
+  setTimeout(function(){ if(typeof abmStartListener==='function') abmStartListener(); if(typeof abmInitLink==='function') abmInitLink(); }, 500);
   const name = (profile.full_name||'').split(' ')[0] || 'Student';
   document.getElementById('uav').textContent = (profile.full_name||'?')[0].toUpperCase();
   document.getElementById('uname-display').textContent = name;
@@ -8020,7 +8071,7 @@ document.addEventListener('DOMContentLoaded', function() {
 #ai-float-send:disabled{opacity:.5;cursor:not-allowed}
 </style>
 
-<button id="ai-bubble" title="Ask AI" onclick="toggleAIBubble()">🤖</button>
+<button id="ai-bubble" title="Ask AI" onclick="toggleAIBubble()" style="display:none">🤖</button>
 <div id="ai-floatbox">
   <div id="ai-float-header">
     <div id="ai-float-title">🤖 AI Study Assistant</div>
@@ -8050,20 +8101,15 @@ async function sendFloatAI(){
   const msgs    = document.getElementById('ai-float-msgs');
   const sendBtn = document.getElementById('ai-float-send');
   const text    = inp.value.trim();
-  if(!text) return;
+  if (!text) return;
 
   const userDiv = document.createElement('div');
-  userDiv.className = 'af-msg user';
-  userDiv.textContent = text;
-  msgs.appendChild(userDiv);
-  inp.value = '';
-  sendBtn.disabled = true;
+  userDiv.className = 'af-msg user'; userDiv.textContent = text;
+  msgs.appendChild(userDiv); inp.value = ''; sendBtn.disabled = true;
 
   const thinkDiv = document.createElement('div');
-  thinkDiv.className = 'af-msg thinking';
-  thinkDiv.textContent = 'Thinking…';
-  msgs.appendChild(thinkDiv);
-  msgs.scrollTop = msgs.scrollHeight;
+  thinkDiv.className = 'af-msg thinking'; thinkDiv.textContent = 'Thinking…';
+  msgs.appendChild(thinkDiv); msgs.scrollTop = msgs.scrollHeight;
 
   const allSubjects = [];
   (semesters||[]).forEach(function(sem){
@@ -8075,50 +8121,21 @@ async function sendFloatAI(){
   const ctx = allSubjects.length ? 'Student courses: '+allSubjects.join('; ') : 'No course data yet.';
   const systemPrompt = 'You are a concise, friendly academic advisor embedded in Gradintel, a GPA tracker. '+ctx+' Answer briefly in 2-4 sentences max.';
 
-  // Use the SAME key & provider stored by the AI Assistant tab
-  const key  = getStoredAIKey();
-  const prov = getStoredAIProvider();
-  let reply  = '';
-
+  let reply = '';
   try {
-    if (!key || !prov) {
-      reply = 'No AI key set up yet. Go to the AI Assistant tab and add your API key (Groq is free!).';
-    } else if (prov === 'claude') {
-      const res = await fetch('https://api.anthropic.com/v1/messages',{
-        method:'POST', headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-        body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:400,system:systemPrompt,messages:[{role:'user',content:text}]})
-      });
-      const d = await res.json(); reply = d?.content?.[0]?.text || d?.error?.message || 'No response.';
-    } else if (prov === 'groq') {
-      const res = await fetch('https://api.groq.com/openai/v1/chat/completions',{
-        method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
-        body:JSON.stringify({model:'llama3-8b-8192',max_tokens:400,messages:[{role:'system',content:systemPrompt},{role:'user',content:text}]})
-      });
-      const d = await res.json(); reply = d?.choices?.[0]?.message?.content || d?.error?.message || 'No response.';
-    } else if (prov === 'gemini') {
-      const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key='+key,{
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({contents:[{parts:[{text:systemPrompt+'\n\nUser: '+text}]}],generationConfig:{maxOutputTokens:400}})
-      });
-      const d = await res.json(); reply = d?.candidates?.[0]?.content?.parts?.[0]?.text || d?.error?.message || 'No response.';
-    } else if (prov === 'openai') {
-      const res = await fetch('https://api.openai.com/v1/chat/completions',{
-        method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
-        body:JSON.stringify({model:'gpt-4o-mini',max_tokens:400,messages:[{role:'system',content:systemPrompt},{role:'user',content:text}]})
-      });
-      const d = await res.json(); reply = d?.choices?.[0]?.message?.content || d?.error?.message || 'No response.';
-    } else {
-      reply = 'Unknown AI provider configured. Go to AI Assistant tab to fix.';
-    }
-  } catch(err) { reply = 'Error: ' + err.message; }
+    // Pollinations.AI — free built-in, no key needed
+    const res = await fetch('https://text.pollinations.ai/openai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'openai', messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: text }] })
+    });
+    const d = await res.json();
+    reply = d.choices?.[0]?.message?.content || '';
+    if (!reply) throw new Error('Empty response, please try again.');
+  } catch(e) { reply = 'Error: ' + e.message; }
 
-  thinkDiv.remove();
-  const aiDiv = document.createElement('div');
-  aiDiv.className = 'af-msg ai';
-  aiDiv.textContent = reply;
-  msgs.appendChild(aiDiv);
-  msgs.scrollTop = msgs.scrollHeight;
-  sendBtn.disabled = false;
+  thinkDiv.className = 'af-msg ai'; thinkDiv.textContent = reply;
+  sendBtn.disabled = false; msgs.scrollTop = msgs.scrollHeight;
 }
 </script>
 
@@ -8281,140 +8298,220 @@ function ciGetBookmarkletCode() {
   });
 })();
 
-/* ═══ ASSIGNMENT BOOKMARKLET ═══ */
-function openAssignmentBookmarkletModal() {
-  document.getElementById('assignment-bm-modal').style.display = 'flex';
-  var statusEl = document.getElementById('dl-canvas-status');
-  if (statusEl) statusEl.style.display = 'block';
-  try {
-    var saved = localStorage.getItem('gradintel_abm_url');
-    if (saved) { document.getElementById('abm-url').value = saved; abmGen(); }
-  } catch(e) {}
-}
-function abmGen() {
-  var url  = (document.getElementById('abm-url').value || '').trim().replace(/\/+$/, '');
-  var btn  = document.getElementById('abm-link');
-  var hint = document.getElementById('abm-hint');
-  if (!url || url.indexOf('http') !== 0) {
-    btn.style.opacity = '0.35'; btn.style.pointerEvents = 'none'; btn.href = '#';
-    if (hint) { hint.textContent = 'Enter your Canvas URL above to activate'; hint.style.color = ''; }
-    return;
-  }
-  try { localStorage.setItem('gradintel_abm_url', url); } catch(e) {}
-  var code = '(function(){'
-    + 'var base="' + url + '";'
-    + 'var bc=new BroadcastChannel("gradintel_assignments");'
-    + 'function gf(p){return fetch(base+p,{credentials:"include",headers:{"Accept":"application/json","X-Requested-With":"XMLHttpRequest"}}).then(function(r){if(!r.ok)throw new Error(r.status);return r.json();});}'
-    + 'gf("/api/v1/users/self/upcoming_events?per_page=100")'
+/* ═══════════════════════════════════════════════════════════
+   ASSIGNMENTS BOOKMARKLET — mirrors grades bookmarklet exactly
+   Uses same Supabase canvas_sync table + Realtime listener
+   type: 'GRADINTEL_ASSIGNMENTS' to distinguish from grades
+═══════════════════════════════════════════════════════════ */
+
+function abmGetCode() {
+  var sbUrl  = SUPABASE_URL;
+  var sbAnon = SUPABASE_ANON;
+  var userId = (typeof currentUser !== 'undefined' && currentUser) ? currentUser.id : 'anonymous';
+
+  var fn = '(function(){'
+    + 'var SBURL="' + sbUrl + '";'
+    + 'var SBANON="' + sbAnon + '";'
+    + 'var UID="' + userId + '";'
+
+    + 'function sendToSupabase(payload){'
+      + 'fetch(SBURL+"/rest/v1/canvas_sync",{'
+        + 'method:"POST",'
+        + 'headers:{"Content-Type":"application/json","apikey":SBANON,"Authorization":"Bearer "+SBANON,"Prefer":"return=minimal"},'
+        + 'body:JSON.stringify({user_id:UID,payload:payload,created_at:new Date().toISOString()})'
+      + '}).catch(function(){});'
+      // BroadcastChannel fallback (same browser, same origin)
+      + 'try{var bc=new BroadcastChannel("gradintel_canvas");bc.postMessage({type:"GRADINTEL_ASSIGNMENTS",data:payload});bc.close();}catch(e){}'
+      // postMessage fallback
+      + 'try{window.opener&&window.opener.postMessage({type:"GRADINTEL_ASSIGNMENTS",data:payload},"*");}catch(e){}'
+    + '}'
+
+    + 'function toast(msg){'
+      + 'var d=document.createElement("div");'
+      + 'd.style.cssText="position:fixed;bottom:24px;right:24px;background:#818cf8;color:#fff;padding:12px 20px;border-radius:12px;font-family:sans-serif;font-size:14px;font-weight:700;z-index:999999;box-shadow:0 4px 20px rgba(0,0,0,.4)";'
+      + 'd.textContent=msg;document.body.appendChild(d);setTimeout(function(){d.remove();},3500);'
+    + '}'
+
+    + 'toast("📝 Gradintel: fetching assignments…");'
+
+    + 'var canvasBase=location.origin;'
+
+    // Try upcoming_events first (works anywhere on Canvas)
+    + 'fetch(canvasBase+"/api/v1/users/self/upcoming_events?per_page=100",{credentials:"include",headers:{"Accept":"application/json","X-Requested-With":"XMLHttpRequest"}})'
+    + '.then(function(r){return r.json();})'
     + '.then(function(events){'
       + 'var assigns=events.filter(function(e){return e.assignment||e.type==="assignment";});'
-      + 'if(assigns.length){bc.postMessage({type:"GRADINTEL_ASSIGNMENTS",assignments:assigns});alert("Gradintel: found "+assigns.length+" upcoming assignment(s)! Go back to Gradintel.");return;}'
-      + 'return gf("/api/v1/courses?enrollment_state=active&per_page=50").then(function(cs){'
-        + 'var all=[],done=0;'
-        + 'if(!cs.length){alert("No active courses found on Canvas.");return;}'
-        + 'cs.forEach(function(c){'
-          + 'gf("/api/v1/courses/"+c.id+"/assignments?bucket=upcoming&per_page=50&include[]=submission")'
-          + '.then(function(a){all=all.concat(a.map(function(x){x._courseName=c.name;return x;}));}).catch(function(){})'
-          + '.finally(function(){done++;if(done===cs.length){bc.postMessage({type:"GRADINTEL_ASSIGNMENTS",assignments:all});alert("Gradintel: found "+all.length+" assignment(s)! Go back to Gradintel.");}});'
+      + 'if(assigns.length>0){'
+        + 'var dls=assigns.map(function(e){'
+          + 'var a=e.assignment||e;'
+          + 'return{name:a.name||e.title||"Assignment",course:e.context_name||"",courseName:e.context_name||"",due:a.due_at||e.end_at||null,type:"assignment",points:a.points_possible||null};'
         + '});'
-      + '});'
-    + '}).catch(function(err){alert("Error: "+err.message+". Make sure you are logged into Canvas.");});'
-    + '})();';
-  btn.href = 'javascript:' + encodeURIComponent(code);
-  btn.style.opacity = '1'; btn.style.pointerEvents = 'auto';
-  if (hint) { hint.textContent = 'Drag this button to your bookmarks bar'; hint.style.color = '#34d399'; }
+        + 'sendToSupabase({type:"GRADINTEL_ASSIGNMENTS",deadlines:dls});'
+        + 'toast("✅ Gradintel: "+dls.length+" upcoming assignment(s) synced! Switch back to Gradintel.");'
+        + 'return;'
+      + '}'
+      // Fall through to per-course fetch if upcoming_events returns no assignments
+      + 'return fetchAllCourses();'
+    + '})'
+    + '.catch(function(){return fetchAllCourses();});'
+
+    // Per-course assignments fetch
+    + 'function fetchAllCourses(){'
+      + 'fetch(canvasBase+"/api/v1/courses?enrollment_state=active&per_page=50",{credentials:"include",headers:{"Accept":"application/json","X-Requested-With":"XMLHttpRequest"}})'
+      + '.then(function(r){return r.json();})'
+      + '.then(function(courses){'
+        + 'if(!courses||!courses.length){toast("⚠️ No active courses found. Make sure you are logged into Canvas.");return;}'
+        + 'var all=[],done=0,total=courses.length;'
+        + 'courses.forEach(function(c){'
+          + 'fetch(canvasBase+"/api/v1/courses/"+c.id+"/assignments?bucket=upcoming&per_page=50",{credentials:"include",headers:{"Accept":"application/json","X-Requested-With":"XMLHttpRequest"}})'
+          + '.then(function(r){return r.json();})'
+          + '.then(function(as){'
+            + 'as.forEach(function(a){'
+              + 'all.push({name:a.name,course:c.name,courseName:c.name,due:a.due_at||null,type:"assignment",points:a.points_possible||null,submissionTypes:a.submission_types||[]});'
+            + '});'
+          + '})'
+          + '.catch(function(){})'
+          + '.finally(function(){'
+            + 'done++;'
+            + 'if(done===total){'
+              + 'if(!all.length){toast("⚠️ No upcoming assignments found. Try visiting a Canvas Assignments page first.");return;}'
+              + 'sendToSupabase({type:"GRADINTEL_ASSIGNMENTS",deadlines:all});'
+              + 'toast("✅ Gradintel: "+all.length+" assignment(s) synced! Switch back to Gradintel.");'
+            + '}'
+          + '});'
+        + '});'
+      + '})'
+      + '.catch(function(err){toast("❌ Error: "+err.message+". Make sure you are logged into Canvas.");});'
+    + '}'
+
+  + '})();';
+
+  return 'javascript:' + encodeURIComponent(fn);
 }
-function abmClick(e) {
-  var url = (document.getElementById('abm-url').value || '').trim();
-  if (!url || url.indexOf('http') !== 0) { e.preventDefault(); showToast('Enter your Canvas URL first'); return false; }
-  e.preventDefault(); showToast('Drag "Gradintel Assignments" to your bookmarks bar, then click it on Canvas!'); return false;
+
+function abmInitLink() {
+  var link = document.getElementById('abm-bm-link');
+  if (link) link.href = abmGetCode();
 }
-(function() {
+
+function openAssignBmPanel() {
+  var panel = document.getElementById('dl-canvas-status');
+  if (!panel) return;
+  var isOpen = panel.style.display !== 'none';
+  panel.style.display = isOpen ? 'none' : 'block';
+  if (!isOpen) {
+    // Re-generate bookmarklet code (bakes in fresh userId)
+    abmInitLink();
+  }
+}
+
+// Supabase Realtime listener for assignments
+// Piggybacks on canvas_sync table, filters by type === 'GRADINTEL_ASSIGNMENTS'
+function abmStartListener() {
+  if (typeof sb === 'undefined' || !sb || typeof currentUser === 'undefined' || !currentUser) return;
   try {
-    var bc = new BroadcastChannel('gradintel_assignments');
-    bc.onmessage = function(ev) {
-      if (!ev.data || ev.data.type !== 'GRADINTEL_ASSIGNMENTS') return;
-      var assignments = ev.data.assignments || [];
-      if (!assignments.length) { showToast('No upcoming assignments found.'); return; }
-      var dls      = getDeadlines();
-      var existing = new Set(dls.map(function(d){ return d.title + '|' + d.due; }));
-      var count    = 0;
-      assignments.forEach(function(a) {
-        var title  = a.name || a.assignment_name || a.title || 'Assignment';
-        var dueRaw = a.due_at || a.end_at || null;
-        var course = a._courseName || a.context_name || '';
-        var key    = title + '|' + dueRaw;
-        if (existing.has(key)) return;
-        var subId = '';
-        if (course) {
-          (semesters||[]).forEach(function(sem){
-            (sem.subjects||[]).forEach(function(s){
-              if (s.name && (s.name.toLowerCase().indexOf(course.toLowerCase()) >= 0 || course.toLowerCase().indexOf(s.name.toLowerCase()) >= 0)) subId = s.id;
-            });
-          });
+    sb.channel('canvas-assignments-' + currentUser.id)
+      .on('postgres_changes', {
+        event: 'INSERT', schema: 'public', table: 'canvas_sync',
+        filter: 'user_id=eq.' + currentUser.id
+      }, function(payload) {
+        if (payload.new && payload.new.payload && payload.new.payload.type === 'GRADINTEL_ASSIGNMENTS') {
+          abmHandleData(payload.new.payload);
+          sb.from('canvas_sync').delete().eq('id', payload.new.id).then(function(){});
         }
-        dls.push({
-          id:     'dl_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
-          title:  title,
-          due:    dueRaw ? new Date(dueRaw).toISOString().slice(0,16) : '',
-          course: subId,
-          weight: a.points_possible ? Math.min(20, Math.round(a.points_possible / 10)) : 0,
-          type:   (a.submission_types||[]).join(',').indexOf('quiz') >= 0 ? 'quiz' : 'assignment',
-          done:   false
-        });
-        count++;
-      });
-      saveDeadlines(dls);
-      renderDeadlines();
-      var modal = document.getElementById('assignment-bm-modal');
-      if (modal) modal.style.display = 'none';
-      var statusEl = document.getElementById('dl-canvas-status');
-      if (statusEl) statusEl.style.display = 'none';
-      showToast('Imported ' + count + ' assignment(s) from Canvas!');
-      if (typeof showTab === 'function') showTab('planner');
-      if (typeof gv3Switch === 'function') gv3Switch('planner');
+      })
+      .subscribe();
+  } catch(e) { console.warn('ABM realtime failed:', e); }
+
+  // BroadcastChannel fallback
+  try {
+    var bc = new BroadcastChannel('gradintel_canvas');
+    var _orig = bc.onmessage;
+    bc.onmessage = function(e) {
+      if (e.data && e.data.type === 'GRADINTEL_ASSIGNMENTS') abmHandleData(e.data.data);
+      else if (_orig) _orig.call(bc, e);
     };
   } catch(e) {}
-})();
+
+  // postMessage fallback
+  window.addEventListener('message', function(e) {
+    if (e.data && e.data.type === 'GRADINTEL_ASSIGNMENTS') abmHandleData(e.data.data);
+  });
+}
+
+function abmHandleData(data) {
+  if (!data || !data.deadlines || !data.deadlines.length) {
+    showToast('⚠️ No assignment data received.');
+    return;
+  }
+
+  var imported = 0;
+  var dls = getDeadlines();
+  var existingKeys = new Set(dls.map(function(d) { return (d.title||d.name) + '|' + d.due; }));
+
+  data.deadlines.forEach(function(a) {
+    var title  = a.name || 'Assignment';
+    var dueRaw = a.due || a.due_at || null;
+    var key    = title + '|' + dueRaw;
+    if (existingKeys.has(key)) return;
+
+    // Try to match canvas course name to a subject
+    var subId = '';
+    var courseName = a.course || a.courseName || '';
+    if (courseName) {
+      (semesters || []).forEach(function(sem) {
+        (sem.subjects || []).forEach(function(s) {
+          if (!s.name) return;
+          var sn = s.name.toLowerCase();
+          var cn = courseName.toLowerCase();
+          if (cn.indexOf(sn.slice(0,5)) >= 0 || sn.indexOf(cn.slice(0,5)) >= 0) subId = s.id;
+        });
+      });
+    }
+
+    var types = (a.submissionTypes || []).join(',');
+    var type  = types.indexOf('quiz') >= 0 ? 'quiz'
+              : types.indexOf('discussion') >= 0 ? 'project'
+              : 'assignment';
+
+    dls.push({
+      id:      'dl_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
+      title:   title,
+      date:    dueRaw ? new Date(dueRaw).toISOString().slice(0,16) : '',
+      course:  subId,
+      weight:  a.points ? Math.min(20, Math.round(a.points / 10)) : 0,
+      type:    type,
+      done:    false,
+      created: new Date().toISOString()
+    });
+    imported++;
+    existingKeys.add(key);
+  });
+
+  saveDeadlines(dls);
+  if (typeof renderDeadlines === 'function') renderDeadlines();
+
+  // Close the panel
+  var panel = document.getElementById('dl-canvas-status');
+  if (panel) panel.style.display = 'none';
+
+  showToast('📅 Imported ' + imported + ' assignment(s) from Canvas!');
+}
+
+// abmStartListener is called from launchApp() after auth
+
+function abmCopyCode() {
+  var code = abmGetCode();
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(code).then(function(){ showToast('Bookmarklet code copied!'); });
+  } else {
+    var ta = document.createElement('textarea');
+    ta.value = code; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); ta.remove();
+    showToast('Bookmarklet code copied!');
+  }
+}
 
 </script>
-
-<!-- ═══ ASSIGNMENT BOOKMARKLET MODAL ═══ -->
-<div id="assignment-bm-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)this.style.display='none'">
-  <div class="modal-box" style="max-width:520px">
-    <div class="modal-title">
-      <span>🔖 Sync Assignments from Canvas</span>
-      <button class="modal-close" onclick="document.getElementById('assignment-bm-modal').style.display='none'">✕</button>
-    </div>
-    <p style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:16px">
-      This bookmarklet fetches your upcoming Canvas assignments using your existing browser login — no token, no extension needed. Works on Chrome, Firefox, Safari, Edge.
-    </p>
-    <div style="background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:14px;margin-bottom:16px">
-      <div style="font-weight:700;font-size:13px;margin-bottom:10px">One-time setup</div>
-      <div style="display:flex;flex-direction:column;gap:8px;font-size:12px;color:var(--muted)">
-        <div style="display:flex;gap:10px"><span style="color:var(--accent);font-weight:700;flex-shrink:0">1</span>Show bookmarks bar: <code>Ctrl+Shift+B</code> (Windows) or <code>Cmd+Shift+B</code> (Mac)</div>
-        <div style="display:flex;gap:10px"><span style="color:var(--accent);font-weight:700;flex-shrink:0">2</span>Enter your Canvas URL below, then <strong>drag</strong> the blue button into your bookmarks bar</div>
-        <div style="display:flex;gap:10px"><span style="color:var(--accent);font-weight:700;flex-shrink:0">3</span>Log into Canvas, click the bookmark — assignments import here automatically</div>
-      </div>
-    </div>
-    <div class="field" style="margin-bottom:14px">
-      <label>Your Canvas URL</label>
-      <input type="url" id="abm-url" placeholder="https://canvas.university.edu" oninput="abmGen()"
-             style="width:100%;box-sizing:border-box;padding:10px 14px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:13px;outline:none">
-    </div>
-    <div style="text-align:center;padding:8px 0 16px">
-      <div id="abm-hint" style="font-size:12px;color:var(--muted);margin-bottom:12px">Enter your Canvas URL above to activate</div>
-      <a id="abm-link" href="#" onclick="return abmClick(event)" draggable="true"
-         style="display:inline-flex;align-items:center;gap:8px;padding:12px 28px;border-radius:12px;background:linear-gradient(135deg,#38bdf8,#6366f1);color:#fff;font-size:14px;font-weight:700;text-decoration:none;box-shadow:0 4px 20px rgba(99,102,241,0.3);cursor:grab;user-select:none;opacity:0.35;pointer-events:none">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 3a2 2 0 012-2h10a2 2 0 012 2v18l-7-3-7 3V3z"/></svg>
-        Gradintel Assignments
-      </a>
-    </div>
-    <div style="border-top:1px solid var(--border);padding-top:14px">
-      <div style="font-weight:700;font-size:13px;margin-bottom:10px">Or add manually</div>
-      <button class="btn btn-primary" style="width:100%" onclick="document.getElementById('assignment-bm-modal').style.display='none';openAddDeadlineModal()">+ Add Assignment Manually</button>
-    </div>
-  </div>
-</div>
 </body>
 </html>
