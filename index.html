@@ -2449,9 +2449,9 @@ input:not(.af input):focus, select:focus {
     <div class="card-title">📅 Deadline Tracker</div>
     <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
       <button class="btn btn-primary" onclick="openAddDeadlineModal()">+ Add Deadline</button>
-      <button class="btn btn-secondary" onclick="importDeadlinesFromCanvas()" style="font-size:12px;display:flex;align-items:center;gap:6px">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        Import from Canvas
+      <button class="btn btn-secondary" onclick="openAssignmentBookmarkletModal()" style="font-size:12px;display:flex;align-items:center;gap:6px">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3a2 2 0 012-2h10a2 2 0 012 2v18l-7-3-7 3V3z"/></svg>
+        Sync Assignments from Canvas
       </button>
       <div style="display:flex;gap:6px">
         <button class="chip" id="dl-filter-all" onclick="filterDeadlines('all')" style="border-color:var(--accent);color:var(--accent)">All</button>
@@ -2460,7 +2460,7 @@ input:not(.af input):focus, select:focus {
       </div>
     </div>
     <div id="dl-canvas-status" style="display:none;margin-bottom:10px;padding:10px 14px;background:rgba(129,140,248,.08);border:1px solid rgba(129,140,248,.25);border-radius:var(--r);font-size:12px;color:var(--muted2)">
-      📡 Listening for Canvas bookmarklet… Go to Canvas → any Grades page → click your Gradintel bookmarklet. Deadlines will import automatically.
+      📡 Listening for Canvas assignments… Go to Canvas (logged in) → click your <strong>Gradintel Assignments</strong> bookmark. Assignments will be added automatically.
       <button onclick="document.getElementById('dl-canvas-status').style.display='none'" style="float:right;background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1">✕</button>
     </div>
     <div id="deadline-list"></div>
@@ -8046,84 +8046,79 @@ function toggleAIBubble(){
 }
 
 async function sendFloatAI(){
-  const inp=document.getElementById('ai-float-input');
-  const msgs=document.getElementById('ai-float-msgs');
-  const sendBtn=document.getElementById('ai-float-send');
-  const text=inp.value.trim();
+  const inp     = document.getElementById('ai-float-input');
+  const msgs    = document.getElementById('ai-float-msgs');
+  const sendBtn = document.getElementById('ai-float-send');
+  const text    = inp.value.trim();
   if(!text) return;
 
-  // Add user message
-  const userDiv=document.createElement('div');
-  userDiv.className='af-msg user';
-  userDiv.textContent=text;
+  const userDiv = document.createElement('div');
+  userDiv.className = 'af-msg user';
+  userDiv.textContent = text;
   msgs.appendChild(userDiv);
-  inp.value='';
-  sendBtn.disabled=true;
+  inp.value = '';
+  sendBtn.disabled = true;
 
-  // Thinking indicator
-  const thinkDiv=document.createElement('div');
-  thinkDiv.className='af-msg thinking';
-  thinkDiv.textContent='Thinking…';
+  const thinkDiv = document.createElement('div');
+  thinkDiv.className = 'af-msg thinking';
+  thinkDiv.textContent = 'Thinking…';
   msgs.appendChild(thinkDiv);
-  msgs.scrollTop=msgs.scrollHeight;
+  msgs.scrollTop = msgs.scrollHeight;
+
+  const allSubjects = [];
+  (semesters||[]).forEach(function(sem){
+    (sem.subjects||[]).forEach(function(s){
+      try { const r=computeSubject(s); allSubjects.push(s.name+': '+r.cur.toFixed(1)+'% ('+r.curG.l+'), '+r.remExams.length+' exams remaining'); }
+      catch(e){ allSubjects.push(s.name); }
+    });
+  });
+  const ctx = allSubjects.length ? 'Student courses: '+allSubjects.join('; ') : 'No course data yet.';
+  const systemPrompt = 'You are a concise, friendly academic advisor embedded in Gradintel, a GPA tracker. '+ctx+' Answer briefly in 2-4 sentences max.';
+
+  // Use the SAME key & provider stored by the AI Assistant tab
+  const key  = getStoredAIKey();
+  const prov = getStoredAIProvider();
+  let reply  = '';
 
   try {
-    // Build context from user's data
-    const allSubjects=[];
-    (semesters||[]).forEach(function(sem){
-      (sem.subjects||[]).forEach(function(s){
-        const res=computeSubject(s);
-        allSubjects.push(s.name+': '+res.cur.toFixed(1)+'% ('+res.curG.l+'), '+res.remExams.length+' exams remaining');
-      });
-    });
-    const ctx=allSubjects.length?'Student courses: '+allSubjects.join('; '):'No course data yet.';
-    const systemPrompt='You are a concise, friendly academic advisor embedded in Gradintel. '+ctx+'. Answer briefly and helpfully in 2-4 sentences max.';
-
-    // Use built-in Anthropic API first; fall back to user-configured key if set
-    const userProv=localStorage.getItem('gradintel_ai_prov')||'';
-    const userKey=userProv?localStorage.getItem('gradintel_ai_key_'+userProv)||'':'';
-
-    let reply='';
-
-    if(!userKey) {
-      // Built-in Anthropic API (no key needed from user)
-      const res=await fetch('https://api.anthropic.com/v1/messages',{
-        method:'POST',
-        headers:{'Content-Type':'application/json','anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    if (!key || !prov) {
+      reply = 'No AI key set up yet. Go to the AI Assistant tab and add your API key (Groq is free!).';
+    } else if (prov === 'claude') {
+      const res = await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST', headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
         body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:400,system:systemPrompt,messages:[{role:'user',content:text}]})
       });
-      const d=await res.json();
-      reply=d?.content?.[0]?.text||'No response.';
+      const d = await res.json(); reply = d?.content?.[0]?.text || d?.error?.message || 'No response.';
+    } else if (prov === 'groq') {
+      const res = await fetch('https://api.groq.com/openai/v1/chat/completions',{
+        method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+        body:JSON.stringify({model:'llama3-8b-8192',max_tokens:400,messages:[{role:'system',content:systemPrompt},{role:'user',content:text}]})
+      });
+      const d = await res.json(); reply = d?.choices?.[0]?.message?.content || d?.error?.message || 'No response.';
+    } else if (prov === 'gemini') {
+      const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key='+key,{
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({contents:[{parts:[{text:systemPrompt+'\n\nUser: '+text}]}],generationConfig:{maxOutputTokens:400}})
+      });
+      const d = await res.json(); reply = d?.candidates?.[0]?.content?.parts?.[0]?.text || d?.error?.message || 'No response.';
+    } else if (prov === 'openai') {
+      const res = await fetch('https://api.openai.com/v1/chat/completions',{
+        method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+        body:JSON.stringify({model:'gpt-4o-mini',max_tokens:400,messages:[{role:'system',content:systemPrompt},{role:'user',content:text}]})
+      });
+      const d = await res.json(); reply = d?.choices?.[0]?.message?.content || d?.error?.message || 'No response.';
     } else {
-      // User has their own key set — use that
-      if(userProv==='gemini'){
-        const res=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key='+userKey,{
-          method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({contents:[{parts:[{text:systemPrompt+'\n\nUser: '+text}]}],generationConfig:{maxOutputTokens:400}})
-        });
-        const d=await res.json();
-        reply=d?.candidates?.[0]?.content?.parts?.[0]?.text||'No response.';
-      } else if(userProv==='claude'){
-        const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':userKey,'anthropic-version':'2023-06-01'},
-          body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:400,system:systemPrompt,messages:[{role:'user',content:text}]})});
-        const d=await res.json(); reply=d?.content?.[0]?.text||'No response.';
-      } else if(userProv==='groq'||userProv==='openai'){
-        const urls={groq:'https://api.groq.com/openai/v1/chat/completions',openai:'https://api.openai.com/v1/chat/completions'};
-        const models={groq:'llama3-8b-8192',openai:'gpt-4o-mini'};
-        const res=await fetch(urls[userProv],{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+userKey},
-          body:JSON.stringify({model:models[userProv],max_tokens:400,messages:[{role:'system',content:systemPrompt},{role:'user',content:text}]})});
-        const d=await res.json(); reply=d?.choices?.[0]?.message?.content||'No response.';
-      }
+      reply = 'Unknown AI provider configured. Go to AI Assistant tab to fix.';
     }
+  } catch(err) { reply = 'Error: ' + err.message; }
 
-    thinkDiv.className='af-msg ai';
-    thinkDiv.textContent=reply;
-  } catch(e){
-    thinkDiv.className='af-msg ai';
-    thinkDiv.textContent='Sorry, I ran into an error. Try again in a moment.';
-  }
-  sendBtn.disabled=false;
-  msgs.scrollTop=msgs.scrollHeight;
+  thinkDiv.remove();
+  const aiDiv = document.createElement('div');
+  aiDiv.className = 'af-msg ai';
+  aiDiv.textContent = reply;
+  msgs.appendChild(aiDiv);
+  msgs.scrollTop = msgs.scrollHeight;
+  sendBtn.disabled = false;
 }
 </script>
 
@@ -8285,6 +8280,141 @@ function ciGetBookmarkletCode() {
     }, 3000);
   });
 })();
+
+/* ═══ ASSIGNMENT BOOKMARKLET ═══ */
+function openAssignmentBookmarkletModal() {
+  document.getElementById('assignment-bm-modal').style.display = 'flex';
+  var statusEl = document.getElementById('dl-canvas-status');
+  if (statusEl) statusEl.style.display = 'block';
+  try {
+    var saved = localStorage.getItem('gradintel_abm_url');
+    if (saved) { document.getElementById('abm-url').value = saved; abmGen(); }
+  } catch(e) {}
+}
+function abmGen() {
+  var url  = (document.getElementById('abm-url').value || '').trim().replace(/\/+$/, '');
+  var btn  = document.getElementById('abm-link');
+  var hint = document.getElementById('abm-hint');
+  if (!url || url.indexOf('http') !== 0) {
+    btn.style.opacity = '0.35'; btn.style.pointerEvents = 'none'; btn.href = '#';
+    if (hint) { hint.textContent = 'Enter your Canvas URL above to activate'; hint.style.color = ''; }
+    return;
+  }
+  try { localStorage.setItem('gradintel_abm_url', url); } catch(e) {}
+  var code = '(function(){'
+    + 'var base="' + url + '";'
+    + 'var bc=new BroadcastChannel("gradintel_assignments");'
+    + 'function gf(p){return fetch(base+p,{credentials:"include",headers:{"Accept":"application/json","X-Requested-With":"XMLHttpRequest"}}).then(function(r){if(!r.ok)throw new Error(r.status);return r.json();});}'
+    + 'gf("/api/v1/users/self/upcoming_events?per_page=100")'
+    + '.then(function(events){'
+      + 'var assigns=events.filter(function(e){return e.assignment||e.type==="assignment";});'
+      + 'if(assigns.length){bc.postMessage({type:"GRADINTEL_ASSIGNMENTS",assignments:assigns});alert("Gradintel: found "+assigns.length+" upcoming assignment(s)! Go back to Gradintel.");return;}'
+      + 'return gf("/api/v1/courses?enrollment_state=active&per_page=50").then(function(cs){'
+        + 'var all=[],done=0;'
+        + 'if(!cs.length){alert("No active courses found on Canvas.");return;}'
+        + 'cs.forEach(function(c){'
+          + 'gf("/api/v1/courses/"+c.id+"/assignments?bucket=upcoming&per_page=50&include[]=submission")'
+          + '.then(function(a){all=all.concat(a.map(function(x){x._courseName=c.name;return x;}));}).catch(function(){})'
+          + '.finally(function(){done++;if(done===cs.length){bc.postMessage({type:"GRADINTEL_ASSIGNMENTS",assignments:all});alert("Gradintel: found "+all.length+" assignment(s)! Go back to Gradintel.");}});'
+        + '});'
+      + '});'
+    + '}).catch(function(err){alert("Error: "+err.message+". Make sure you are logged into Canvas.");});'
+    + '})();';
+  btn.href = 'javascript:' + encodeURIComponent(code);
+  btn.style.opacity = '1'; btn.style.pointerEvents = 'auto';
+  if (hint) { hint.textContent = 'Drag this button to your bookmarks bar'; hint.style.color = '#34d399'; }
+}
+function abmClick(e) {
+  var url = (document.getElementById('abm-url').value || '').trim();
+  if (!url || url.indexOf('http') !== 0) { e.preventDefault(); showToast('Enter your Canvas URL first'); return false; }
+  e.preventDefault(); showToast('Drag "Gradintel Assignments" to your bookmarks bar, then click it on Canvas!'); return false;
+}
+(function() {
+  try {
+    var bc = new BroadcastChannel('gradintel_assignments');
+    bc.onmessage = function(ev) {
+      if (!ev.data || ev.data.type !== 'GRADINTEL_ASSIGNMENTS') return;
+      var assignments = ev.data.assignments || [];
+      if (!assignments.length) { showToast('No upcoming assignments found.'); return; }
+      var dls      = getDeadlines();
+      var existing = new Set(dls.map(function(d){ return d.title + '|' + d.due; }));
+      var count    = 0;
+      assignments.forEach(function(a) {
+        var title  = a.name || a.assignment_name || a.title || 'Assignment';
+        var dueRaw = a.due_at || a.end_at || null;
+        var course = a._courseName || a.context_name || '';
+        var key    = title + '|' + dueRaw;
+        if (existing.has(key)) return;
+        var subId = '';
+        if (course) {
+          (semesters||[]).forEach(function(sem){
+            (sem.subjects||[]).forEach(function(s){
+              if (s.name && (s.name.toLowerCase().indexOf(course.toLowerCase()) >= 0 || course.toLowerCase().indexOf(s.name.toLowerCase()) >= 0)) subId = s.id;
+            });
+          });
+        }
+        dls.push({
+          id:     'dl_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
+          title:  title,
+          due:    dueRaw ? new Date(dueRaw).toISOString().slice(0,16) : '',
+          course: subId,
+          weight: a.points_possible ? Math.min(20, Math.round(a.points_possible / 10)) : 0,
+          type:   (a.submission_types||[]).join(',').indexOf('quiz') >= 0 ? 'quiz' : 'assignment',
+          done:   false
+        });
+        count++;
+      });
+      saveDeadlines(dls);
+      renderDeadlines();
+      var modal = document.getElementById('assignment-bm-modal');
+      if (modal) modal.style.display = 'none';
+      var statusEl = document.getElementById('dl-canvas-status');
+      if (statusEl) statusEl.style.display = 'none';
+      showToast('Imported ' + count + ' assignment(s) from Canvas!');
+      if (typeof showTab === 'function') showTab('planner');
+      if (typeof gv3Switch === 'function') gv3Switch('planner');
+    };
+  } catch(e) {}
+})();
+
 </script>
+
+<!-- ═══ ASSIGNMENT BOOKMARKLET MODAL ═══ -->
+<div id="assignment-bm-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal-box" style="max-width:520px">
+    <div class="modal-title">
+      <span>🔖 Sync Assignments from Canvas</span>
+      <button class="modal-close" onclick="document.getElementById('assignment-bm-modal').style.display='none'">✕</button>
+    </div>
+    <p style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:16px">
+      This bookmarklet fetches your upcoming Canvas assignments using your existing browser login — no token, no extension needed. Works on Chrome, Firefox, Safari, Edge.
+    </p>
+    <div style="background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:14px;margin-bottom:16px">
+      <div style="font-weight:700;font-size:13px;margin-bottom:10px">One-time setup</div>
+      <div style="display:flex;flex-direction:column;gap:8px;font-size:12px;color:var(--muted)">
+        <div style="display:flex;gap:10px"><span style="color:var(--accent);font-weight:700;flex-shrink:0">1</span>Show bookmarks bar: <code>Ctrl+Shift+B</code> (Windows) or <code>Cmd+Shift+B</code> (Mac)</div>
+        <div style="display:flex;gap:10px"><span style="color:var(--accent);font-weight:700;flex-shrink:0">2</span>Enter your Canvas URL below, then <strong>drag</strong> the blue button into your bookmarks bar</div>
+        <div style="display:flex;gap:10px"><span style="color:var(--accent);font-weight:700;flex-shrink:0">3</span>Log into Canvas, click the bookmark — assignments import here automatically</div>
+      </div>
+    </div>
+    <div class="field" style="margin-bottom:14px">
+      <label>Your Canvas URL</label>
+      <input type="url" id="abm-url" placeholder="https://canvas.university.edu" oninput="abmGen()"
+             style="width:100%;box-sizing:border-box;padding:10px 14px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:13px;outline:none">
+    </div>
+    <div style="text-align:center;padding:8px 0 16px">
+      <div id="abm-hint" style="font-size:12px;color:var(--muted);margin-bottom:12px">Enter your Canvas URL above to activate</div>
+      <a id="abm-link" href="#" onclick="return abmClick(event)" draggable="true"
+         style="display:inline-flex;align-items:center;gap:8px;padding:12px 28px;border-radius:12px;background:linear-gradient(135deg,#38bdf8,#6366f1);color:#fff;font-size:14px;font-weight:700;text-decoration:none;box-shadow:0 4px 20px rgba(99,102,241,0.3);cursor:grab;user-select:none;opacity:0.35;pointer-events:none">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 3a2 2 0 012-2h10a2 2 0 012 2v18l-7-3-7 3V3z"/></svg>
+        Gradintel Assignments
+      </a>
+    </div>
+    <div style="border-top:1px solid var(--border);padding-top:14px">
+      <div style="font-weight:700;font-size:13px;margin-bottom:10px">Or add manually</div>
+      <button class="btn btn-primary" style="width:100%" onclick="document.getElementById('assignment-bm-modal').style.display='none';openAddDeadlineModal()">+ Add Assignment Manually</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
