@@ -1367,6 +1367,52 @@ input:not(.af input):focus, select:focus {
 .dl-notif-actions { display: flex; gap: 4px; flex-shrink: 0; align-items: flex-start; padding-top: 2px; }
 #tc-planner { position: relative; }
 
+/* ── EXAM REMINDERS (slide-in from right on load) ── */
+#exam-reminder-stack {
+  position: fixed;
+  right: 18px; bottom: 20px;
+  z-index: 8500;
+  display: flex; flex-direction: column-reverse; gap: 10px;
+  pointer-events: none;
+}
+.exam-reminder {
+  pointer-events: auto;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-left: 3px solid var(--accent);
+  border-radius: 14px;
+  padding: 12px 16px;
+  min-width: 240px; max-width: 300px;
+  box-shadow: 0 6px 28px rgba(0,0,0,.45);
+  transform: translateX(340px);
+  opacity: 0;
+  transition: transform .4s cubic-bezier(.4,0,.2,1), opacity .4s;
+  cursor: pointer;
+}
+.exam-reminder.show { transform: translateX(0); opacity: 1; }
+.exam-reminder.urgent { border-left-color: var(--red); }
+.exam-reminder.soon   { border-left-color: var(--yellow); }
+.exam-reminder-title  { font-weight: 700; font-size: 13px; margin-bottom: 3px; }
+.exam-reminder-sub    { font-size: 11px; color: var(--muted2); }
+.exam-reminder-countdown { font-family:'Clash Display',sans-serif; font-weight:800; font-size:15px; margin-top:5px; }
+
+/* ── LIVE COUNTDOWN in cal-exam-row ── */
+.cal-countdown {
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 8px;
+  margin-top: 4px;
+  display: inline-block;
+  background: rgba(129,140,248,.1);
+  color: var(--accent);
+  letter-spacing: .04em;
+}
+.cal-countdown.urgent { background: rgba(248,113,113,.12); color: var(--red); }
+.cal-countdown.soon   { background: rgba(251,191,36,.12); color: var(--yellow); }
+.cal-countdown.past   { background: rgba(107,114,128,.1); color: var(--muted); }
+
 /* ════════════════ CANVAS INTEGRATION STYLES ════════════════ */
 .cv-hero {
   text-align: center;
@@ -2597,7 +2643,7 @@ input:not(.af input):focus, select:focus {
     <span class="dl-count-badge" id="dl-count-badge">0</span>
   </button>
 
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;padding-top:50px">
     <div class="card">
       <div class="card-title">⏱️ Pomodoro Timer</div>
       <div style="text-align:center;padding:10px 0">
@@ -3236,6 +3282,8 @@ function launchApp() {
   // Restore last active tab (default: dashboard)
   const lastTab = localStorage.getItem('gradintel_active_tab') || 'dashboard';
   showTab(lastTab);
+  // Show exam reminders after a short delay so the UI settles first
+  setTimeout(showExamReminders, 1800);
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -4179,18 +4227,109 @@ function renderCalendar() {
   withRem.forEach(({ s }) => {
     (s.exams || []).filter(e => !e.taken).forEach(e => {
       const key = e.id;
+      const hasDate = !!examDates[key];
       html += `<div class="cal-exam-row">
         <div class="cal-date"><input type="date" value="${examDates[key]||''}" onchange="setExamDate('${key}',this.value)" style="padding:6px;font-size:11px;width:100%"/></div>
-        <div><div class="cal-name">${e.name}</div><div class="cal-sub">${s.name} · ${e.weight.toFixed(0)}% of exam marks</div></div>
+        <div style="flex:1">
+          <div class="cal-name">${e.name}</div>
+          <div class="cal-sub">${s.name} · ${e.weight.toFixed(0)}% of exam marks</div>
+          ${hasDate ? `<div class="cal-countdown" id="cd-${key}" data-date="${examDates[key]}">Loading…</div>` : ''}
+        </div>
       </div>`;
     });
   });
   c.innerHTML = html;
+  tickCountdowns();
 }
 function setExamDate(examId, date) {
   examDates[examId] = date;
   localStorage.setItem('gradintel-dates-' + (currentUser?.id || ''), JSON.stringify(examDates));
-  showToast('Calendar date saved');
+  showToast('📅 Exam date saved!');
+  renderCalendar(); // re-render to show/update countdown
+}
+let _cdInterval = null;
+function tickCountdowns() {
+  clearInterval(_cdInterval);
+  _cdInterval = setInterval(() => {
+    document.querySelectorAll('.cal-countdown[data-date]').forEach(el => {
+      const target = new Date(el.getAttribute('data-date') + 'T23:59:59');
+      const now = new Date();
+      const diff = target - now;
+      if (diff <= 0) {
+        el.textContent = 'Exam day! 🎯';
+        el.classList.remove('urgent','soon'); el.classList.add('past');
+        return;
+      }
+      const days = Math.floor(diff / 86400000);
+      const hrs  = Math.floor((diff % 86400000) / 3600000);
+      const mins = Math.floor((diff % 3600000) / 60000);
+      const secs = Math.floor((diff % 60000) / 1000);
+      el.textContent = `${days}d ${String(hrs).padStart(2,'0')}h ${String(mins).padStart(2,'0')}m ${String(secs).padStart(2,'0')}s`;
+      el.classList.remove('urgent','soon','past');
+      if (days < 2) el.classList.add('urgent');
+      else if (days < 7) el.classList.add('soon');
+    });
+  }, 1000);
+}
+function showExamReminders() {
+  if (!examDates || !Object.keys(examDates).length) return;
+  const now = new Date();
+  const upcoming = [];
+  semesters.forEach(sem => sem.subjects.forEach(s => {
+    (s.exams || []).filter(e => !e.taken && examDates[e.id]).forEach(e => {
+      const target = new Date(examDates[e.id] + 'T23:59:59');
+      const diff = target - now;
+      if (diff > 0) upcoming.push({ e, s, diff, target });
+    });
+  }));
+  if (!upcoming.length) return;
+  upcoming.sort((a, b) => a.diff - b.diff);
+  const toShow = upcoming.slice(0, 3); // show up to 3 closest exams
+  const stack = document.getElementById('exam-reminder-stack');
+  if (!stack) return;
+  stack.innerHTML = '';
+  toShow.forEach((item, i) => {
+    const days = Math.floor(item.diff / 86400000);
+    const hrs  = Math.floor((item.diff % 86400000) / 3600000);
+    const urgentClass = days < 2 ? 'urgent' : days < 7 ? 'soon' : '';
+    const urgencyText = days === 0 ? 'Today!' : days === 1 ? 'Tomorrow' : `${days} days left`;
+    const div = document.createElement('div');
+    div.className = 'exam-reminder ' + urgentClass;
+    div.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div style="flex:1;min-width:0">
+          <div class="exam-reminder-title">📋 ${item.e.name}</div>
+          <div class="exam-reminder-sub">${item.s.name} · ${item.e.weight.toFixed(0)}% weight</div>
+          <div class="exam-reminder-countdown" id="er-cd-${item.e.id}" data-date="${examDates[item.e.id]}"
+            style="color:${days<2?'var(--red)':days<7?'var(--yellow)':'var(--accent)'}">
+            ${urgencyText}
+          </div>
+        </div>
+        <button onclick="this.closest('.exam-reminder').remove()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0 0 0 8px;flex-shrink:0">✕</button>
+      </div>`;
+    stack.appendChild(div);
+    // Stagger slide-in
+    setTimeout(() => div.classList.add('show'), 300 + i * 180);
+    // Auto-dismiss after 12s
+    setTimeout(() => {
+      div.style.opacity = '0'; div.style.transform = 'translateX(340px)';
+      setTimeout(() => div.remove(), 400);
+    }, 12000 + i * 1000);
+  });
+  // Live tick for reminder countdowns
+  setInterval(() => {
+    document.querySelectorAll('.exam-reminder-countdown[data-date]').forEach(el => {
+      const target = new Date(el.getAttribute('data-date') + 'T23:59:59');
+      const now = new Date();
+      const diff = target - now;
+      if (diff <= 0) { el.textContent = 'Exam day! 🎯'; return; }
+      const days = Math.floor(diff / 86400000);
+      const hrs  = Math.floor((diff % 86400000) / 3600000);
+      const mins = Math.floor((diff % 3600000) / 60000);
+      const secs = Math.floor((diff % 60000) / 1000);
+      el.textContent = `${days}d ${String(hrs).padStart(2,'0')}h ${String(mins).padStart(2,'0')}m ${String(secs).padStart(2,'0')}s`;
+    });
+  }, 1000);
 }
 function exportICS() {
   const all = []; semesters.forEach(sem => sem.subjects.forEach(s => all.push({ s, sem })));
@@ -9218,5 +9357,6 @@ function generateSmartStudyPlan() {
 // goal sim inits via showTab and updateStats hooks
 
 </script>
+<div id="exam-reminder-stack"></div>
 </body>
 </html>
