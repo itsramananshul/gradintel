@@ -580,6 +580,62 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2)}
 @keyframes confettiFall{0%{transform:translateY(0) rotate(0deg);opacity:1}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}
 @keyframes spin{to{transform:rotate(360deg)}}
 
+/* ═══ PANIC MODE ═══ */
+@keyframes panicShake {
+  0%  { transform: translate(0,0) rotate(0deg); }
+  10% { transform: translate(-6px,-4px) rotate(-1deg); }
+  20% { transform: translate(6px,4px) rotate(1deg); }
+  30% { transform: translate(-6px,2px) rotate(-0.5deg); }
+  40% { transform: translate(6px,-2px) rotate(0.5deg); }
+  50% { transform: translate(-4px,-4px) rotate(-1deg); }
+  60% { transform: translate(4px,4px) rotate(1deg); }
+  70% { transform: translate(-4px,2px) rotate(-0.5deg); }
+  80% { transform: translate(4px,-2px) rotate(0.5deg); }
+  90% { transform: translate(-2px,0px) rotate(0deg); }
+  100%{ transform: translate(0,0) rotate(0deg); }
+}
+@keyframes panicPulse {
+  0%,100%{ transform:scale(1); }
+  50%{ transform:scale(1.2); }
+}
+@keyframes panicFadeIn {
+  from{ opacity:0; transform:scale(0.95); }
+  to{ opacity:1; transform:scale(1); }
+}
+@keyframes panicBar {
+  0%{ background-position:0% 50%; }
+  100%{ background-position:200% 50%; }
+}
+@keyframes panicFlicker {
+  0%,100%{ opacity:1; }
+  92%{ opacity:1; }
+  93%{ opacity:0.85; }
+  94%{ opacity:1; }
+}
+
+body.panic-mode {
+  animation: panicShake 0.5s ease both;
+}
+body.panic-mode::before {
+  content:'';
+  position:fixed;inset:0;z-index:9;pointer-events:none;
+  background: radial-gradient(ellipse at 50% 50%, rgba(239,68,68,0.07) 0%, transparent 70%);
+  animation: panicFlicker 4s infinite;
+}
+body.panic-mode .bg-blob.bb1 { background: #ef4444 !important; }
+body.panic-mode .bg-blob.bb2 { background: #dc2626 !important; }
+body.panic-mode .bg-blob.bb3 { background: #b91c1c !important; }
+body.panic-mode :root,
+body.panic-mode {
+  --accent: #ef4444 !important;
+  --accent2: #dc2626 !important;
+  --accent3: #f87171 !important;
+  --a1: #ef4444 !important;
+  --a2: #dc2626 !important;
+}
+body.panic-mode .gv3-dot { background: #ef4444 !important; box-shadow: 0 0 5px #ef4444 !important; }
+body.panic-mode #panic-btn { border-color: #ef4444 !important; background: rgba(239,68,68,0.25) !important; box-shadow: 0 0 12px rgba(239,68,68,0.4) !important; animation: panicPulse 0.8s ease-in-out infinite; }
+
 /* PRINT */
 @media print{.bg-layer,.bg-grid,.fog,.fog2,.scanline,.anno,#cur,#cur-ring,#bgCanvas,.topbar-r,.btn-row,.nav-tabs,.steps,.modal-overlay,.config-banner{display:none!important}body{background:#fff;color:#000;cursor:auto}.card,.exam-card,.eneed,.score-hero{border:1px solid #ddd;background:#fff;box-shadow:none}}
 
@@ -1234,9 +1290,82 @@ input:not(.af input):focus, select:focus {
   body.gv3-collapsed #gv3-main { margin-left: 0 !important; }
   .app, .hero, .dash-stats, [id^="tc-"] { padding-left: 16px !important; padding-right: 16px !important; }
   #gv3-mob-btn { display: flex !important; }
+  .auth-wrap.ready ~ * #gv3-mob-btn,
+  body.auth-visible #gv3-mob-btn { display: none !important; }
   .topbar { padding-top: 58px !important; }
 }
 
+
+/* ── FLOATING DEADLINE PILL + SLIDE PANEL ── */
+#dl-float-btn {
+  position: absolute;
+  top: 0; right: 0;
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px 8px 14px;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 100px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  z-index: 50;
+  transition: background .2s, box-shadow .2s;
+  box-shadow: 0 2px 12px rgba(0,0,0,.3);
+  white-space: nowrap;
+}
+#dl-float-btn:hover { background: var(--surface3); box-shadow: 0 4px 20px rgba(129,140,248,.2); }
+#dl-float-btn .dl-count-badge {
+  background: var(--accent); color: #fff;
+  border-radius: 100px; font-size: 10px; font-weight: 800;
+  min-width: 18px; height: 18px; padding: 0 5px;
+  display: flex; align-items: center; justify-content: center;
+}
+#dl-slide-panel {
+  position: fixed;
+  top: 0; right: -420px;
+  width: 400px; max-width: 92vw; height: 100vh;
+  background: var(--surface);
+  border-left: 1px solid var(--border2);
+  z-index: 9000;
+  transition: right .32s cubic-bezier(.4,0,.2,1);
+  display: flex; flex-direction: column;
+  box-shadow: -8px 0 40px rgba(0,0,0,.4);
+}
+#dl-slide-panel.open { right: 0; }
+#dl-slide-overlay {
+  position: fixed; inset: 0; z-index: 8999;
+  background: rgba(0,0,0,.35); backdrop-filter: blur(2px);
+  display: none; opacity: 0; transition: opacity .3s;
+}
+#dl-slide-overlay.open { display: block; opacity: 1; }
+.dl-panel-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 20px 14px;
+  border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.dl-panel-actions {
+  padding: 12px 16px; border-bottom: 1px solid var(--border);
+  display: flex; gap: 8px; flex-wrap: wrap; align-items: center; flex-shrink: 0;
+}
+.dl-panel-list { flex: 1; overflow-y: auto; padding: 10px 16px 20px; }
+.dl-notif {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 10px 12px; border-radius: 12px;
+  border: 1px solid var(--border); background: var(--surface2);
+  margin-bottom: 8px; transition: border-color .2s;
+}
+.dl-notif.overdue { border-color: rgba(248,113,113,.35); background: rgba(248,113,113,.04); }
+.dl-notif.due-soon { border-color: rgba(251,191,36,.35); background: rgba(251,191,36,.04); }
+.dl-notif.done { opacity: .45; }
+.dl-notif-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+.dl-notif-body { flex: 1; min-width: 0; }
+.dl-notif-title { font-weight: 700; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dl-notif-meta { font-size: 11px; color: var(--muted2); margin-top: 2px; }
+.dl-notif-actions { display: flex; gap: 4px; flex-shrink: 0; align-items: flex-start; padding-top: 2px; }
+#tc-planner { position: relative; }
 
 /* ════════════════ CANVAS INTEGRATION STYLES ════════════════ */
 .cv-hero {
@@ -1627,8 +1756,8 @@ input:not(.af input):focus, select:focus {
 
 <body>
 
-<div id="gv3-mob-overlay" onclick="gv3CloseMob()"></div>
-<button id="gv3-mob-btn" onclick="gv3ToggleMob()">
+<div id="gv3-mob-overlay" onclick="gv3CloseMob()" style="display:none"></div>
+<button id="gv3-mob-btn" onclick="gv3ToggleMob()" style="display:none">
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
 </button>
 
@@ -1697,11 +1826,12 @@ input:not(.af input):focus, select:focus {
       <span class="gv3-lbl">What-If</span>
     </button>
     <button class="gv3-item" data-tab="simulator" onclick="gv3Switch('simulator')">
-      <div class="gv3-ico" data-tip="Simulator">
+      <div class="gv3-ico" data-tip="Score Lab">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" fill="rgba(167,139,250,0.1)" stroke="var(--a1)" stroke-width="1.8"/><circle cx="12" cy="12" r="5" fill="rgba(167,139,250,0.15)" stroke="var(--a2)" stroke-width="1.8"/><circle cx="12" cy="12" r="2.2" fill="var(--a1)"/></svg>
       </div>
-      <span class="gv3-lbl">Simulator</span>
+      <span class="gv3-lbl">Score Lab</span>
     </button>
+
     <div class="gv3-sec">Tools</div>
     <button class="gv3-item" data-tab="planner" onclick="gv3Switch('planner')">
       <div class="gv3-ico" data-tip="Planner">
@@ -1919,6 +2049,7 @@ input:not(.af input):focus, select:focus {
       <button class="icon-btn" onclick="toggleMotion()" id="motionBtn" title="Reduce Motion"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="url(#site-ig)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M12 3v3M12 18v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M3 12h3M18 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg></button>
       <button class="icon-btn" onclick="toggleTheme()" id="themeBtn" title="Theme"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="url(#site-ig)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg></button>
       <button class="icon-btn" onclick="window.print()" title="Print"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="url(#site-ig)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
+      <button class="icon-btn" id="panic-btn" onclick="activatePanicMode()" title="Panic Mode" style="border-color:rgba(239,68,68,0.4);color:#ef4444;background:rgba(239,68,68,0.08)">🚨</button>
       <div class="user-pill" onclick="openUserModal()">
         <div class="uav" id="uav">?</div>
         <span id="uname-display">User</span>
@@ -1931,6 +2062,7 @@ input:not(.af input):focus, select:focus {
     <div class="hero-ey">Academic Performance System</div>
     <h1 id="hero-h">Welcome back!</h1>
     <p id="hero-p">Your GPA dashboard · Track · Predict · Improve</p>
+    <button onclick="openShareCard()" class="btn btn-secondary" style="font-size:11px;padding:5px 14px;margin-top:10px">📊 Share GPA Card</button>
   </div>
 
   <!-- Compact stats bar shown on non-dashboard pages -->
@@ -1980,7 +2112,7 @@ input:not(.af input):focus, select:focus {
     <button class="nav-tab" onclick="showTab('policies')" id="tab-policies"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="url(#site-ig)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M12 3v18M3 9l9-6 9 6"/><path d="M3 9l4 8H3M21 9l-4 8h4"/></svg> Policies</button>
     <button class="nav-tab" onclick="showTab('export')" id="tab-export"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="url(#site-ig)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg> Export</button>
     <button class="nav-tab" onclick="showTab('canvas')" id="tab-canvas" style="position:relative"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="url(#site-ig)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg> Canvas Import<span style="position:absolute;top:5px;right:5px;width:6px;height:6px;border-radius:50%;background:var(--accent3);box-shadow:0 0 5px var(--accent3)"></span></button>
-    <button class="nav-tab" onclick="showTab('simulator')" id="tab-simulator">🎯 Simulator</button>
+    <button class="nav-tab" onclick="showTab('simulator')" id="tab-simulator">🔬 Score Lab</button>
     <button class="nav-tab" onclick="showTab('analytics')" id="tab-analytics">📊 Analytics</button>
     <button class="nav-tab" onclick="showTab('planner')" id="tab-planner">📅 Planner</button>
     <button class="nav-tab" onclick="showTab('achievements')" id="tab-achievements">🏆 Achievements</button>
@@ -2112,6 +2244,21 @@ input:not(.af input):focus, select:focus {
       <div class="infobox">Drag sliders to simulate different exam scores and see projected grades live. Your real GPA above stays unchanged.</div>
       <div id="wi-full"></div>
     </div>
+
+    <div class="card" style="margin-top:14px">
+      <div class="card-title">⏮️ GPA Time Machine</div>
+      <div style="font-size:13px;color:var(--muted2);margin-bottom:14px">Drag the slider to see how your cumulative GPA would look if you had scored X% better across all past semesters.</div>
+      <div id="tm-wrap">
+        <label style="font-size:12px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase">Hypothetical score boost across all past exams</label>
+        <input type="range" id="tm-slider" min="-100" max="100" value="0" oninput="renderTimeMachine()" style="margin:12px 0"/>
+        <div class="slider-labels"><span>-100%</span><span style="color:var(--accent);font-weight:700" id="tm-val">0%</span><span>+100%</span></div>
+        <div style="margin-top:14px;display:flex;gap:18px;align-items:center">
+          <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em">Actual GPA</div><div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:32px" id="tm-actual">—</div></div>
+          <div style="font-size:22px;color:var(--muted)">→</div>
+          <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em">Hypothetical GPA</div><div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:32px;color:var(--accent)" id="tm-hyp">—</div></div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- STUDY -->
@@ -2121,6 +2268,9 @@ input:not(.af input):focus, select:focus {
       <div class="infobox">Estimated study hours based on what you need to score per exam. <strong>Highest ROI exam</strong> is flagged with ★.</div>
       <div id="study-content"></div>
     </div>
+
+    <!-- ── SMART STUDY PLAN removed — now lives in Score Lab tab ── -->
+
     <div class="card" id="cal-card">
       <div class="card-title"><span class="ico"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="url(#site-ig)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>Exam Calendar &amp; .ics Export</div>
       <div class="infobox">Add dates to your exams, then export to Google Calendar, Apple Calendar, or Outlook.</div>
@@ -2343,59 +2493,53 @@ input:not(.af input):focus, select:focus {
 <!-- GRADE SIMULATOR TAB -->
 <!-- ═══════════════════════════════════════════════════════════ -->
 <div id="tc-simulator" class="hidden">
-  <div class="card">
-    <div class="card-title">🎯 Grade Simulator & Scenarios</div>
-    <div class="infobox">Simulate hypothetical scores and see how they'd affect your GPA in real time. Save up to 3 scenarios side-by-side.</div>
-    <div id="sim-no-data" style="color:var(--muted);font-size:13px;padding:20px 0">Add at least one course with remaining exams to use the simulator.</div>
+
+  <!-- 1. TARGET GRADE CALCULATOR (moved to top) -->
+  <div class="card" style="margin-bottom:14px">
+    <div id="sim-no-data" style="color:var(--muted);font-size:13px;padding:20px 0">Add at least one course with remaining exams to use the grade tools below.</div>
     <div id="sim-content" style="display:none">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px" id="sim-scenarios-row">
-        <div class="sim-scenario-card" id="sim-s0" style="background:rgba(129,140,248,.07);border:2px solid rgba(129,140,248,.4);border-radius:var(--r);padding:18px">
-          <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:13px;margin-bottom:4px;color:var(--accent)">📉 Pessimistic</div>
-          <div style="font-size:32px;font-family:'Clash Display',sans-serif;font-weight:700" id="sim-s0-gpa">—</div>
-          <div style="font-size:11px;color:var(--muted)" id="sim-s0-lbl">Assuming all remaining = 50%</div>
-        </div>
-        <div class="sim-scenario-card" id="sim-s1" style="background:rgba(52,211,153,.07);border:2px solid rgba(52,211,153,.4);border-radius:var(--r);padding:18px">
-          <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:13px;margin-bottom:4px;color:var(--green)">📈 Realistic</div>
-          <div style="font-size:32px;font-family:'Clash Display',sans-serif;font-weight:700" id="sim-s1-gpa">—</div>
-          <div style="font-size:11px;color:var(--muted)" id="sim-s1-lbl">Assuming all remaining = 75%</div>
-        </div>
-        <div class="sim-scenario-card" id="sim-s2" style="background:rgba(251,191,36,.07);border:2px solid rgba(251,191,36,.4);border-radius:var(--r);padding:18px">
-          <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:13px;margin-bottom:4px;color:var(--yellow)">🚀 Optimistic</div>
-          <div style="font-size:32px;font-family:'Clash Display',sans-serif;font-weight:700" id="sim-s2-gpa">—</div>
-          <div style="font-size:11px;color:var(--muted)" id="sim-s2-lbl">Assuming all remaining = 95%</div>
-        </div>
-        <div class="sim-scenario-card" id="sim-s3" style="background:rgba(244,114,182,.07);border:2px solid rgba(244,114,182,.4);border-radius:var(--r);padding:18px">
-          <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:13px;margin-bottom:4px;color:var(--accent2)">⭐ Custom</div>
-          <div style="font-size:32px;font-family:'Clash Display',sans-serif;font-weight:700" id="sim-s3-gpa">—</div>
-          <div style="font-size:11px;color:var(--muted)">Your custom inputs below</div>
-        </div>
-      </div>
-      <div class="divider"></div>
-      <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:14px;margin-bottom:14px">🎚️ Custom Scenario — Slide to Simulate</div>
-      <div id="sim-sliders"></div>
-      <div class="divider"></div>
-      <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:14px;margin-bottom:10px">🔒 Safe Zone Indicator</div>
-      <div id="sim-safezone"></div>
-      <div class="divider"></div>
-      <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:14px;margin-bottom:6px">🎯 Target Grade Calculator</div>
+      <div class="card-title">🎯 Target Grade Calculator</div>
       <div style="font-size:12px;color:var(--muted);margin-bottom:14px">Pick the grade you want in each course — see exactly what you need on remaining exams.</div>
       <div id="sim-minimum"></div>
+
+      <div class="divider" style="margin:18px 0"></div>
+
+      <!-- 2. SAFE ZONE INDICATOR -->
+      <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:14px;margin-bottom:10px">🔒 Safe Zone Indicator</div>
+      <div id="sim-safezone"></div>
     </div>
   </div>
-  <div class="card" style="margin-top:14px">
-    <div class="card-title">⏮️ GPA Time Machine</div>
-    <div style="font-size:13px;color:var(--muted2);margin-bottom:14px">Drag the slider to see how your cumulative GPA would look if you had scored X% better across all past semesters.</div>
-    <div id="tm-wrap">
-      <label style="font-size:12px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase">Hypothetical score boost across all past exams</label>
-      <input type="range" id="tm-slider" min="-100" max="100" value="0" oninput="renderTimeMachine()" style="margin:12px 0"/>
-      <div class="slider-labels"><span>-100%</span><span style="color:var(--accent);font-weight:700" id="tm-val">0%</span><span>+100%</span></div>
-      <div style="margin-top:14px;display:flex;gap:18px;align-items:center">
-        <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em">Actual GPA</div><div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:32px" id="tm-actual">—</div></div>
-        <div style="font-size:22px;color:var(--muted)">→</div>
-        <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em">Hypothetical GPA</div><div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:32px;color:var(--accent)" id="tm-hyp">—</div></div>
-      </div>
+
+  <!-- 3. SMART STUDY PLAN (moved here from Study tab) -->
+  <div class="card" style="margin-bottom:14px;border-color:rgba(129,140,248,0.3);position:relative;overflow:hidden">
+    <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2),var(--accent3))"></div>
+    <div class="card-title">
+      <span class="ico">🧠</span> Smart Study Plan
+      <span style="display:inline-block;padding:2px 10px;border-radius:100px;background:rgba(129,140,248,0.12);border:1px solid rgba(129,140,248,0.25);font-size:10px;font-weight:700;color:var(--accent);letter-spacing:.08em;text-transform:uppercase;margin-left:8px;vertical-align:middle">AI-POWERED</span>
+    </div>
+    <div style="font-size:13px;color:var(--muted2);margin-bottom:16px;line-height:1.6">
+      Based on your current grades, Gradintel tells you <strong>exactly what to focus on</strong> — which subjects are recoverable, which need urgent attention, and what score you need on each upcoming exam.
+    </div>
+    <div id="ssp-output">
+      <div style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0">Click below to generate your personalized study plan.</div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
+      <button class="btn btn-primary" onclick="generateSmartStudyPlan()" id="ssp-btn" style="display:flex;align-items:center;gap:8px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        Generate My Study Plan
+      </button>
+      <button class="btn btn-secondary" onclick="document.getElementById('ssp-output').innerHTML='<div style=\'color:var(--muted);font-size:13px;text-align:center;padding:20px 0\'>Click below to generate your personalized study plan.</div>'" style="font-size:12px">Reset</button>
     </div>
   </div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- GPA GOAL SIMULATOR TAB -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SHARE CARD TAB (injected as modal, button added to dashboard) -->
+<!-- ═══════════════════════════════════════════════════════════ -->
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════ -->
@@ -2445,74 +2589,14 @@ input:not(.af input):focus, select:focus {
 <!-- PLANNER TAB -->
 <!-- ═══════════════════════════════════════════════════════════ -->
 <div id="tc-planner" class="hidden">
-  <div class="card" style="margin-bottom:14px">
-    <div class="card-title">📅 Deadline Tracker</div>
-    <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
-      <button class="btn btn-primary" onclick="openAddDeadlineModal()">+ Add Deadline</button>
-      <button class="btn btn-secondary" onclick="openAssignBmPanel()" style="font-size:12px;display:flex;align-items:center;gap:6px">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3a2 2 0 012-2h10a2 2 0 012 2v18l-7-3-7 3V3z"/></svg>
-        Import Assignments from Canvas
-      </button>
-      <div style="display:flex;gap:6px">
-        <button class="chip" id="dl-filter-all" onclick="filterDeadlines('all')" style="border-color:var(--accent);color:var(--accent)">All</button>
-        <button class="chip" id="dl-filter-upcoming" onclick="filterDeadlines('upcoming')">Upcoming</button>
-        <button class="chip" id="dl-filter-overdue" onclick="filterDeadlines('overdue')">Overdue</button>
-      </div>
-    </div>
-    <!-- ASSIGNMENTS BOOKMARKLET PANEL -->
-    <div id="dl-canvas-status" style="display:none;margin-bottom:14px">
-      <div class="card" style="padding:18px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-          <div class="card-title" style="margin:0">🔖 Import Assignments from Canvas</div>
-          <button onclick="document.getElementById('dl-canvas-status').style.display='none'" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;padding:0">✕</button>
-        </div>
 
-        <div class="infobox" style="margin-bottom:16px">
-          A <strong>bookmarklet</strong> is a bookmark containing JavaScript. Drag it to your browser bar <strong>once</strong>. Then whenever you're logged into Canvas, click it — your upcoming assignments are sent to Gradintel automatically via your account. Works on Chrome, Firefox, Safari, Edge.
-        </div>
+  <!-- Floating deadline pill — top right of planner, shown via showTab -->
+  <button id="dl-float-btn" onclick="toggleDeadlinePanel()">
+    <span style="font-size:15px">📌</span>
+    Deadlines
+    <span class="dl-count-badge" id="dl-count-badge">0</span>
+  </button>
 
-        <div class="ci-bm-dragzone" style="margin-bottom:16px">
-          <div style="font-size:12px;color:var(--muted2);margin-bottom:14px">👇 Drag this button to your bookmarks bar</div>
-          <a id="abm-bm-link" href="#" class="ci-bm-pill" draggable="true" onclick="return false">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:5px"><path d="M5 3a2 2 0 012-2h10a2 2 0 012 2v18l-7-3-7 3V3z"/></svg>
-            📝 Gradintel Assignments
-          </a>
-          <div style="font-size:11px;color:var(--muted);margin-top:10px">
-            Can't drag? <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="abmCopyCode()">Copy bookmarklet code</button>
-          </div>
-        </div>
-
-        <div class="ci-steps">
-          <div class="ci-step">
-            <div class="ci-step-num ci-step-accent">1</div>
-            <div class="ci-step-body">
-              <div class="ci-step-title">Show your bookmarks bar</div>
-              <div class="ci-step-desc">Press <code>Ctrl+Shift+B</code> (Windows/Linux) or <code>Cmd+Shift+B</code> (Mac) to show the bookmarks bar</div>
-            </div>
-          </div>
-          <div class="ci-step">
-            <div class="ci-step-num ci-step-accent">2</div>
-            <div class="ci-step-body">
-              <div class="ci-step-title">Drag "📝 Gradintel Assignments" to the bar</div>
-              <div class="ci-step-desc">Drag the button above into your bookmarks bar. You only need to do this once.</div>
-            </div>
-          </div>
-          <div class="ci-step">
-            <div class="ci-step-num ci-step-accent">3</div>
-            <div class="ci-step-body">
-              <div class="ci-step-title">Go to Canvas → click the bookmark</div>
-              <div class="ci-step-desc">Log into Canvas in the same browser, go to any page (Assignments, Dashboard, etc.), and click the bookmark. Your upcoming assignments will appear here within seconds.</div>
-            </div>
-          </div>
-        </div>
-
-        <div id="abm-listen-banner" style="margin-top:12px;padding:8px 12px;background:rgba(129,140,248,.08);border:1px solid rgba(129,140,248,.25);border-radius:8px;font-size:12px;color:var(--muted2)">
-          📡 Listening… Once you click the bookmark on Canvas, assignments will appear here automatically.
-        </div>
-      </div>
-    </div>
-    <div id="deadline-list"></div>
-  </div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
     <div class="card">
       <div class="card-title">⏱️ Pomodoro Timer</div>
@@ -2575,6 +2659,49 @@ input:not(.af input):focus, select:focus {
     </div>
     <div style="position:relative;height:160px"><canvas id="moodChart"></canvas></div>
   </div>
+</div>
+
+<!-- DEADLINE SLIDE PANEL OVERLAY -->
+<div id="dl-slide-overlay" onclick="closeDeadlinePanel()"></div>
+
+<!-- DEADLINE SLIDE PANEL -->
+<div id="dl-slide-panel">
+  <div class="dl-panel-header">
+    <div>
+      <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:17px">📌 Deadlines</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px">Your upcoming assignments &amp; tasks</div>
+    </div>
+    <button onclick="closeDeadlinePanel()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;line-height:1;padding:4px">✕</button>
+  </div>
+  <div class="dl-panel-actions">
+    <button class="btn btn-primary" onclick="openAddDeadlineModal()" style="font-size:12px;padding:7px 14px">+ Add Deadline</button>
+    <button class="btn btn-secondary" onclick="openAssignBmPanel()" style="font-size:12px;padding:7px 14px;display:flex;align-items:center;gap:5px">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3a2 2 0 012-2h10a2 2 0 012 2v18l-7-3-7 3V3z"/></svg>
+      Canvas Import
+    </button>
+    <div style="display:flex;gap:5px;margin-left:auto">
+      <button class="chip" id="dl-filter-all" onclick="filterDeadlines('all')" style="border-color:var(--accent);color:var(--accent);font-size:11px">All</button>
+      <button class="chip" id="dl-filter-upcoming" onclick="filterDeadlines('upcoming')" style="font-size:11px">Upcoming</button>
+      <button class="chip" id="dl-filter-overdue" onclick="filterDeadlines('overdue')" style="font-size:11px">Overdue</button>
+    </div>
+  </div>
+  <!-- Canvas import panel inside the slide panel -->
+  <div id="dl-canvas-status" style="display:none;padding:12px 16px;border-bottom:1px solid var(--border);flex-shrink:0">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div style="font-weight:700;font-size:13px">🔖 Import from Canvas</div>
+      <button onclick="document.getElementById('dl-canvas-status').style.display='none'" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:0">✕</button>
+    </div>
+    <div class="ci-bm-dragzone" style="margin-bottom:10px">
+      <div style="font-size:11px;color:var(--muted2);margin-bottom:8px">👇 Drag this to your bookmarks bar</div>
+      <a id="abm-bm-link" href="#" class="ci-bm-pill" draggable="true" onclick="return false" style="font-size:12px">
+        📝 Gradintel Assignments
+      </a>
+    </div>
+    <div id="abm-listen-banner" style="padding:7px 10px;background:rgba(129,140,248,.08);border:1px solid rgba(129,140,248,.25);border-radius:8px;font-size:11px;color:var(--muted2)">
+      📡 Listening for Canvas data…
+    </div>
+  </div>
+  <div class="dl-panel-list" id="deadline-list"></div>
 </div>
 
 <!-- DEADLINE MODAL -->
@@ -2933,6 +3060,7 @@ async function doSignOut() {
   authWrap.style.display = 'flex';
   authWrap.classList.add('ready');
   authWrap.classList.remove('out');
+  document.body.classList.add('auth-visible');
   document.getElementById('in-email').value = '';
   document.getElementById('in-pass').value = '';
   document.getElementById('auth-err').style.display = 'none';
@@ -2940,6 +3068,7 @@ async function doSignOut() {
 }
 async function onAuthSuccess() {
   document.getElementById('auth-wrap').classList.add('out');
+  document.body.classList.remove('auth-visible');
   setTimeout(() => document.getElementById('auth-wrap').style.display = 'none', 400);
   await loadProfile();
 }
@@ -3085,6 +3214,8 @@ function launchApp() {
   document.getElementById('app').style.display = 'block';
   document.getElementById('gv3-sb').style.display = 'flex';
   document.getElementById('ai-bubble').style.display = 'flex';
+  document.getElementById('gv3-mob-btn').style.display = '';
+  document.getElementById('gv3-mob-overlay').style.display = '';
   setTimeout(function(){ if(typeof abmStartListener==='function') abmStartListener(); if(typeof abmInitLink==='function') abmInitLink(); }, 500);
   const name = (profile.full_name||'').split(' ')[0] || 'Student';
   document.getElementById('uav').textContent = (profile.full_name||'?')[0].toUpperCase();
@@ -3198,6 +3329,11 @@ function updateStats() {
   document.getElementById('ds-credits-sub').textContent = policies.goalCredits ? `of ${policies.goalCredits} target` : 'total';
   renderGoalRing(cumGPA, totalCR);
   renderRiskCenter();
+  // Update goal sim header
+  try {
+    var gcEl = document.getElementById('goal-cur-gpa');
+    if (gcEl) gcEl.textContent = cumGPA.toFixed(2);
+  } catch(e){}
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -4951,7 +5087,7 @@ function showTab(id) {
   }
 
   if (id === 'history') { renderHistory(); buildSemTrendChart(); }
-  if (id === 'whatif') renderWIFull();
+  if (id === 'whatif') { renderWIFull(); try { renderTimeMachine(); } catch(e){} }
   if (id === 'study') { renderStudy(); renderCalendar(); }
   if (id === 'courses') renderCourses();
   if (id === 'dashboard') { renderDashboard(); updateStats(); }
@@ -4959,7 +5095,16 @@ function showTab(id) {
   if (id === 'policies') renderPoliciesUI();
   if (id === 'simulator') renderSimulator();
   if (id === 'analytics') renderAnalytics();
-  if (id === 'planner') { renderDeadlines(); renderStreakGrid(); renderPomoCoursePicker(); renderMoodChart(); renderNotesCourseList(); }
+  if (id === 'planner') {
+    renderDeadlines(); renderStreakGrid(); renderPomoCoursePicker(); renderMoodChart(); renderNotesCourseList();
+    const pill = document.getElementById('dl-float-btn');
+    if(pill){ pill.style.display = 'flex'; }
+    updateDeadlineBadge();
+  } else {
+    const pill = document.getElementById('dl-float-btn');
+    if(pill){ pill.style.display = 'none'; }
+    closeDeadlinePanel();
+  }
   if (id === 'achievements') renderAchievements();
   if (id === 'degree') renderDegree();
   if (id === 'canvas') ciInitTab();
@@ -5057,7 +5202,7 @@ function initAnimations() {
     document.body.classList.add('reduced-motion');
     const btn = document.getElementById('motionBtn'); if (btn) btn.style.opacity = '.4';
   }
-  if (!initSupabase()) { document.getElementById('auth-wrap').classList.add('ready'); return; }
+  if (!initSupabase()) { document.getElementById('auth-wrap').classList.add('ready'); document.body.classList.add('auth-visible'); return; }
   const { data: { session } } = await sb.auth.getSession();
   if (session) {
     // User is already logged in — don't show auth at all
@@ -5066,6 +5211,7 @@ function initAnimations() {
   } else {
     // No session — show the sign-in page
     document.getElementById('auth-wrap').classList.add('ready');
+    document.body.classList.add('auth-visible');
   }
   sb.auth.onAuthStateChange(async (event, session) => {
     if (event === 'SIGNED_IN' && session && !currentUser) { currentUser = session.user; await onAuthSuccess(); }
@@ -5302,32 +5448,7 @@ function renderSimulator(){
   document.getElementById('sim-no-data').style.display=hasRem?'none':'block';
   document.getElementById('sim-content').style.display=hasRem?'block':'none';
   if(!hasRem) return;
-  // Scenarios
-  const scenarios=[
-    {id:'sim-s0-gpa',score:50,label:'All remaining = 50%'},
-    {id:'sim-s1-gpa',score:75,label:'All remaining = 75%'},
-    {id:'sim-s2-gpa',score:95,label:'All remaining = 95%'},
-  ];
-  scenarios.forEach(sc=>{
-    const map=buildScoreMap(sc.score);
-    const gpa=simGPAWithScores(map);
-    document.getElementById(sc.id).textContent=gpa.toFixed(2);
-    document.getElementById(sc.id).style.color=gpa>=3.5?'var(--green)':gpa>=2.5?'var(--accent)':'var(--red)';
-  });
-  // Custom sliders
-  const sliderWrap=document.getElementById('sim-sliders');
-  const simCourses=courses.filter(c=>getRemExams(c).length>0);
-  sliderWrap.innerHTML=simCourses.map(c=>`
-    <div style="margin-bottom:14px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:14px">
-      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
-        <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:13px">${c.name}</div>
-        <div style="font-size:13px;color:var(--accent);font-weight:700" id="sim-score-${c.id}">75%</div>
-      </div>
-      <input type="range" min="0" max="100" value="75" oninput="updateSimScore('${c.id}',this.value)"
-        style="width:100%"/>
-      <div class="slider-labels"><span>0%</span><span>50%</span><span>100%</span></div>
-    </div>`).join('');
-  updateCustomScenario();
+  // Scenarios & sliders removed — render safe zone + target grade only
   renderSafeZone();
   renderMinCalc();
 }
@@ -5605,11 +5726,38 @@ function renderAnalytics(){
 }
 
 // ─── DEADLINES ────────────────────────────────────────────
+function toggleDeadlinePanel(){
+  const panel = document.getElementById('dl-slide-panel');
+  const overlay = document.getElementById('dl-slide-overlay');
+  if(panel.classList.contains('open')){ closeDeadlinePanel(); return; }
+  panel.classList.add('open');
+  overlay.style.display = 'block';
+  setTimeout(()=>{ overlay.style.opacity='1'; }, 10);
+  renderDeadlines();
+}
+function closeDeadlinePanel(){
+  const panel = document.getElementById('dl-slide-panel');
+  const overlay = document.getElementById('dl-slide-overlay');
+  panel.classList.remove('open');
+  overlay.style.opacity = '0';
+  setTimeout(()=>{ overlay.style.display='none'; }, 300);
+}
+function updateDeadlineBadge(){
+  const dls = getDeadlines();
+  const now = new Date();
+  const pending = dls.filter(d => !d.done).length;
+  const overdue = dls.filter(d => !d.done && d.date && new Date(d.date) < now).length;
+  const badge = document.getElementById('dl-count-badge');
+  if(badge){
+    badge.textContent = pending;
+    badge.style.background = overdue > 0 ? 'var(--red)' : 'var(--accent)';
+    badge.style.display = pending === 0 ? 'none' : 'flex';
+  }
+}
 let deadlineFilter='all';
 function getDeadlines(){ return getNS(userKey('gradintel_deadlines'),[]); }
 function saveDeadlines(dls){ setNS(userKey('gradintel_deadlines'),dls); }
 function openAddDeadlineModal(){
-  // populate course select
   const sel=document.getElementById('dl-course');
   sel.innerHTML='<option value="">— None —</option>';
   semesters.forEach(sem=>sem.subjects.forEach(s=>{
@@ -5635,17 +5783,14 @@ function saveDeadline(){
   });
   saveDeadlines(dls);
   document.getElementById('deadline-modal').classList.remove('show');
-  renderDeadlines(); checkBadges(); unlockBadge('deadlines_1');
+  renderDeadlines(); updateDeadlineBadge(); checkBadges(); unlockBadge('deadlines_1');
   addXP(5,'Added deadline');
   showToast('📌 Deadline saved!');
 }
 function importDeadlinesFromCanvas(){
-  // Show the status banner and start listening
   const statusEl = document.getElementById('dl-canvas-status');
   if(statusEl) statusEl.style.display = 'block';
   showToast('📡 Go to Canvas → click your Gradintel bookmarklet to sync deadlines!');
-  // The actual handling is done by the realtime listener in the bottom script
-  // ciStartListener may not be running if canvas tab hasn't been opened — start it
   if(typeof ciStartListener === 'function') ciStartListener();
 }
 
@@ -5666,22 +5811,27 @@ function renderDeadlines(){
   dls.sort((a,b)=>new Date(a.date||0)-new Date(b.date||0));
   const el=document.getElementById('deadline-list');
   if(!el) return;
-  if(!dls.length){ el.innerHTML='<div style="color:var(--muted);font-size:13px;padding:12px 0">No deadlines yet. Click + Add Deadline!</div>'; return; }
+  updateDeadlineBadge();
+  if(!dls.length){
+    el.innerHTML='<div style="text-align:center;padding:32px 16px"><div style="font-size:28px;margin-bottom:10px">🎉</div><div style="font-size:13px;color:var(--muted)">No deadlines here!<br>Hit <strong>+ Add Deadline</strong> to get started.</div></div>';
+    return;
+  }
   el.innerHTML=dls.map(d=>{
     const due=d.date?new Date(d.date):null;
     const isOverdue=due&&due<now&&!d.done;
     const isSoon=due&&!isOverdue&&(due-now)<86400000*3;
     const cls=isOverdue?'overdue':isSoon?'due-soon':d.done?'done':'';
-    const urgency=d.done?'<span style="color:var(--green);font-weight:700">Done ✓</span>':isOverdue?`<span style="color:var(--red);font-weight:700">Overdue</span>`:due?`<span style="color:${isSoon?'var(--yellow)':'var(--muted)'}">${Math.ceil((due-now)/86400000)}d left</span>`:'';
+    const dotColor=d.done?'var(--muted)':isOverdue?'var(--red)':isSoon?'var(--yellow)':'var(--accent)';
+    const urgency=d.done?'✓ Done':isOverdue?'Overdue':due?Math.ceil((due-now)/86400000)+'d left':'';
+    const urgencyColor=d.done?'var(--green)':isOverdue?'var(--red)':isSoon?'var(--yellow)':'var(--muted)';
     const courseName=d.course?semesters.flatMap(s=>s.subjects).find(s=>s.id===d.course)?.name||'':'';
-    return `<div class="deadline-item ${cls}">
-      <div class="dl-ico">${typeIco[d.type]||'📌'}</div>
-      <div class="dl-info">
-        <div class="dl-title-text" style="${d.done?'text-decoration:line-through':''}">${d.title}${d.weight?` <span style="font-size:10px;color:var(--accent);background:rgba(129,140,248,.12);padding:1px 6px;border-radius:4px">${d.weight}%</span>`:''}</div>
-        <div class="dl-meta">${courseName?courseName+' · ':''}${due?due.toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):'No date'}</div>
+    return `<div class="dl-notif ${cls}">
+      <div class="dl-notif-dot" style="background:${dotColor}"></div>
+      <div class="dl-notif-body">
+        <div class="dl-notif-title" style="${d.done?'text-decoration:line-through;color:var(--muted)':''}">${typeIco[d.type]||'📌'} ${d.title}${d.weight?` <span style="font-size:10px;color:var(--accent);background:rgba(129,140,248,.12);padding:1px 5px;border-radius:4px;font-weight:700">${d.weight}%</span>`:''}</div>
+        <div class="dl-notif-meta">${courseName?courseName+' · ':''}${due?due.toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):'No date set'} <span style="color:${urgencyColor};font-weight:700;margin-left:4px">${urgency}</span></div>
       </div>
-      <div class="dl-urgency">${urgency}</div>
-      <div class="dl-actions">
+      <div class="dl-notif-actions">
         <button class="ca-btn" onclick="toggleDeadlineDone('${d.id}')" title="Toggle done" style="${d.done?'color:var(--muted)':'color:var(--green)'}">✓</button>
         <button class="ca-btn" onclick="deleteDeadline('${d.id}')" title="Delete" style="color:var(--red)">🗑</button>
       </div>
@@ -5694,12 +5844,12 @@ function toggleDeadlineDone(id){
   dl.done=!dl.done;
   saveDeadlines(dls);
   if(dl.done){ addXP(10,'Completed deadline'); checkBadges(); }
-  renderDeadlines();
+  renderDeadlines(); updateDeadlineBadge();
   showToast(dl.done?'✅ Deadline done!':'↩️ Marked undone');
 }
 function deleteDeadline(id){
   const dls=getDeadlines().filter(d=>d.id!==id);
-  saveDeadlines(dls); renderDeadlines(); showToast('🗑 Deadline removed');
+  saveDeadlines(dls); renderDeadlines(); updateDeadlineBadge(); showToast('🗑 Deadline removed');
 }
 
 // ─── POMODORO ─────────────────────────────────────────────
@@ -7376,6 +7526,45 @@ function ciClearBmPreview() {
 
 </div><!-- /gv3-main -->
 
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- PANIC MODE MODAL — lives outside app so tab-switching can't hide it -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="panic-modal" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.88);align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(8px);cursor:auto">
+  <div id="panic-modal-box" style="background:#1a0505;border:2px solid #ef4444;border-radius:24px;padding:32px;max-width:780px;width:100%;max-height:88vh;overflow-y:auto;position:relative;box-shadow:0 0 80px rgba(239,68,68,0.5),0 0 160px rgba(239,68,68,0.2);cursor:auto">
+    <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#ef4444,#dc2626,#b91c1c,#ef4444);border-radius:24px 24px 0 0;animation:panicBar 1.5s linear infinite;background-size:200% 100%"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">
+      <div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+          <span style="font-size:28px;animation:panicPulse 0.8s ease-in-out infinite">🚨</span>
+          <span style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:24px;color:#ef4444">PANIC MODE</span>
+        </div>
+        <div style="font-size:12px;color:#f87171;letter-spacing:.12em;text-transform:uppercase;font-family:'Space Mono',monospace">What you need to score — for every grade — on upcoming exams</div>
+      </div>
+      <button onclick="deactivatePanicMode()" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);border-radius:12px;color:#ef4444;cursor:pointer;font-size:14px;font-weight:700;padding:8px 18px;font-family:'Cabinet Grotesk',sans-serif;transition:all 0.2s" onmouseover="this.style.background='rgba(239,68,68,0.3)'" onmouseout="this.style.background='rgba(239,68,68,0.15)'">✕ Exit Panic</button>
+    </div>
+    <div id="panic-modal-content">
+      <div style="color:#f87171;font-size:13px;text-align:center;padding:20px">Loading your exam data...</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SHARE CARD MODAL — lives outside app so it always shows -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="share-card-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.6);align-items:center;justify-content:center;padding:20px;cursor:auto">
+  <div style="background:var(--surface);border-radius:20px;padding:28px;max-width:380px;width:100%;position:relative;cursor:auto">
+    <button onclick="document.getElementById('share-card-modal').style.display='none'" style="position:absolute;top:14px;right:14px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px">✕</button>
+    <div id="share-card-inner" style="background:linear-gradient(135deg,#1e1b4b,#312e81);border-radius:16px;padding:28px;color:#fff;text-align:center;margin-bottom:16px">
+      <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:13px;letter-spacing:.15em;text-transform:uppercase;opacity:.7;margin-bottom:8px">GRADINTEL</div>
+      <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:52px;margin-bottom:4px" id="sc-gpa">—</div>
+      <div style="font-size:12px;opacity:.7;margin-bottom:20px" id="sc-semester">Cumulative GPA</div>
+      <div id="sc-courses" style="text-align:left;font-size:12px;line-height:1.8;opacity:.9"></div>
+      <div style="margin-top:18px;font-size:10px;opacity:.5;letter-spacing:.1em">gradintel.anshulraman.com</div>
+    </div>
+    <button onclick="copyShareCard()" class="btn btn-primary" style="width:100%">📋 Copy as Image</button>
+  </div>
+</div>
+
 <div id="gv3-theme-panel">
   <div class="gv3-panel-title">🎨 Choose Theme</div>
   <div class="gv3-theme-grid">
@@ -8446,14 +8635,18 @@ function abmHandleData(data) {
   }
 
   var imported = 0;
-  var dls = getDeadlines();
-  var existingKeys = new Set(dls.map(function(d) { return (d.title||d.name) + '|' + d.due; }));
+  var skipped  = 0;
+  var dls      = getDeadlines();
+  var existingKeys = new Set(dls.map(function(d) { return (d.title||'').toLowerCase().trim() + '|' + (d.date||'').slice(0,10); }));
 
   data.deadlines.forEach(function(a) {
-    var title  = a.name || 'Assignment';
+    var title  = (a.title || a.name || '').trim();
+    if (!title) return;
     var dueRaw = a.due || a.due_at || null;
-    var key    = title + '|' + dueRaw;
-    if (existingKeys.has(key)) return;
+    var dateStr = '';
+    if (dueRaw) { try { dateStr = new Date(dueRaw).toISOString().slice(0,16); } catch(e){} }
+    var key = title.toLowerCase() + '|' + dateStr.slice(0,10);
+    if (existingKeys.has(key)) { skipped++; return; }
 
     // Try to match canvas course name to a subject
     var subId = '';
@@ -8477,7 +8670,7 @@ function abmHandleData(data) {
     dls.push({
       id:      'dl_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
       title:   title,
-      date:    dueRaw ? new Date(dueRaw).toISOString().slice(0,16) : '',
+      date:    dateStr,
       course:  subId,
       weight:  a.points ? Math.min(20, Math.round(a.points / 10)) : 0,
       type:    type,
@@ -8495,7 +8688,9 @@ function abmHandleData(data) {
   var panel = document.getElementById('dl-canvas-status');
   if (panel) panel.style.display = 'none';
 
-  showToast('📅 Imported ' + imported + ' assignment(s) from Canvas!');
+  var msg = '📅 Imported ' + imported + ' assignment(s) from Canvas!';
+  if (skipped > 0) msg += ' (' + skipped + ' already added)';
+  showToast(msg);
 }
 
 // abmStartListener is called from launchApp() after auth
@@ -8511,6 +8706,516 @@ function abmCopyCode() {
     showToast('Bookmarklet code copied!');
   }
 }
+
+
+/* ═══════════════════════════════════════════════════════════
+   NEW FEATURES: GPA Goal Sim, Finals Survival, Panic Mode, Share Card
+═══════════════════════════════════════════════════════════ */
+
+// ── GPA Goal Simulator ─────────────────────────────────────────
+function runGoalSim() {
+  var target  = parseFloat(document.getElementById('gs-target').value) || 0;
+  var done    = parseFloat(document.getElementById('gs-done').value);
+  var rem     = parseFloat(document.getElementById('gs-rem').value);
+  var res     = document.getElementById('gs-result');
+
+  // Update header
+  var curGPA = computeAllGPA ? (computeAllGPA().cumGPA || 0) : 0;
+  var el = document.getElementById('goal-cur-gpa');
+  if (el) el.textContent = curGPA.toFixed(2);
+  var td = document.getElementById('goal-target-disp');
+  if (td) td.textContent = target ? target.toFixed(2) : '—';
+  var gd = document.getElementById('goal-gap-disp');
+  if (gd) {
+    var gap = target - curGPA;
+    gd.textContent = (gap >= 0 ? '+' : '') + gap.toFixed(2);
+    gd.style.color = gap <= 0 ? 'var(--green)' : 'var(--yellow)';
+  }
+
+  if (!target || isNaN(done) || isNaN(rem) || rem <= 0) { res.style.display = 'none'; return; }
+  res.style.display = '';
+
+  // Required avg GPA in remaining credits
+  // target = (curGPA * done + reqAvg * rem) / (done + rem)
+  var reqAvg = (target * (done + rem) - curGPA * done) / rem;
+
+  var scale = GPA[0] ? GPA : [{l:'A',p:4.0},{l:'B',p:3.0},{l:'C',p:2.0},{l:'F',p:0}];
+  var maxP  = scale[0].p;
+
+  var verdict = document.getElementById('gs-verdict');
+  if (reqAvg > maxP) {
+    verdict.style.background = 'rgba(239,68,68,.12)';
+    verdict.style.color = 'var(--red)';
+    verdict.innerHTML = '⚠️ Not achievable — you\'d need a <strong>' + reqAvg.toFixed(2) + '</strong> average, which exceeds the ' + maxP.toFixed(1) + ' scale. Consider adjusting your goal or timeframe.';
+  } else if (reqAvg <= 0) {
+    verdict.style.background = 'rgba(52,211,153,.12)';
+    verdict.style.color = 'var(--green)';
+    verdict.innerHTML = '🎉 Already on track! Your current GPA of <strong>' + curGPA.toFixed(2) + '</strong> already meets or exceeds your goal.';
+  } else {
+    var pct = reqAvg / maxP * 100;
+    var diff = reqAvg - curGPA;
+    var color = pct < 70 ? 'rgba(52,211,153,.12)' : pct < 85 ? 'rgba(251,191,36,.12)' : 'rgba(239,68,68,.12)';
+    var tc = pct < 70 ? 'var(--green)' : pct < 85 ? 'var(--yellow)' : 'var(--red)';
+    verdict.style.background = color;
+    verdict.style.color = tc;
+    verdict.innerHTML = 'You need an average GPA of <strong>' + reqAvg.toFixed(2) + '</strong> across your remaining ' + rem + ' credits. That\'s ' + (diff > 0 ? '<strong>+' + diff.toFixed(2) + '</strong> above' : '<strong>' + diff.toFixed(2) + '</strong> below') + ' your current average.';
+  }
+
+  // Scenarios table
+  var scenarios = [
+    { label: '🏆 All A\'s', gpa: maxP },
+    { label: '📈 Mostly A\'s', gpa: maxP * 0.925 },
+    { label: '📊 A/B Mix', gpa: maxP * 0.85 },
+    { label: '📉 Mostly B\'s', gpa: maxP * 0.75 },
+    { label: '😰 B/C Mix', gpa: maxP * 0.65 },
+  ];
+  var scEl = document.getElementById('gs-scenarios');
+  scEl.innerHTML = scenarios.map(function(sc) {
+    var finalGPA = (curGPA * done + sc.gpa * rem) / (done + rem);
+    var hit = finalGPA >= target;
+    return '<div style="background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:12px;text-align:center">'
+      + '<div style="font-size:12px;font-weight:700;margin-bottom:6px">' + sc.label + '</div>'
+      + '<div style="font-family:\'Clash Display\',sans-serif;font-weight:700;font-size:22px;color:' + (hit ? 'var(--green)' : 'var(--red)') + '">' + finalGPA.toFixed(2) + '</div>'
+      + '<div style="font-size:10px;margin-top:4px;color:' + (hit ? 'var(--green)' : 'var(--red)') + '">' + (hit ? '✓ Reaches goal' : '✗ Below goal') + '</div>'
+      + '</div>';
+  }).join('');
+}
+
+// ── Finals Survival Plan ─────────────────────────────────────
+function runFinalsSurvival() {
+  var el = document.getElementById('fsp-content');
+  var courses = [];
+  (semesters || []).forEach(function(sem) {
+    (sem.subjects || []).forEach(function(s) {
+      var r = computeSubject(s);
+      if (!r.remExams.length) return;
+      // Calculate what score is needed on remaining exams for each grade
+      var targets = r.targets || [];
+      var bTarget = targets.find(function(t) { return t.l === 'B'; });
+      var aTarget = targets.find(function(t) { return t.l === 'A'; });
+      courses.push({
+        name:    s.name,
+        cur:     r.cur,
+        curG:    r.curG,
+        remExams: r.remExams,
+        remFrac: r.remFrac,
+        needForB: bTarget ? bTarget.avg : null,
+        needForA: aTarget ? aTarget.avg : null,
+      });
+    });
+  });
+
+  if (!courses.length) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:13px">No courses with remaining exams found. Add courses and mark upcoming exams as not yet taken.</div>';
+    return;
+  }
+
+  // Sort by urgency: lowest current grade first
+  courses.sort(function(a, b) { return a.cur - b.cur; });
+
+  // Allocate study hours proportionally to how much grade improvement is possible
+  var totalStudyHours = 20;
+  var weights = courses.map(function(c) { return Math.max(1, 100 - c.cur); });
+  var totalW  = weights.reduce(function(a,b){return a+b;}, 0);
+
+  el.innerHTML = courses.map(function(c, i) {
+    var hrs  = Math.round(weights[i] / totalW * totalStudyHours);
+    var urgency = c.cur < 70 ? '🔴 Critical' : c.cur < 80 ? '🟡 At Risk' : '🟢 On Track';
+    var urgColor = c.cur < 70 ? 'var(--red)' : c.cur < 80 ? 'var(--yellow)' : 'var(--green)';
+    var needB = c.needForB !== null ? (c.needForB > 100 ? '⚠️ Not possible' : c.needForB < 0 ? '✅ Already secured' : Math.round(c.needForB) + '%') : '—';
+    var needA = c.needForA !== null ? (c.needForA > 100 ? '⚠️ Not possible' : c.needForA < 0 ? '✅ Already secured' : Math.round(c.needForA) + '%') : '—';
+    return '<div style="background:var(--surface2);border:1px solid var(--border2);border-radius:12px;padding:16px;margin-bottom:10px">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
+        + '<div style="font-weight:700;font-size:14px">' + c.name + '</div>'
+        + '<div style="font-size:12px;font-weight:700;color:' + urgColor + '">' + urgency + '</div>'
+      + '</div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;font-size:12px">'
+        + '<div style="text-align:center"><div style="color:var(--muted);margin-bottom:2px">Current</div><div style="font-weight:700">' + Math.round(c.cur) + '% (' + c.curG.l + ')</div></div>'
+        + '<div style="text-align:center"><div style="color:var(--muted);margin-bottom:2px">Need for B</div><div style="font-weight:700">' + needB + '</div></div>'
+        + '<div style="text-align:center"><div style="color:var(--muted);margin-bottom:2px">Need for A</div><div style="font-weight:700">' + needA + '</div></div>'
+        + '<div style="text-align:center;background:rgba(129,140,248,.1);border-radius:8px;padding:4px"><div style="color:var(--accent);margin-bottom:2px;font-weight:700">Study</div><div style="font-weight:700;color:var(--accent)">' + hrs + 'h</div></div>'
+      + '</div>'
+      + (i === 0 ? '<div style="margin-top:8px;font-size:11px;color:var(--accent);font-weight:600">👆 Focus here first — most impact on your GPA</div>' : '')
+    + '</div>';
+  }).join('');
+}
+
+// ── Panic Mode ────────────────────────────────────────────────
+var _panicActive = false;
+
+function activatePanicMode() {
+  _panicActive = true;
+
+  // Apply red theme to body
+  document.body.classList.add('panic-mode');
+
+  // Shake animation
+  document.body.style.animation = 'panicShake 0.5s ease both';
+  setTimeout(function(){ document.body.style.animation = ''; }, 500);
+
+  // Show modal — use flex so it actually appears
+  var modal = document.getElementById('panic-modal');
+  modal.style.display = 'flex';
+  modal.style.animation = 'panicFadeIn 0.3s ease both';
+
+  // Restore cursor inside modal area (body has cursor:none)
+  document.body.style.cursor = 'auto';
+
+  // Render content
+  renderPanicModalContent();
+}
+
+function deactivatePanicMode() {
+  _panicActive = false;
+  document.body.classList.remove('panic-mode');
+  document.body.style.cursor = '';  // restore custom cursor:none from CSS
+  var modal = document.getElementById('panic-modal');
+  modal.style.display = 'none';
+}
+
+function renderPanicModalContent() {
+  var el = document.getElementById('panic-modal-content');
+  var courses = [];
+
+  (semesters || []).forEach(function(sem) {
+    (sem.subjects || []).forEach(function(s) {
+      var r = computeSubject(s);
+      if (!r.remExams || !r.remExams.length) return; // skip fully-done courses
+
+      // Collect all grade targets
+      var gradeMap = {};
+      (r.targets || []).forEach(function(t) { gradeMap[t.l] = t.avg; });
+
+      courses.push({
+        name:     s.name,
+        cur:      r.cur,
+        curG:     r.curG,
+        remExams: r.remExams,
+        grades:   gradeMap,
+      });
+    });
+  });
+
+  // Also add courses with no remaining exams as a "locked" row
+  var lockedCourses = [];
+  (semesters || []).forEach(function(sem) {
+    (sem.subjects || []).forEach(function(s) {
+      var r = computeSubject(s);
+      if (!r.remExams || r.remExams.length === 0) {
+        lockedCourses.push({ name: s.name, curG: r.curG, cur: r.cur });
+      }
+    });
+  });
+
+  if (!courses.length && !lockedCourses.length) {
+    el.innerHTML = '<div style="color:#f87171;font-size:14px;text-align:center;padding:24px">No courses found. Add some courses and exams first!</div>';
+    return;
+  }
+
+  var gradeOrder = ['A','A-','B+','B','B-','C+','C','C-','D+','D','D-'];
+  var gradeColors = {
+    'A':'#34d399','A-':'#6ee7b7',
+    'B+':'#60a5fa','B':'#60a5fa','B-':'#93c5fd',
+    'C+':'#fbbf24','C':'#fbbf24','C-':'#fde68a',
+    'D+':'#f87171','D':'#f87171','D-':'#fca5a5'
+  };
+
+  function fmtScore(val) {
+    if (val === undefined || val === null) return '<span style="color:#6b7280">—</span>';
+    if (val < 0) return '<span style="color:#34d399;font-weight:700">✓ Already secured</span>';
+    if (val > 100) return '<span style="color:#f87171;font-weight:700">✗ Impossible</span>';
+    var col = val > 90 ? '#f87171' : val > 75 ? '#fbbf24' : '#34d399';
+    return '<span style="color:' + col + ';font-weight:800;font-size:15px">' + Math.ceil(val) + '%</span>';
+  }
+
+  var html = '';
+
+  if (courses.length) {
+    html += '<div style="margin-bottom:20px">';
+    html += '<div style="font-family:\'Space Mono\',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:#f87171;margin-bottom:12px">Courses With Remaining Exams</div>';
+
+    courses.forEach(function(c) {
+      var relevantGrades = gradeOrder.filter(function(g) { return c.grades[g] !== undefined; });
+      if (!relevantGrades.length) relevantGrades = gradeOrder;
+
+      html += '<div style="background:#200808;border:1px solid rgba(239,68,68,0.35);border-radius:16px;padding:20px;margin-bottom:14px">';
+
+      // Course header
+      html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">';
+      html += '<div style="font-family:\'Clash Display\',sans-serif;font-weight:700;font-size:17px;color:#fff">' + c.name + '</div>';
+      html += '<div style="display:flex;align-items:center;gap:10px">';
+      html += '<div style="font-size:12px;color:#9ca3af">Current: <strong style="color:#f1f0ff">' + Math.round(c.cur) + '% (' + c.curG.l + ')</strong></div>';
+      html += '<div style="font-size:11px;color:#f87171;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);border-radius:100px;padding:3px 10px;">' + c.remExams.length + ' exam' + (c.remExams.length > 1 ? 's' : '') + ' left</div>';
+      html += '</div></div>';
+
+      // Grade grid
+      html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px">';
+      relevantGrades.forEach(function(g) {
+        var val = c.grades[g];
+        var col = gradeColors[g] || '#9ca3af';
+        html += '<div style="background:rgba(0,0,0,0.4);border:1px solid rgba(239,68,68,0.2);border-radius:10px;padding:10px 6px;text-align:center">';
+        html += '<div style="font-family:\'Clash Display\',sans-serif;font-weight:800;font-size:16px;color:' + col + ';margin-bottom:4px">' + g + '</div>';
+        html += '<div style="font-size:11px;color:#9ca3af;margin-bottom:2px">avg needed</div>';
+        html += '<div style="font-size:13px">' + fmtScore(val) + '</div>';
+        html += '</div>';
+      });
+      html += '</div>'; // end grade grid
+
+      // Show remaining exams
+      if (c.remExams.length > 0) {
+        html += '<div style="margin-top:12px;font-size:11px;color:#9ca3af">';
+        html += '<span style="color:#f87171;font-weight:700">Upcoming: </span>';
+        html += c.remExams.map(function(e) {
+          return '<span style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:2px 8px;margin-right:4px;display:inline-block">' + e.name + ' (' + e.weight + '%)</span>';
+        }).join('');
+        html += '</div>';
+      }
+
+      html += '</div>'; // end course card
+    });
+
+    html += '</div>';
+  }
+
+  if (lockedCourses.length) {
+    html += '<div>';
+    html += '<div style="font-family:\'Space Mono\',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:#6b7280;margin-bottom:10px">Grade Locked (No Exams Remaining)</div>';
+    html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px">';
+    lockedCourses.forEach(function(c) {
+      html += '<div style="background:#150303;border:1px solid rgba(239,68,68,0.15);border-radius:12px;padding:12px;display:flex;align-items:center;justify-content:space-between">';
+      html += '<div style="font-size:13px;color:#9ca3af;font-weight:600">' + c.name + '</div>';
+      html += '<div style="font-family:\'Clash Display\',sans-serif;font-weight:800;font-size:16px;color:#34d399">✓ ' + c.curG.l + '</div>';
+      html += '</div>';
+    });
+    html += '</div></div>';
+  }
+
+  el.innerHTML = html;
+}
+
+// Legacy kept for compatibility
+function runPanicMode() { activatePanicMode(); }
+
+// ── Shareable GPA Card ─────────────────────────────────────────
+function openShareCard() {
+  var modal = document.getElementById('share-card-modal');
+  if (!modal) return;
+  modal.style.display = 'flex';
+
+  var allGPA = computeAllGPA ? computeAllGPA() : null;
+  var curSem = semesters && semesters.length ? semesters[semesters.length-1] : null;
+
+  document.getElementById('sc-gpa').textContent = allGPA ? (allGPA.cumGPA||0).toFixed(2) : '—';
+  document.getElementById('sc-semester').textContent = curSem ? (curSem.name || 'Current Semester') : 'Cumulative GPA';
+
+  if (curSem) {
+    var lines = (curSem.subjects || []).map(function(s) {
+      var r = computeSubject(s);
+      return '<div>' + r.curG.l + '&nbsp;&nbsp;' + s.name + '</div>';
+    }).join('');
+    document.getElementById('sc-courses').innerHTML = lines;
+  }
+}
+
+function copyShareCard() {
+  showToast('📸 Screenshot this card and share it!');
+}
+
+// ── Smart Study Plan ─────────────────────────────────────────
+function generateSmartStudyPlan() {
+  var btn = document.getElementById('ssp-btn');
+  var out = document.getElementById('ssp-output');
+  if (!btn || !out) return;
+
+  btn.disabled = true;
+  btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation:spin 1s linear infinite"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> Generating...';
+
+  // Collect all subjects across semesters
+  var courses = [];
+  (semesters || []).forEach(function(sem) {
+    (sem.subjects || []).forEach(function(s) {
+      var r = computeSubject(s);
+      var gradeMap = {};
+      (r.targets || []).forEach(function(t) { gradeMap[t.l] = t.avg; });
+
+      var status, urgency, color, emoji;
+      var hasRem = r.remExams && r.remExams.length > 0;
+
+      if (!hasRem) {
+        status = 'locked';
+        urgency = 0;
+        emoji = '✅';
+        color = '#34d399';
+      } else {
+        var needA = gradeMap['A'];
+        var needB = gradeMap['B'];
+        var needC = gradeMap['C'];
+        var needD = gradeMap['D'];
+
+        if (needD !== undefined && needD > 100) {
+          status = 'critical'; urgency = 100; emoji = '🔴'; color = '#ef4444';
+        } else if (needC !== undefined && needC > 100) {
+          status = 'danger'; urgency = 85; emoji = '🟠'; color = '#f97316';
+        } else if (needB !== undefined && needB > 100) {
+          status = 'tough'; urgency = 60; emoji = '🟡'; color = '#fbbf24';
+        } else if (needA !== undefined && needA > 100) {
+          status = 'recoverable'; urgency = 35; emoji = '🔵'; color = '#60a5fa';
+        } else {
+          status = 'good'; urgency = 10; emoji = '🟢'; color = '#34d399';
+        }
+      }
+
+      courses.push({
+        name: s.name,
+        credits: s.credits || 3,
+        cur: r.cur,
+        curG: r.curG,
+        remExams: r.remExams || [],
+        grades: gradeMap,
+        status: status,
+        urgency: urgency,
+        emoji: emoji,
+        color: color,
+        hasRem: hasRem,
+        semName: sem.name,
+      });
+    });
+  });
+
+  if (!courses.length) {
+    out.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:16px;text-align:center">No courses found. Add some subjects first!</div>';
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Generate My Study Plan';
+    return;
+  }
+
+  // Sort by urgency desc
+  courses.sort(function(a, b) { return b.urgency - a.urgency; });
+
+  var activeCourses = courses.filter(function(c) { return c.hasRem; });
+  var lockedCourses = courses.filter(function(c) { return !c.hasRem; });
+
+  function fmtNeeded(val, grade) {
+    if (val === undefined || val === null) return null;
+    if (val <= 0) return '<span style="color:#34d399;font-weight:700">✓ Already secured</span>';
+    if (val > 100) return '<span style="color:#f87171;font-weight:700">✗ Not achievable</span>';
+    var col = val >= 90 ? '#f87171' : val >= 75 ? '#fbbf24' : '#34d399';
+    return 'need <strong style="color:' + col + '">' + Math.ceil(val) + '%</strong> for ' + grade;
+  }
+
+  var html = '';
+
+  // Header summary
+  var critCount = activeCourses.filter(function(c){ return c.status==='critical'||c.status==='danger'; }).length;
+  var goodCount = activeCourses.filter(function(c){ return c.status==='good'; }).length;
+
+  html += '<div style="background:rgba(129,140,248,0.06);border:1px solid rgba(129,140,248,0.2);border-radius:14px;padding:16px 20px;margin-bottom:20px">';
+  html += '<div style="font-family:\'Clash Display\',sans-serif;font-weight:700;font-size:15px;margin-bottom:8px;color:var(--text)">📋 Your Study Situation</div>';
+  html += '<div style="font-size:13px;color:var(--muted2);line-height:1.8">';
+  html += 'You have <strong style="color:var(--text)">' + activeCourses.length + ' course' + (activeCourses.length!==1?'s':'') + '</strong> with upcoming exams. ';
+  if (critCount > 0) {
+    html += '<strong style="color:#ef4444">' + critCount + ' need urgent attention.</strong> ';
+  }
+  if (goodCount > 0) {
+    html += goodCount + ' are in good shape — focus your energy elsewhere.';
+  }
+  html += '</div></div>';
+
+  // Priority list
+  if (activeCourses.length > 0) {
+    html += '<div style="font-family:\'Space Mono\',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:12px">Study Priority Order</div>';
+
+    activeCourses.forEach(function(c, i) {
+      var needA = fmtNeeded(c.grades['A'], 'A');
+      var needB = fmtNeeded(c.grades['B'], 'B');
+      var needC = fmtNeeded(c.grades['C'], 'C');
+      var needD = fmtNeeded(c.grades['D'], 'D (pass)');
+
+      // Verdict sentence
+      var verdict = '';
+      if (c.status === 'critical') {
+        verdict = 'Passing this course is at risk — every point counts right now.';
+      } else if (c.status === 'danger') {
+        verdict = 'A C is in jeopardy. Push hard on upcoming exams.';
+      } else if (c.status === 'tough') {
+        verdict = 'Still recoverable — a strong exam performance can pull this up.';
+      } else if (c.status === 'recoverable') {
+        verdict = 'Solid standing — an A is out of reach but B or higher is very achievable.';
+      } else {
+        verdict = 'You\'re in great shape here. Maintain momentum.';
+      }
+
+      html += '<div style="background:var(--surface2);border:1px solid var(--border2);border-radius:14px;padding:18px;margin-bottom:10px;border-left:3px solid ' + c.color + '">';
+      html += '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px">';
+      html += '<div>';
+      html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">';
+      html += '<span style="font-size:16px">' + c.emoji + '</span>';
+      html += '<span style="font-family:\'Clash Display\',sans-serif;font-weight:700;font-size:16px">' + c.name + '</span>';
+      html += '<span style="background:rgba(0,0,0,0.2);border-radius:100px;padding:2px 8px;font-size:10px;font-weight:700;color:' + c.color + '">' + c.status.toUpperCase() + '</span>';
+      html += '</div>';
+      html += '<div style="font-size:12px;color:var(--muted2)">' + verdict + '</div>';
+      html += '</div>';
+      html += '<div style="text-align:right;flex-shrink:0">';
+      html += '<div style="font-size:10px;color:var(--muted);margin-bottom:2px">Current</div>';
+      html += '<div style="font-family:\'Clash Display\',sans-serif;font-weight:800;font-size:20px;color:' + c.color + '">' + Math.round(c.cur) + '%</div>';
+      html += '<div style="font-size:11px;color:var(--muted)">' + c.curG.l + ' grade</div>';
+      html += '</div>';
+      html += '</div>';
+
+      // Grade targets row
+      html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:10px">';
+      [['A','#34d399'],['B','#60a5fa'],['C','#fbbf24'],['D','#f87171']].forEach(function(pair) {
+        var g = pair[0], col = pair[1];
+        var val = c.grades[g];
+        if (val === undefined) return;
+        var display;
+        if (val <= 0) display = '<span style="color:#34d399;font-size:12px;font-weight:700">✓ Already secured</span>';
+        else if (val > 100) display = '<span style="color:#f87171;font-size:12px;font-weight:700">✗ Not achievable</span>';
+        else display = '<span style="color:' + (val>=90?'#f87171':val>=75?'#fbbf24':'#34d399') + ';font-size:14px;font-weight:800">' + Math.ceil(val) + '%</span><span style="font-size:11px;color:var(--muted)"> avg needed</span>';
+        html += '<div style="background:var(--surface3);border-radius:10px;padding:8px 10px;text-align:center">';
+        html += '<div style="font-family:\'Clash Display\',sans-serif;font-weight:800;font-size:14px;color:' + col + ';margin-bottom:3px">' + g + '</div>';
+        html += '<div>' + display + '</div>';
+        html += '</div>';
+      });
+      html += '</div>';
+
+      // Upcoming exams
+      if (c.remExams.length > 0) {
+        html += '<div style="font-size:11px;color:var(--muted);margin-top:4px"><span style="color:var(--accent);font-weight:600">Upcoming: </span>';
+        html += c.remExams.map(function(e){
+          return '<span style="background:rgba(129,140,248,0.1);border:1px solid rgba(129,140,248,0.2);border-radius:6px;padding:2px 8px;margin-right:4px;display:inline-block">' + e.name + ' (' + e.weight + '%)</span>';
+        }).join('');
+        html += '</div>';
+      }
+
+      // Focus tip for #1 priority
+      if (i === 0 && c.status !== 'good') {
+        html += '<div style="margin-top:10px;padding:8px 12px;background:rgba(129,140,248,0.08);border-radius:8px;font-size:12px;color:var(--accent);font-weight:600">👆 Start here — this is your highest priority right now.</div>';
+      }
+
+      html += '</div>';
+    });
+  }
+
+  // Locked / done courses
+  if (lockedCourses.length > 0) {
+    html += '<div style="font-family:\'Space Mono\',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;margin-top:8px">Grade Locked — No Action Needed</div>';
+    html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px">';
+    lockedCourses.forEach(function(c) {
+      html += '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between">';
+      html += '<div style="font-size:13px;font-weight:600;color:var(--muted2)">' + c.name + '</div>';
+      html += '<div style="font-family:\'Clash Display\',sans-serif;font-weight:800;font-size:16px;color:#34d399">✓ ' + c.curG.l + '</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+
+  out.innerHTML = html;
+  btn.disabled = false;
+  btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Regenerate Plan';
+}
+
+// goal sim inits via showTab and updateStats hooks
 
 </script>
 </body>
