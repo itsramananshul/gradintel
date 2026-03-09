@@ -646,10 +646,6 @@ body.panic-mode #panic-btn { border-color: #ef4444 !important; background: rgba(
   .dash-stats{grid-template-columns:1fr 1fr}
   .mode-grid{grid-template-columns:1fr}
   .export-grid{grid-template-columns:1fr}
-  .topbar{flex-wrap:wrap;gap:8px;padding:14px 0 8px}
-  .topbar-r{flex-wrap:wrap;gap:6px;width:100%;justify-content:flex-end}
-  .user-pill{font-size:11px;padding:5px 10px 5px 7px}
-  .icon-btn{width:32px;height:32px;font-size:14px}
 }
 
 /* ══════════════════════════════
@@ -6912,7 +6908,11 @@ function ciPickCourseMatch(canvasCourseName) {
       });
     });
 
-    if (!options.length) { resolve(null); return; }
+    // Build semester options for the "create new subject" form
+    const semOpts = semesters.map(function(sem) {
+      return '<option value="' + sem.id + '">' + (sem.name || sem.id) + '</option>';
+    }).join('');
+    const hasSems = semesters.length > 0;
 
     // Build modal HTML
     const modalId = 'ci-match-modal';
@@ -6925,6 +6925,14 @@ function ciPickCourseMatch(canvasCourseName) {
       position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;
       background:rgba(0,0,0,.7);backdrop-filter:blur(8px);padding:20px;
     `;
+
+    const existingListHtml = options.length ? options.map(function(o, i) {
+      return '<div class="ci-match-opt" data-idx="' + i + '" onclick="ciPickOpt(' + i + ')"' +
+        ' style="padding:12px 16px;border-radius:10px;border:1px solid var(--border2);' +
+        'background:var(--surface2);cursor:pointer;transition:all .15s;font-size:14px;font-weight:600">' +
+        o.label + '</div>';
+    }).join('') : '<div style="font-size:13px;color:var(--muted);text-align:center;padding:14px 0">No existing subjects yet.</div>';
+
     modal.innerHTML = `
       <div style="background:var(--surface);border:1px solid var(--border2);border-radius:20px;
                   padding:32px;max-width:480px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,.6)">
@@ -6933,18 +6941,43 @@ function ciPickCourseMatch(canvasCourseName) {
         </div>
         <div style="font-size:13px;color:var(--muted2);margin-bottom:20px;line-height:1.6">
           Canvas sent grades for <strong style="color:var(--accent)">${canvasCourseName}</strong>.<br>
-          Which of your courses should these grades update?
+          Pick an existing subject or create a new one below.
         </div>
-        <div style="display:flex;flex-direction:column;gap:8px;max-height:280px;overflow-y:auto;margin-bottom:20px" id="ci-match-list">
-          ${options.map((o, i) => `
-            <div class="ci-match-opt" data-idx="${i}" onclick="ciPickOpt(${i})"
-              style="padding:12px 16px;border-radius:10px;border:1px solid var(--border2);
-                     background:var(--surface2);cursor:pointer;transition:all .15s;
-                     font-size:14px;font-weight:600">
-              ${o.label}
-            </div>
-          `).join('')}
+
+        <!-- CREATE NEW SUBJECT — always at top -->
+        <div id="ci-new-subj-toggle" onclick="ciToggleNewSubj()"
+          style="padding:12px 16px;border-radius:10px;border:2px dashed rgba(129,140,248,.45);
+                 background:rgba(129,140,248,.06);cursor:pointer;transition:all .15s;
+                 font-size:14px;font-weight:700;color:var(--accent);margin-bottom:12px;
+                 display:flex;align-items:center;gap:8px">
+          <span style="font-size:18px">➕</span> Create new subject for this course
         </div>
+        <div id="ci-new-subj-form" style="display:none;margin-bottom:16px;
+          background:var(--surface2);border:1px solid rgba(129,140,248,.3);
+          border-radius:12px;padding:16px">
+          <div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Subject name</div>
+          <input id="ci-new-subj-name" type="text" value="${canvasCourseName}"
+            style="width:100%;padding:9px 12px;background:var(--surface3);border:1px solid var(--border2);
+                   border-radius:8px;color:var(--text);font-family:'Cabinet Grotesk',sans-serif;
+                   font-size:14px;outline:none;margin-bottom:10px"/>
+          <div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Add to semester</div>
+          ${hasSems
+            ? '<select id="ci-new-subj-sem" style="width:100%;padding:9px 12px;background:var(--surface3);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:\'Cabinet Grotesk\',sans-serif;font-size:14px;outline:none;margin-bottom:10px">' + semOpts + '</select>'
+            : '<input id="ci-new-subj-sem-name" type="text" placeholder="New semester name (e.g. Fall 2025)" style="width:100%;padding:9px 12px;background:var(--surface3);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:\'Cabinet Grotesk\',sans-serif;font-size:14px;outline:none;margin-bottom:10px"/>'
+          }
+          <button onclick="ciCreateAndPick()" style="width:100%;padding:10px;border-radius:8px;border:none;
+            background:var(--accent);color:#fff;font-family:'Clash Display',sans-serif;
+            font-weight:700;font-size:14px;cursor:pointer">
+            ✅ Create &amp; Sync Here
+          </button>
+        </div>
+
+        <!-- EXISTING SUBJECTS LIST -->
+        ${options.length ? '<div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Or pick an existing subject</div>' : ''}
+        <div style="display:flex;flex-direction:column;gap:8px;max-height:220px;overflow-y:auto;margin-bottom:20px" id="ci-match-list">
+          ${existingListHtml}
+        </div>
+
         <div style="display:flex;gap:10px">
           <button onclick="ciPickOpt(-1)" style="flex:1;padding:11px;border-radius:10px;border:1px solid var(--border2);
             background:transparent;color:var(--muted);cursor:pointer;font-family:'Cabinet Grotesk',sans-serif;font-size:13px">
@@ -6955,9 +6988,56 @@ function ciPickCourseMatch(canvasCourseName) {
     `;
     document.body.appendChild(modal);
 
+    window.ciToggleNewSubj = function() {
+      const form = document.getElementById('ci-new-subj-form');
+      const toggle = document.getElementById('ci-new-subj-toggle');
+      const open = form.style.display === 'none';
+      form.style.display = open ? 'block' : 'none';
+      toggle.style.background = open ? 'rgba(129,140,248,.12)' : 'rgba(129,140,248,.06)';
+      toggle.style.borderColor = open ? 'var(--accent)' : 'rgba(129,140,248,.45)';
+    };
+
+    window.ciCreateAndPick = async function() {
+      const nameEl = document.getElementById('ci-new-subj-name');
+      const semSelEl = document.getElementById('ci-new-subj-sem');
+      const semNameEl = document.getElementById('ci-new-subj-sem-name');
+      const subjectName = (nameEl && nameEl.value.trim()) || canvasCourseName;
+
+      let targetSem;
+      if (semSelEl) {
+        targetSem = semesters.find(function(s) { return s.id === semSelEl.value; });
+      } else if (semNameEl) {
+        const newSemName = (semNameEl.value.trim()) || ('Semester ' + (semesters.length + 1));
+        targetSem = { id: (typeof uid === 'function' ? uid() : ('sem_' + Date.now())), name: newSemName, subjects: [], user_id: currentUser.id, _gpa: 0 };
+        semesters.push(targetSem);
+      }
+      if (!targetSem) { showToast('⚠️ Please select a semester.'); return; }
+
+      const newSubject = {
+        id: (typeof uid === 'function' ? uid() : ('subj_' + Date.now())),
+        name: subjectName,
+        credits: 3,
+        status: 'normal',
+        other_pct: 100,
+        exam_pct: 0,
+        other_score: 0,
+        exams: []
+      };
+      targetSem.subjects.push(newSubject);
+      await saveSemesterToDB(targetSem);
+      updateStats(); renderDashboard(); renderCourses();
+      modal.remove();
+      delete window.ciPickOpt;
+      delete window.ciToggleNewSubj;
+      delete window.ciCreateAndPick;
+      resolve({ sem: targetSem, subject: newSubject });
+    };
+
     window.ciPickOpt = function(idx) {
       modal.remove();
       delete window.ciPickOpt;
+      delete window.ciToggleNewSubj;
+      delete window.ciCreateAndPick;
       if (idx < 0) { resolve(null); return; }
       resolve(options[idx]);
     };
@@ -6975,6 +7055,7 @@ function ciPickCourseMatch(canvasCourseName) {
     });
   });
 }
+
 
 // ── IMPORT ENGINE ─────────────────────────────────────────────
 // ciAutoImport: called automatically when bookmarklet fires.
