@@ -1943,6 +1943,12 @@ input:not(.af input):focus, select:focus {
       </div>
       <span class="gv3-lbl">Privacy Policy</span>
     </button>
+    <button class="gv3-item" data-tab="admin" id="admin-nav-btn" onclick="gv3Switch('admin')" style="display:none">
+      <div class="gv3-ico" data-tip="Admin">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill="rgba(248,113,113,0.15)" stroke="#f87171" stroke-width="1.8" stroke-linejoin="round" d="M12 2L3 7v7c0 5 4 9 9 9s9-4 9-9V7z"/><polyline fill="none" stroke="#f87171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="8 12 11 15 16 10"/></svg>
+      </div>
+      <span class="gv3-lbl" style="color:#f87171">Admin</span>
+    </button>
   </div>
 
   <div id="gv3-bottom">
@@ -8232,13 +8238,67 @@ function ciClearBmPreview() {
     <div class="field">
       <label>Rating <span style="color:var(--muted);font-size:11px">(optional)</span></label>
       <div style="display:flex;gap:6px" id="fb-stars">
-        ${[1,2,3,4,5].map(n=>`<button onclick="setFbRating(${n})" data-rating="${n}" style="background:transparent;border:1px solid var(--border2);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:18px;transition:all .15s;color:var(--muted)">★</button>`).join('')}
+        <button onclick="setFbRating(1)" data-rating="1" style="background:transparent;border:1px solid var(--border2);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:18px;transition:all .15s;color:var(--muted)">★</button>
+        <button onclick="setFbRating(2)" data-rating="2" style="background:transparent;border:1px solid var(--border2);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:18px;transition:all .15s;color:var(--muted)">★</button>
+        <button onclick="setFbRating(3)" data-rating="3" style="background:transparent;border:1px solid var(--border2);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:18px;transition:all .15s;color:var(--muted)">★</button>
+        <button onclick="setFbRating(4)" data-rating="4" style="background:transparent;border:1px solid var(--border2);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:18px;transition:all .15s;color:var(--muted)">★</button>
+        <button onclick="setFbRating(5)" data-rating="5" style="background:transparent;border:1px solid var(--border2);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:18px;transition:all .15s;color:var(--muted)">★</button>
       </div>
     </div>
     <div id="fb-status" style="display:none;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:10px"></div>
     <div class="btn-row">
       <button class="btn btn-primary" onclick="submitFeedback()">Send Feedback 🚀</button>
     </div>
+  </div>
+</div>
+
+<!-- ════════════ ADMIN TAB ════════════ -->
+<div id="tc-admin" class="hidden">
+  <div class="cv-hero">
+    <div class="cv-hero-badge" style="background:rgba(248,113,113,0.12);border-color:rgba(248,113,113,0.3);color:#f87171">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L3 7v7c0 5 4 9 9 9s9-4 9-9V7z"/></svg>
+      Admin Only
+    </div>
+    <div class="cv-hero-title">🛡️ Admin Dashboard</div>
+    <div class="cv-hero-sub">Logged in as <strong id="admin-email-display"></strong></div>
+  </div>
+
+  <!-- Stats row -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px">
+    <div class="card" style="padding:16px;text-align:center">
+      <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:28px;color:#f87171" id="admin-stat-total">—</div>
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em">Total Feedback</div>
+    </div>
+    <div class="card" style="padding:16px;text-align:center">
+      <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:28px;color:#818cf8" id="admin-stat-bugs">—</div>
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em">Bug Reports</div>
+    </div>
+    <div class="card" style="padding:16px;text-align:center">
+      <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:28px;color:#34d399" id="admin-stat-features">—</div>
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em">Feature Requests</div>
+    </div>
+    <div class="card" style="padding:16px;text-align:center">
+      <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:28px;color:#fbbf24" id="admin-stat-avg">—</div>
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em">Avg Rating</div>
+    </div>
+  </div>
+
+  <!-- Filter bar -->
+  <div class="card" style="padding:16px;margin-bottom:16px">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <span style="font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.08em">Filter:</span>
+      <button onclick="adminFilter('all')" id="af-all" class="btn btn-primary" style="font-size:11px;padding:5px 12px">All</button>
+      <button onclick="adminFilter('bug')" id="af-bug" class="btn btn-secondary" style="font-size:11px;padding:5px 12px">🐛 Bugs</button>
+      <button onclick="adminFilter('feature')" id="af-feature" class="btn btn-secondary" style="font-size:11px;padding:5px 12px">✨ Features</button>
+      <button onclick="adminFilter('general')" id="af-general" class="btn btn-secondary" style="font-size:11px;padding:5px 12px">💬 General</button>
+      <button onclick="adminFilter('praise')" id="af-praise" class="btn btn-secondary" style="font-size:11px;padding:5px 12px">🙌 Praise</button>
+      <button onclick="loadAdminFeedback()" class="btn btn-ghost" style="font-size:11px;padding:5px 12px;margin-left:auto">🔄 Refresh</button>
+    </div>
+  </div>
+
+  <!-- Feedback list -->
+  <div id="admin-feedback-list">
+    <div style="color:var(--muted);font-size:13px;text-align:center;padding:40px">Click Refresh to load feedback</div>
   </div>
 </div>
 
@@ -10143,57 +10203,80 @@ async function submitFeedback() {
 // ADMIN PANEL
 // ══════════════════════════════════════════════════════════════
 const ADMIN_EMAIL = 'akanshul20062008@gmail.com'; // ← your admin email
-async function openAdminPanel() {
-  if (!currentUser || currentUser.email !== ADMIN_EMAIL) return;
-  const existing = document.getElementById('_admin_panel');
-  if (existing) { existing.remove(); return; }
-  const panel = document.createElement('div');
-  panel.id = '_admin_panel';
-  panel.style.cssText = 'position:fixed;inset:0;z-index:999999;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(8px)';
-  panel.innerHTML = '<div style="background:var(--surface);border:1px solid var(--border2);border-radius:20px;padding:28px;width:100%;max-width:680px;max-height:90vh;overflow-y:auto">' +
-    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">' +
-    '<div style="font-family:\'Clash Display\',sans-serif;font-weight:700;font-size:20px">🛡️ Admin Panel</div>' +
-    '<button onclick="document.getElementById(\'_admin_panel\').remove()" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:18px">✕</button></div>' +
-    '<div id="_admin_content"><div style="color:var(--muted);font-size:13px">Loading feedback…</div></div></div>';
-  document.body.appendChild(panel);
-  try {
-    const { data, error } = await sb.from('gradintel_feedback').select('*').order('created_at', { ascending: false }).limit(100);
-    if (error) throw error;
-    const content = document.getElementById('_admin_content');
-    if (!data.length) { content.innerHTML = '<div style="color:var(--muted);font-size:13px">No feedback yet.</div>'; return; }
-    const typeColors = { bug:'#f87171', feature:'#818cf8', general:'#60a5fa', praise:'#34d399' };
-    content.innerHTML = '<div style="font-size:12px;color:var(--muted);margin-bottom:16px">' + data.length + ' feedback entries</div>' +
-      data.map(function(f) {
-        const col = typeColors[f.type] || 'var(--muted)';
-        const stars = f.rating ? '★'.repeat(f.rating) + '☆'.repeat(5-f.rating) : '—';
-        const date = new Date(f.created_at).toLocaleDateString('en-US', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
-        return '<div style="background:var(--surface2);border:1px solid var(--border2);border-radius:12px;padding:16px;margin-bottom:12px">' +
-          '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">' +
-          '<span style="background:' + col + '22;color:' + col + ';border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700">' + (f.type||'general').toUpperCase() + '</span>' +
-          '<span style="font-family:\'Clash Display\',sans-serif;font-weight:700;font-size:14px">' + (f.subject||'') + '</span>' +
-          '<span style="margin-left:auto;font-size:11px;color:var(--muted)">' + date + '</span></div>' +
-          '<div style="font-size:13px;color:var(--muted2);margin-bottom:8px;line-height:1.6">' + (f.message||'') + '</div>' +
-          '<div style="display:flex;gap:16px;font-size:11px;color:var(--muted)">' +
-          '<span>👤 ' + (f.user_email||'anon') + '</span>' +
-          '<span>⭐ ' + stars + '</span></div></div>';
-      }).join('');
-  } catch(e) {
-    document.getElementById('_admin_content').innerHTML = '<div style="color:var(--red);font-size:13px">Error: ' + (e.message||'Could not load') + '</div>';
-  }
-}
-// Show admin button in nav bottom bar if admin
+
+let _adminAllFeedback = [];
+let _adminFilter = 'all';
+
 function maybeShowAdminBtn() {
   if (!currentUser || currentUser.email !== ADMIN_EMAIL) return;
-  const bottom = document.getElementById('gv3-bottom');
-  if (!bottom || document.getElementById('_admin-btn')) return;
-  const btn = document.createElement('button');
-  btn.id = '_admin-btn';
-  btn.className = 'icon-btn';
-  btn.title = 'Admin Panel';
-  btn.style.cssText = 'flex:1;border-radius:9px;min-width:0;color:var(--accent)';
-  btn.innerHTML = '🛡️';
-  btn.onclick = openAdminPanel;
-  bottom.appendChild(btn);
+  // Show admin nav item
+  const btn = document.getElementById('admin-nav-btn');
+  if (btn) btn.style.display = '';
+  // Set email display
+  const ed = document.getElementById('admin-email-display');
+  if (ed) ed.textContent = currentUser.email;
+  // Auto-load feedback when tab is first shown
+  loadAdminFeedback();
+}
+
+async function loadAdminFeedback() {
+  const list = document.getElementById('admin-feedback-list');
+  if (!list) return;
+  list.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:40px">⏳ Loading…</div>';
+  try {
+    const { data, error } = await sb.from('gradintel_feedback').select('*').order('created_at', { ascending: false }).limit(200);
+    if (error) throw error;
+    _adminAllFeedback = data || [];
+    // Update stats
+    document.getElementById('admin-stat-total').textContent = _adminAllFeedback.length;
+    document.getElementById('admin-stat-bugs').textContent = _adminAllFeedback.filter(f=>f.type==='bug').length;
+    document.getElementById('admin-stat-features').textContent = _adminAllFeedback.filter(f=>f.type==='feature').length;
+    const rated = _adminAllFeedback.filter(f=>f.rating);
+    document.getElementById('admin-stat-avg').textContent = rated.length ? (rated.reduce((a,f)=>a+f.rating,0)/rated.length).toFixed(1)+'★' : '—';
+    renderAdminFeedback();
+  } catch(e) {
+    list.innerHTML = '<div style="color:var(--red);font-size:13px;text-align:center;padding:40px">❌ ' + (e.message||'Could not load feedback') + '<br><br><small>Make sure the Supabase table and RLS policy are set up correctly.</small></div>';
+  }
+}
+
+function adminFilter(type) {
+  _adminFilter = type;
+  ['all','bug','feature','general','praise'].forEach(t => {
+    const btn = document.getElementById('af-'+t);
+    if (btn) { btn.className = t === type ? 'btn btn-primary' : 'btn btn-secondary'; btn.style.fontSize='11px'; btn.style.padding='5px 12px'; }
+  });
+  renderAdminFeedback();
+}
+
+function renderAdminFeedback() {
+  const list = document.getElementById('admin-feedback-list');
+  if (!list) return;
+  const filtered = _adminFilter === 'all' ? _adminAllFeedback : _adminAllFeedback.filter(f=>f.type===_adminFilter);
+  if (!filtered.length) { list.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:40px">No feedback found.</div>'; return; }
+  const typeColors = { bug:'#f87171', feature:'#818cf8', general:'#60a5fa', praise:'#34d399' };
+  const typeIcons  = { bug:'🐛', feature:'✨', general:'💬', praise:'🙌' };
+  list.innerHTML = filtered.map(function(f) {
+    const col   = typeColors[f.type] || 'var(--muted)';
+    const ico   = typeIcons[f.type]  || '💬';
+    const stars = f.rating ? '★'.repeat(f.rating) + '<span style="opacity:.3">★</span>'.repeat(5-f.rating) : '—';
+    const date  = new Date(f.created_at).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    return '<div class="card" style="margin-bottom:12px;border-left:3px solid '+col+'">' +
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">' +
+        '<span style="background:'+col+'22;color:'+col+';border-radius:6px;padding:3px 10px;font-size:11px;font-weight:700">'+ico+' '+(f.type||'general').toUpperCase()+'</span>' +
+        '<span style="font-family:\'Clash Display\',sans-serif;font-weight:700;font-size:15px">'+escHtml(f.subject||'(no subject)')+'</span>' +
+        '<span style="margin-left:auto;font-size:11px;color:var(--muted)">'+date+'</span>' +
+      '</div>' +
+      '<div style="font-size:13px;color:var(--muted2);line-height:1.7;margin-bottom:10px;white-space:pre-wrap">'+escHtml(f.message||'')+'</div>' +
+      '<div style="display:flex;gap:16px;font-size:12px;color:var(--muted);flex-wrap:wrap">' +
+        '<span>👤 '+escHtml(f.user_email||'anonymous')+'</span>' +
+        '<span>⭐ '+stars+'</span>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 </script>
