@@ -1928,6 +1928,12 @@ input:not(.af input):focus, select:focus {
       </div>
       <span class="gv3-lbl">Export</span>
     </button>
+    <button class="gv3-item" data-tab="feedback" onclick="gv3Switch('feedback')">
+      <div class="gv3-ico" data-tip="Feedback">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill="rgba(167,139,250,0.15)" stroke="var(--a1)" stroke-width="1.8" stroke-linejoin="round" d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/><line x1="8" y1="10" x2="16" y2="10" stroke="var(--a2)" stroke-width="1.6" stroke-linecap="round"/><line x1="8" y1="14" x2="13" y2="14" stroke="var(--a2)" stroke-width="1.6" stroke-linecap="round"/></svg>
+      </div>
+      <span class="gv3-lbl">Feedback</span>
+    </button>
     <button class="gv3-item" data-tab="privacy" onclick="gv3Switch('privacy')">
       <div class="gv3-ico" data-tip="Privacy Policy">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -2189,6 +2195,12 @@ input:not(.af input):focus, select:focus {
         <div class="card-title"><span class="ico"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="url(#site-ig)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M22 9L12 5 2 9l10 4 10-4z"/><path d="M6 11v5c0 2 3 3 6 3s6-1 6-3v-5"/><line x1="22" y1="9" x2="22" y2="15"/></svg></span>New Semester / Add Subjects</div>
         <div class="infobox">Name your semester and add subjects. They'll be <strong>saved to the cloud</strong> and accessible from any device.</div>
         <div class="field"><label>Semester Name</label><input type="text" id="sem-name-inp" placeholder="e.g. Fall 2024 / Semester 3"/></div>
+        <div class="field" id="degree-link-field">
+          <label>Link to Degree <span style="font-size:10px;color:var(--muted)">(optional)</span></label>
+          <select id="sem-degree-sel" style="width:100%;padding:10px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:'Cabinet Grotesk',sans-serif;font-size:13px">
+            <option value="">— No degree link —</option>
+          </select>
+        </div>
         <div class="field"><label>Mode</label>
           <div class="tgl-group">
             <div class="tgl-btn on" id="mode-s" onclick="setMode('single')">Single Subject</div>
@@ -2871,7 +2883,8 @@ input:not(.af input):focus, select:focus {
 <!-- REQUIREMENT MODAL -->
 <div class="modal-overlay" id="req-modal">
   <div class="modal-box" style="max-width:440px">
-    <div class="modal-title"><span>Add Course Requirement</span><button class="modal-close" onclick="document.getElementById('req-modal').classList.remove('show')">✕</button></div>
+    <div class="modal-title"><span id="req-modal-title">Add Course Requirement</span><button class="modal-close" onclick="document.getElementById('req-modal').classList.remove('show')">✕</button></div>
+    <input type="hidden" id="req-edit-id" value=""/>
     <div class="field"><label>Course Name</label><input type="text" id="req-name" placeholder="e.g. Calculus II"/></div>
     <div class="field"><label>Credits</label><input type="number" id="req-credits" placeholder="e.g. 3" min="0.5" step="0.5"/></div>
     <div class="field"><label>Category</label><input type="text" id="req-category" placeholder="e.g. Core, Elective, Lab"/></div>
@@ -3115,6 +3128,7 @@ async function onAuthSuccess() {
   document.body.classList.remove('auth-visible');
   setTimeout(() => document.getElementById('auth-wrap').style.display = 'none', 400);
   await loadProfile();
+  setTimeout(maybeShowAdminBtn, 500);
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -3824,6 +3838,13 @@ function goStep1() {
   document.getElementById('pg-setup').classList.remove('hidden');
   document.getElementById('pg-subjects').classList.add('hidden');
   document.getElementById('pg-results').classList.add('hidden');
+  // Populate degree selector
+  const sel = document.getElementById('sem-degree-sel');
+  if (sel) {
+    const degrees = getDegrees();
+    sel.innerHTML = '<option value="">— No degree link —</option>' +
+      degrees.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+  }
 }
 function goStep2() {
   const n = appMode === 'single' ? 1 : parseInt(document.getElementById('n-subjs').value) || 2;
@@ -3922,6 +3943,7 @@ async function calcAndSave() {
   const btn = document.getElementById('calc-save-btn');
   btn.disabled = true; btn.textContent = '💾 Saving to cloud...';
   const semName = document.getElementById('sem-name-inp').value.trim() || `Semester ${semesters.length + 1}`;
+  const degreeId = document.getElementById('sem-degree-sel')?.value || '';
   const forms = document.querySelectorAll('[id^="sf-"]');
   calcSubjs = []; calcRes = [];
   forms.forEach((_, i) => {
@@ -3930,7 +3952,8 @@ async function calcAndSave() {
   });
   let sem = semesters.find(s => s.name === semName);
   if (sem) { calcSubjs.forEach(s => sem.subjects.push(s)); }
-  else { sem = { id: uid(), name: semName, date: new Date().toLocaleDateString(), subjects: calcSubjs }; }
+  else { sem = { id: uid(), name: semName, date: new Date().toLocaleDateString(), subjects: calcSubjs, degreeId: degreeId || undefined }; }
+  if (degreeId) sem.degreeId = degreeId;
   const semCP = sem.subjects.reduce((a, s) => a + s.credits * computeSubject(s).curG.p, 0);
   const semCR = sem.subjects.reduce((a, s) => a + s.credits, 0);
   sem._gpa = semCR ? semCP / semCR : 0;
@@ -3939,7 +3962,8 @@ async function calcAndSave() {
   activeCalcIdx = 0;
   updateStats(); renderDashboard(); renderCourses(); renderHistory(); renderWIFull(); renderStudy(); renderROI();
   renderResults();
-  showToast(`✅ Saved! ${calcSubjs.length} subject${calcSubjs.length !== 1 ? 's' : ''}`);
+  const degreeLabel = degreeId ? (' → ' + (getDegrees().find(d=>d.id===degreeId)?.name||'')) : '';
+  showToast(`✅ Saved! ${calcSubjs.length} subject${calcSubjs.length !== 1 ? 's' : ''}${degreeLabel}`);
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -5174,7 +5198,23 @@ function openUserModal() {
 
     <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn btn-secondary" style="font-size:12px;padding:8px 14px" onclick="document.getElementById('edit-profile-section').style.display=document.getElementById('edit-profile-section').style.display==='none'?'block':'none'">✏️ Edit Profile</button>
+      <button class="btn btn-secondary" style="font-size:12px;padding:8px 14px" onclick="document.getElementById('change-pw-section').style.display=document.getElementById('change-pw-section').style.display==='none'?'block':'none'">🔑 Change Password</button>
       <button class="btn btn-secondary" style="font-size:12px;padding:8px 14px" onclick="exportJSON();document.getElementById('user-modal').classList.remove('show')"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="url(#site-ig)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg> Export Backup</button>
+    </div>
+    <div id="change-pw-section" style="display:none;margin-top:16px;padding:14px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r)">
+      <div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:13px;margin-bottom:12px">🔑 Change Password</div>
+      <div class="field" style="margin-bottom:10px">
+        <label style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em">New Password</label>
+        <input type="password" id="new-pw-inp" placeholder="At least 6 characters" style="width:100%;padding:9px 12px;background:var(--surface3);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:'Cabinet Grotesk',sans-serif;font-size:13px;margin-top:4px"/>
+      </div>
+      <div class="field" style="margin-bottom:10px">
+        <label style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em">Confirm New Password</label>
+        <input type="password" id="new-pw-confirm" placeholder="Repeat password" style="width:100%;padding:9px 12px;background:var(--surface3);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:'Cabinet Grotesk',sans-serif;font-size:13px;margin-top:4px"/>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn btn-primary" style="font-size:12px;padding:8px 14px" onclick="doChangePassword()">Update Password</button>
+        <button class="btn btn-ghost" style="font-size:12px;padding:8px 14px" onclick="document.getElementById('change-pw-section').style.display='none'">Cancel</button>
+      </div>
     </div>`;
   document.getElementById('user-modal').classList.add('show');
 }
@@ -5196,6 +5236,21 @@ async function saveProfileEdits() {
   if (newUni) document.getElementById('hero-p').textContent = `${newUni} · GPA Dashboard`;
   document.getElementById('user-modal').classList.remove('show');
   showToast('✅ Profile updated!');
+}
+
+async function doChangePassword() {
+  const pw  = document.getElementById('new-pw-inp')?.value || '';
+  const pw2 = document.getElementById('new-pw-confirm')?.value || '';
+  if (pw.length < 6) { showToast('⚠️ Password must be at least 6 characters'); return; }
+  if (pw !== pw2)    { showToast('⚠️ Passwords do not match'); return; }
+  try {
+    const { error } = await sb.auth.updateUser({ password: pw });
+    if (error) throw error;
+    document.getElementById('user-modal').classList.remove('show');
+    showToast('✅ Password updated successfully!');
+  } catch(e) {
+    showToast('❌ ' + (e.message || 'Could not update password'));
+  }
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -5690,7 +5745,7 @@ function renderMinCalc(){
           <span style="font-size:12px;color:var(--muted2)">I want:</span>
           <select id="${selId}" onchange="calcTargetGrade('${s.id}')"
             style="padding:6px 10px;border-radius:8px;border:1px solid var(--border2);background:var(--surface3);color:var(--text);font-family:'Clash Display',sans-serif;font-weight:700;font-size:14px;cursor:pointer">
-            ${gradeOpts.map(g => `<option value="${g}" ${g==='B'?'selected':''}>${g}</option>`).join('')}
+            ${gradeOpts.map(g => `<option value="${g}" ${g==='A'?'selected':''}>${g}</option>`).join('')}
           </select>
         </div>
       </div>
@@ -6374,21 +6429,50 @@ function saveRequirementsForDegree(reqs) {
 }
 
 function openAddRequirementModal() {
-  ['req-name', 'req-credits', 'req-category'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
-  document.getElementById('req-status').value = 'pending';
-  document.getElementById('req-modal').classList.add('show');
+  openAddReq();
 }
 function saveRequirement() {
   const name = document.getElementById('req-name')?.value.trim();
   if (!name) { showToast('Add a course name!'); return; }
+  const editId = document.getElementById('req-edit-id')?.value || '';
   const reqs = getRequirements();
-  reqs.push({ id: 'req_' + Date.now(), name,
+  const entry = {
+    id: editId || ('req_' + Date.now()),
+    name,
     credits: parseFloat(document.getElementById('req-credits')?.value) || 3,
     category: document.getElementById('req-category')?.value.trim() || 'General',
-    status: document.getElementById('req-status')?.value || 'pending' });
+    status: document.getElementById('req-status')?.value || 'pending'
+  };
+  if (editId) {
+    const idx = reqs.findIndex(r => r.id === editId);
+    if (idx >= 0) reqs[idx] = entry; else reqs.push(entry);
+    showToast('✏️ Requirement updated!');
+  } else {
+    reqs.push(entry);
+    showToast('📋 Requirement added!');
+  }
   saveRequirementsForDegree(reqs);
   document.getElementById('req-modal').classList.remove('show');
-  renderRequirements(); checkBadges(); showToast('📋 Requirement added!');
+  renderRequirements(); checkBadges();
+}
+function openAddReq() {
+  document.getElementById('req-modal-title').textContent = 'Add Course Requirement';
+  document.getElementById('req-edit-id').value = '';
+  document.getElementById('req-name').value = '';
+  document.getElementById('req-credits').value = '';
+  document.getElementById('req-category').value = '';
+  document.getElementById('req-status').value = 'pending';
+  document.getElementById('req-modal').classList.add('show');
+}
+function openEditReq(id) {
+  const r = getRequirements().find(x => x.id === id); if (!r) return;
+  document.getElementById('req-modal-title').textContent = 'Edit Course Requirement';
+  document.getElementById('req-edit-id').value = r.id;
+  document.getElementById('req-name').value = r.name;
+  document.getElementById('req-credits').value = r.credits;
+  document.getElementById('req-category').value = r.category || '';
+  document.getElementById('req-status').value = r.status || 'pending';
+  document.getElementById('req-modal').classList.add('show');
 }
 function renderRequirements() {
   const reqs = getRequirements();
@@ -6409,7 +6493,8 @@ function renderRequirements() {
       <select onchange="updateReqStatus('${r.id}',this.value)" style="font-size:11px;background:var(--surface3);border:1px solid var(--border2);border-radius:6px;padding:3px 6px;color:var(--text)">
         ${['pending', 'in_progress', 'completed', 'waived'].map(s => `<option value="${s}" ${s === r.status ? 'selected' : ''}>${s.replace('_', ' ')}</option>`).join('')}
       </select>
-      <button onclick="deleteRequirement('${r.id}')" style="background:transparent;border:none;color:var(--red);cursor:pointer;font-size:13px">🗑</button>
+      <button onclick="openEditReq('${r.id}')" title="Edit" style="background:transparent;border:none;color:var(--accent);cursor:pointer;font-size:13px;padding:2px 4px">✏️</button>
+      <button onclick="deleteRequirement('${r.id}')" title="Delete" style="background:transparent;border:none;color:var(--red);cursor:pointer;font-size:13px;padding:2px 4px">🗑</button>
     </div>`;
   }).join('');
 }
@@ -8114,6 +8199,48 @@ function ciClearBmPreview() {
 
 </div>
 <!-- ════════════ END CANVAS IMPORT TAB ════════════ -->
+
+<!-- ════════════ FEEDBACK TAB ════════════ -->
+<div id="tc-feedback" class="hidden">
+  <div class="cv-hero">
+    <div class="cv-hero-badge" style="background:rgba(129,140,248,0.12);border-color:rgba(129,140,248,0.3);color:var(--accent)">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+      Feedback
+    </div>
+    <div class="cv-hero-title">Share Your Thoughts 💬</div>
+    <div class="cv-hero-sub">Help make Gradintel better. Your feedback goes directly to the team.</div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="ico">📝</span>Send Feedback</div>
+    <div class="field">
+      <label>Type</label>
+      <select id="fb-type" style="width:100%;padding:10px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:'Cabinet Grotesk',sans-serif;font-size:13px">
+        <option value="bug">🐛 Bug Report</option>
+        <option value="feature">✨ Feature Request</option>
+        <option value="general">💬 General Feedback</option>
+        <option value="praise">🙌 I love this app!</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Subject</label>
+      <input type="text" id="fb-subject" placeholder="Brief summary of your feedback" style="width:100%;padding:10px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:'Cabinet Grotesk',sans-serif;font-size:13px"/>
+    </div>
+    <div class="field">
+      <label>Message</label>
+      <textarea id="fb-message" placeholder="Tell us more — the more detail the better!" style="width:100%;min-height:120px;padding:10px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:'Cabinet Grotesk',sans-serif;font-size:13px;resize:vertical"></textarea>
+    </div>
+    <div class="field">
+      <label>Rating <span style="color:var(--muted);font-size:11px">(optional)</span></label>
+      <div style="display:flex;gap:6px" id="fb-stars">
+        ${[1,2,3,4,5].map(n=>`<button onclick="setFbRating(${n})" data-rating="${n}" style="background:transparent;border:1px solid var(--border2);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:18px;transition:all .15s;color:var(--muted)">★</button>`).join('')}
+      </div>
+    </div>
+    <div id="fb-status" style="display:none;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:10px"></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="submitFeedback()">Send Feedback 🚀</button>
+    </div>
+  </div>
+</div>
 
 <!-- ════════════ PRIVACY POLICY TAB ════════════ -->
 <div id="tc-privacy" class="hidden">
@@ -9964,6 +10091,110 @@ function generateSmartStudyPlan() {
 }
 
 // goal sim inits via showTab and updateStats hooks
+
+// ══════════════════════════════════════════════════════════════
+// FEEDBACK
+// ══════════════════════════════════════════════════════════════
+let _fbRating = 0;
+function setFbRating(n) {
+  _fbRating = n;
+  document.querySelectorAll('#fb-stars button').forEach(function(b) {
+    const v = parseInt(b.getAttribute('data-rating'));
+    b.style.background = v <= n ? 'rgba(129,140,248,.15)' : 'transparent';
+    b.style.borderColor = v <= n ? 'var(--accent)' : 'var(--border2)';
+    b.style.color = v <= n ? 'var(--accent)' : 'var(--muted)';
+  });
+}
+async function submitFeedback() {
+  const type    = document.getElementById('fb-type')?.value || 'general';
+  const subject = document.getElementById('fb-subject')?.value.trim();
+  const message = document.getElementById('fb-message')?.value.trim();
+  const status  = document.getElementById('fb-status');
+  if (!subject || !message) { showToast('⚠️ Please fill in subject and message'); return; }
+  const payload = {
+    user_id:    currentUser?.id || null,
+    user_email: currentUser?.email || 'anonymous',
+    type, subject, message,
+    rating: _fbRating || null,
+    created_at: new Date().toISOString(),
+    user_agent: navigator.userAgent.slice(0, 200)
+  };
+  try {
+    const { error } = await sb.from('gradintel_feedback').insert(payload);
+    if (error) throw error;
+    status.style.display = 'block';
+    status.style.background = 'rgba(52,211,153,.1)';
+    status.style.border = '1px solid rgba(52,211,153,.3)';
+    status.style.color = 'var(--green)';
+    status.textContent = '✅ Thank you! Your feedback has been sent.';
+    document.getElementById('fb-subject').value = '';
+    document.getElementById('fb-message').value = '';
+    _fbRating = 0; setFbRating(0);
+  } catch(e) {
+    status.style.display = 'block';
+    status.style.background = 'rgba(248,113,113,.1)';
+    status.style.border = '1px solid rgba(248,113,113,.3)';
+    status.style.color = 'var(--red)';
+    status.textContent = '❌ Could not send feedback: ' + (e.message || 'Unknown error');
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// ADMIN PANEL
+// ══════════════════════════════════════════════════════════════
+const ADMIN_EMAIL = 'akanshul20062008@gmail.com'; // ← your admin email
+async function openAdminPanel() {
+  if (!currentUser || currentUser.email !== ADMIN_EMAIL) return;
+  const existing = document.getElementById('_admin_panel');
+  if (existing) { existing.remove(); return; }
+  const panel = document.createElement('div');
+  panel.id = '_admin_panel';
+  panel.style.cssText = 'position:fixed;inset:0;z-index:999999;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(8px)';
+  panel.innerHTML = '<div style="background:var(--surface);border:1px solid var(--border2);border-radius:20px;padding:28px;width:100%;max-width:680px;max-height:90vh;overflow-y:auto">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">' +
+    '<div style="font-family:\'Clash Display\',sans-serif;font-weight:700;font-size:20px">🛡️ Admin Panel</div>' +
+    '<button onclick="document.getElementById(\'_admin_panel\').remove()" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:18px">✕</button></div>' +
+    '<div id="_admin_content"><div style="color:var(--muted);font-size:13px">Loading feedback…</div></div></div>';
+  document.body.appendChild(panel);
+  try {
+    const { data, error } = await sb.from('gradintel_feedback').select('*').order('created_at', { ascending: false }).limit(100);
+    if (error) throw error;
+    const content = document.getElementById('_admin_content');
+    if (!data.length) { content.innerHTML = '<div style="color:var(--muted);font-size:13px">No feedback yet.</div>'; return; }
+    const typeColors = { bug:'#f87171', feature:'#818cf8', general:'#60a5fa', praise:'#34d399' };
+    content.innerHTML = '<div style="font-size:12px;color:var(--muted);margin-bottom:16px">' + data.length + ' feedback entries</div>' +
+      data.map(function(f) {
+        const col = typeColors[f.type] || 'var(--muted)';
+        const stars = f.rating ? '★'.repeat(f.rating) + '☆'.repeat(5-f.rating) : '—';
+        const date = new Date(f.created_at).toLocaleDateString('en-US', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+        return '<div style="background:var(--surface2);border:1px solid var(--border2);border-radius:12px;padding:16px;margin-bottom:12px">' +
+          '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">' +
+          '<span style="background:' + col + '22;color:' + col + ';border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700">' + (f.type||'general').toUpperCase() + '</span>' +
+          '<span style="font-family:\'Clash Display\',sans-serif;font-weight:700;font-size:14px">' + (f.subject||'') + '</span>' +
+          '<span style="margin-left:auto;font-size:11px;color:var(--muted)">' + date + '</span></div>' +
+          '<div style="font-size:13px;color:var(--muted2);margin-bottom:8px;line-height:1.6">' + (f.message||'') + '</div>' +
+          '<div style="display:flex;gap:16px;font-size:11px;color:var(--muted)">' +
+          '<span>👤 ' + (f.user_email||'anon') + '</span>' +
+          '<span>⭐ ' + stars + '</span></div></div>';
+      }).join('');
+  } catch(e) {
+    document.getElementById('_admin_content').innerHTML = '<div style="color:var(--red);font-size:13px">Error: ' + (e.message||'Could not load') + '</div>';
+  }
+}
+// Show admin button in nav bottom bar if admin
+function maybeShowAdminBtn() {
+  if (!currentUser || currentUser.email !== ADMIN_EMAIL) return;
+  const bottom = document.getElementById('gv3-bottom');
+  if (!bottom || document.getElementById('_admin-btn')) return;
+  const btn = document.createElement('button');
+  btn.id = '_admin-btn';
+  btn.className = 'icon-btn';
+  btn.title = 'Admin Panel';
+  btn.style.cssText = 'flex:1;border-radius:9px;min-width:0;color:var(--accent)';
+  btn.innerHTML = '🛡️';
+  btn.onclick = openAdminPanel;
+  bottom.appendChild(btn);
+}
 
 </script>
 <div id="exam-reminder-stack"></div>
