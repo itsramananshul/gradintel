@@ -3290,33 +3290,31 @@ function launchApp() {
 function computeSubject(s) {
   const op = s.other_pct / 100;
   const os = s.other_score / 100;
-  const ep = s.exam_pct / 100;
+  // Each exam.weight is now an ABSOLUTE % of total course grade (not relative to exam_pct)
   let earned = op * os;
-  let totalTakenWeight = 0;
+  let totalTakenWeight = 0; // as absolute fractions
   let remW = 0;
   (s.exams || []).forEach(e => {
-    const wf = e.weight / 100;
+    const wf = e.weight / 100; // absolute fraction of total course
     if (e.taken && e.score !== null) {
-      earned += ep * wf * (e.score / 100);
+      earned += wf * (e.score / 100);
       totalTakenWeight += wf;
     } else {
       remW += wf;
     }
   });
   // cur = score based only on taken portions (not projecting untaken)
-  const takenFrac = op + ep * totalTakenWeight;
+  const takenFrac = op + totalTakenWeight;
   const cur = takenFrac > 0 ? (earned / takenFrac) * 100 : 0;
   const curG = pctToG(cur);
-  const remFrac = remW * ep;
-  const remExams = (s.exams || []).filter(e => !e.taken).map(e => ({ name: e.name, weight: e.weight, gf: e.weight / 100 * ep, id: e.id }));
+  const remFrac = remW; // absolute fraction remaining
+  const ep = s.exam_pct / 100; // kept for display but not used in core calc
+  const remExams = (s.exams || []).filter(e => !e.taken).map(e => ({ name: e.name, weight: e.weight, gf: e.weight / 100, id: e.id }));
   const takenExams = (s.exams || []).filter(e => e.taken).map(e => ({ name: e.name, weight: e.weight, score: e.score, id: e.id }));
 
   // For targets: project what final score would be
-  const earnedAbs = op * os + ep * totalTakenWeight * (takenExams.reduce((a,e)=> a + (e.score/100 * (e.weight/100)), 0) / Math.max(totalTakenWeight, 0.001) || 0);
-  const earnedRaw = op * os;
-  takenExams.forEach(e => { earnedRaw; });
   let e2 = op * os;
-  (s.exams||[]).forEach(e => { if(e.taken && e.score!==null) e2 += ep*(e.weight/100)*(e.score/100); });
+  (s.exams||[]).forEach(e => { if(e.taken && e.score!==null) e2 += (e.weight/100)*(e.score/100); });
   const curAbsolute = e2 * 100; // absolute score so far as fraction of 100%
 
   const targets = GPA.map(g => {
@@ -3550,7 +3548,7 @@ function openEditSubject(semId, subjectId) {
     </div>
     <div class="field-row">
       <div class="field"><label>Other Stuff %</label><input type="number" id="ed-op" value="${s.other_pct}" min="0" max="100" oninput="edUpdEP()"/></div>
-      <div class="field"><label>Exam % (auto)</label><input type="number" id="ed-ep" value="${s.exam_pct}" readonly style="opacity:.4;cursor:not-allowed"/></div>
+      <div class="field"><label>Exam % Total (live)</label><input type="number" id="ed-ep" value="${s.exam_pct}" readonly style="opacity:.4;cursor:not-allowed"/></div>
     </div>
     <div class="field"><label>Other Stuff Score (out of 100)</label><input type="number" id="ed-os" value="${s.other_score}" min="0" max="100"/></div>
     <div class="field"><label>Course Status</label>
@@ -3571,7 +3569,7 @@ function openEditSubject(semId, subjectId) {
           </div>
           <div class="field-row-3">
             <div class="field"><label>Name</label><input type="text" id="ed-en-${i}" value="${e.name}"/></div>
-            <div class="field"><label>Weight (% of exam)</label><input type="number" id="ed-ew-${i}" value="${e.weight.toFixed(1)}" min="0" max="100"/></div>
+            <div class="field"><label>Weight (% of total course)</label><input type="number" id="ed-ew-${i}" value="${e.weight.toFixed(1)}" min="0" max="100" oninput="edUpdEP()"/></div>
             <div class="field"><label>Taken?</label>
               <select id="ed-et-${i}" onchange="edTogSc(${i})">
                 <option value="no" ${!e.taken?'selected':''}>Not yet</option>
@@ -3589,7 +3587,14 @@ function openEditSubject(semId, subjectId) {
   `;
   document.getElementById('edit-modal').classList.add('show');
 }
-function edUpdEP() { const v=parseFloat(document.getElementById('ed-op').value)||0; document.getElementById('ed-ep').value=Math.max(0,100-v).toFixed(0); }
+function edUpdEP() {
+  let total = 0;
+  document.querySelectorAll('#ed-exams .exam-card').forEach((card, i) => {
+    total += parseFloat(document.getElementById(`ed-ew-${i}`)?.value) || 0;
+  });
+  const epEl = document.getElementById('ed-ep');
+  if (epEl) epEl.value = total.toFixed(1);
+}
 function edTogSc(i) { document.getElementById(`ed-esf-${i}`).style.display=document.getElementById(`ed-et-${i}`).value==='yes'?'block':'none'; }
 function removeEdExam(i) { document.getElementById(`ed-exam-${i}`)?.remove(); }
 function addEdExam() {
@@ -3601,7 +3606,7 @@ function addEdExam() {
     <button onclick="removeEdExam(${idx})" style="background:transparent;border:none;color:var(--red);cursor:pointer;font-size:13px">Remove</button></div>
     <div class="field-row-3">
       <div class="field"><label>Name</label><input type="text" id="ed-en-${idx}" placeholder="e.g. Final"/></div>
-      <div class="field"><label>Weight</label><input type="number" id="ed-ew-${idx}" placeholder="e.g. 50" min="0" max="100"/></div>
+      <div class="field"><label>Weight (% of total course)</label><input type="number" id="ed-ew-${idx}" placeholder="e.g. 20" min="0" max="100" oninput="edUpdEP()"/></div>
       <div class="field"><label>Taken?</label><select id="ed-et-${idx}" onchange="edTogSc(${idx})">
         <option value="no">Not yet</option><option value="yes">Yes</option></select></div>
     </div>
@@ -3615,7 +3620,6 @@ async function saveEditModal() {
   s.name = document.getElementById('ed-name').value.trim() || s.name;
   s.credits = parseFloat(document.getElementById('ed-cr').value) || s.credits;
   s.other_pct = parseFloat(document.getElementById('ed-op').value) || 0;
-  s.exam_pct = 100 - s.other_pct;
   s.other_score = parseFloat(document.getElementById('ed-os').value) || 0;
   s.status = document.getElementById('ed-status').value;
   const newExams = [];
@@ -3627,8 +3631,8 @@ async function saveEditModal() {
     const existingExam = s.exams?.[i];
     newExams.push({ id: existingExam?.id || uid(), name: nm, weight: wt, taken, score });
   });
-  const tw = newExams.reduce((a, e) => a + e.weight, 0);
-  if (tw > 0 && Math.abs(tw - 100) > 0.01) newExams.forEach(e => e.weight = e.weight / tw * 100);
+  // Do NOT normalize — weights are absolute percentages of total course grade
+  s.exam_pct = newExams.reduce((a, e) => a + e.weight, 0);
   s.exams = newExams;
   const btn = document.getElementById('edit-modal-save');
   btn.disabled = true; btn.textContent = 'Saving...';
@@ -3673,7 +3677,7 @@ function viewDetail(semId, subjectId) {
     ${(s.exams || []).map(e => `
       <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
         <div><div style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:13px">${e.name}</div>
-          <div style="font-size:11px;color:var(--muted)">${e.weight.toFixed(0)}% of exam marks</div></div>
+          <div style="font-size:11px;color:var(--muted)">${e.weight.toFixed(0)}% of course grade</div></div>
         ${e.taken
           ? `<div style="display:flex;align-items:center;gap:8px">
               <span style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:18px;color:${gCol(pctToG(e.score).l)}">${e.score}%</span>
@@ -3735,7 +3739,7 @@ function openAddScore(semId, subjectId) {
   document.getElementById('modal-body').innerHTML = `
     <div class="infobox">Select the exam and enter your score. Cloud sync is automatic.</div>
     <div class="field"><label>Exam</label>
-      <select id="modal-exam-sel">${rem.map(e => `<option value="${e.id}">${e.name} (${e.weight.toFixed(0)}% of exam marks)</option>`).join('')}</select>
+      <select id="modal-exam-sel">${rem.map(e => `<option value="${e.id}">${e.name} (${e.weight.toFixed(0)}% of course grade)</option>`).join('')}</select>
     </div>
     <div class="field"><label>Your Score (out of 100)</label>
       <input type="number" id="modal-score-inp" placeholder="e.g. 82" min="0" max="100"/>
@@ -3838,10 +3842,10 @@ function makeForm(idx, total) {
       <div class="field"><label>Credits</label><input type="number" id="s${idx}_cr" placeholder="e.g. 3" min=".5" max="12" step=".5"/></div>
     </div>
     <div class="divider"></div>
-    <div class="infobox">Split grade into <strong>Exams</strong> and <strong>Other stuff</strong> (assignments, attendance, quizzes).<br/>GPA is calculated on <strong>taken exams only</strong> — untaken exams won't drag your score down.</div>
+    <div class="infobox">Enter <strong>Other Stuff %</strong> (assignments, attendance, quizzes). Then enter each exam's <strong>direct % of total course grade</strong> — e.g. if exams = 80% total and you have 4 exams, enter 16, 16, 16, 32. They should together equal the exam portion.<br/>GPA is calculated on <strong>taken exams only</strong> — untaken exams won't drag your score down.</div>
     <div class="field-row">
       <div class="field"><label>Other Stuff %</label><input type="number" id="s${idx}_op" value="40" min="0" max="100" oninput="updEP(${idx})"/></div>
-      <div class="field"><label>Exam % (auto)</label><input type="number" id="s${idx}_ep" value="60" readonly style="opacity:.4;cursor:not-allowed"/></div>
+      <div class="field"><label>Exam % Total (live)</label><input type="number" id="s${idx}_ep" value="60" readonly style="opacity:.4;cursor:not-allowed"/></div>
     </div>
     <div class="field"><label>Other Stuff Score (out of 100 · blank = assume 88)</label><input type="number" id="s${idx}_os" placeholder="e.g. 88" min="0" max="100"/></div>
     <div class="divider"></div>
@@ -3850,7 +3854,18 @@ function makeForm(idx, total) {
   setTimeout(() => rebuildEx(idx), 40);
   return d;
 }
-function updEP(i) { const v = parseFloat(document.getElementById(`s${i}_op`).value) || 0; document.getElementById(`s${i}_ep`).value = Math.max(0, 100 - v).toFixed(0); }
+function updEP(i) {
+  // Exam % = sum of all exam weight inputs
+  let total = 0;
+  const c = document.getElementById(`s${i}_ex`);
+  if (c) {
+    c.querySelectorAll('[data-f="wt"]').forEach(inp => {
+      total += parseFloat(inp.value) || 0;
+    });
+  }
+  const epEl = document.getElementById(`s${i}_ep`);
+  if (epEl) epEl.value = total.toFixed(1);
+}
 function rebuildEx(idx) {
   const n = parseInt(document.getElementById(`s${idx}_ne`).value) || 1;
   const c = document.getElementById(`s${idx}_ex`);
@@ -3866,7 +3881,7 @@ function rebuildEx(idx) {
     card.innerHTML = `<div class="exam-card-hdr"><div class="exam-badge">${icos[i % icos.length]} Exam ${i + 1}</div></div>
       <div class="field-row-3">
         <div class="field"><label>Name</label><input data-f="nm" type="text" value="${e.nm || ''}" placeholder="e.g. Midterm"/></div>
-        <div class="field"><label>Weight (% of exam marks)</label><input data-f="wt" type="number" value="${e.wt || ''}" placeholder="e.g. 40" min="0" max="100"/></div>
+        <div class="field"><label>Weight (% of total course)</label><input data-f="wt" type="number" value="${e.wt || ''}" placeholder="e.g. 20" min="0" max="100" oninput="updEP(${idx})"/></div>
         <div class="field"><label>Taken?</label><select data-f="tk" onchange="togSc(this,${idx},${i})">
           <option value="no" ${e.tk !== 'yes' ? 'selected' : ''}>Not yet</option>
           <option value="yes" ${e.tk === 'yes' ? 'selected' : ''}>Yes</option>
@@ -3878,6 +3893,8 @@ function rebuildEx(idx) {
       </div>`;
     c.appendChild(card);
   }
+  // Update the live exam % total after rebuilding cards
+  updEP(idx);
 }
 function togSc(sel, si, ei) { document.getElementById(`s${si}_e${ei}_sf`).style.display = sel.value === 'yes' ? 'block' : 'none'; }
 function readSubjFromForm(idx) {
@@ -3897,8 +3914,9 @@ function readSubjFromForm(idx) {
     exams.push({ id: uid(), name: ename, weight: wt, taken, score });
   });
   const tw = exams.reduce((a, e) => a + e.weight, 0);
-  if (tw > 0 && Math.abs(tw - 100) > .01) exams.forEach(e => e.weight = e.weight / tw * 100);
-  return { id: uid(), name: nm, credits: cr, other_pct: op, other_score: os, exam_pct: ep, exams, status: 'normal' };
+  // Do NOT normalize — weights are absolute percentages of the total course grade
+  const computedExamPct = tw; // exam_pct = sum of all exam weights
+  return { id: uid(), name: nm, credits: cr, other_pct: op, other_score: os, exam_pct: computedExamPct, exams, status: 'normal' };
 }
 async function calcAndSave() {
   const btn = document.getElementById('calc-save-btn');
@@ -4230,7 +4248,7 @@ function renderCalendar() {
         <div class="cal-date"><input type="date" value="${examDates[key]||''}" onchange="setExamDate('${key}',this.value)" style="padding:6px;font-size:11px;width:100%"/></div>
         <div style="flex:1">
           <div class="cal-name">${e.name}</div>
-          <div class="cal-sub">${s.name} · ${e.weight.toFixed(0)}% of exam marks</div>
+          <div class="cal-sub">${s.name} · ${e.weight.toFixed(0)}% of course grade</div>
           ${hasDate ? `<div class="cal-countdown" id="cd-${key}" data-date="${examDates[key]}">Loading…</div>` : ''}
         </div>
       </div>`;
@@ -4339,7 +4357,7 @@ function exportICS() {
       const d = examDates[e.id].replace(/-/g, '');
       ics += `BEGIN:VEVENT\r\nDTSTART;VALUE=DATE:${d}\r\nDTEND;VALUE=DATE:${d}\r\n`;
       ics += `SUMMARY:${e.name} — ${s.name}\r\n`;
-      ics += `DESCRIPTION:Weight: ${e.weight.toFixed(0)}% of exam marks\r\n`;
+      ics += `DESCRIPTION:Weight: ${e.weight.toFixed(0)}% of course grade\r\n`;
       ics += `UID:${e.id}@gradintel\r\nEND:VEVENT\r\n`;
       count++;
     });
@@ -5296,10 +5314,8 @@ function initAnimations() {
   const cur = document.getElementById('cur'); const ring = document.getElementById('cur-ring');
   if (!cur || !ring) return;
   let mx = 0, my = 0, rx = 0, ry = 0;
-  // Smooth cursor — uses RAF + will-change for zero lag
   document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; }, { passive: true });
 
-  // Use event delegation on document so dynamic elements (modals, toasts, etc.) all work
   const interactiveSelector = 'button,a,input,select,textarea,.tgl-btn,.course-item,.card,.mode-card,.auth-btn,.ci-match-opt,.icon-btn,.nav-tab,.chip,.modal-close,.btn';
   document.addEventListener('mouseover', e => {
     if (e.target.closest(interactiveSelector)) {
@@ -5318,30 +5334,47 @@ function initAnimations() {
     }
   }, { passive: true });
 
+  // Cursor dot: instant. Ring: faster lerp (0.22 instead of 0.12) for less lag feeling
   (function animCursor() {
     cur.style.transform = 'translate(' + (mx - 4) + 'px,' + (my - 4) + 'px)';
-    rx += (mx - rx) * .12; ry += (my - ry) * .12;
+    rx += (mx - rx) * .22; ry += (my - ry) * .22;
     ring.style.transform = 'translate(' + (rx - 16) + 'px,' + (ry - 16) + 'px)';
     requestAnimationFrame(animCursor);
   })();
+
+  // Particle canvas — throttled to 30fps to save main thread
   const canvas = document.getElementById('bgCanvas'); if (!canvas) return;
   const ctx = canvas.getContext('2d'); let W, H, particles = [];
   function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
-  resize(); window.addEventListener('resize', resize);
+  resize(); window.addEventListener('resize', resize, { passive: true });
   class P { constructor() { this.reset(true); } reset(init) { this.x = Math.random() * W; this.y = init ? Math.random() * H : Math.random() * H; this.vx = (Math.random() - .5) * .25; this.vy = (Math.random() - .5) * .25; this.life = Math.random(); this.maxLife = .6 + Math.random() * .4; this.size = Math.random() * 1.2 + .3; this.color = Math.random() < .5 ? '129,140,248' : '244,114,182'; } update() { this.x += this.vx; this.y += this.vy; this.life += .002; if (this.life > this.maxLife || this.x < 0 || this.x > W || this.y < 0 || this.y > H) this.reset(false); } draw() { const a = Math.sin((this.life / this.maxLife) * Math.PI) * .45; ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fillStyle = `rgba(${this.color},${a})`; ctx.fill(); } }
-  for (let i = 0; i < 50; i++) particles.push(new P());
-  (function loop() {
-    ctx.clearRect(0, 0, W, H);
-    // Simple: just draw particles, NO O(n²) connection lines
-    particles.forEach(p => { p.update(); p.draw(); });
+  for (let i = 0; i < 40; i++) particles.push(new P());
+  let lastFrame = 0;
+  (function loop(ts) {
     requestAnimationFrame(loop);
+    if (ts - lastFrame < 33) return; // cap at ~30fps
+    lastFrame = ts;
+    ctx.clearRect(0, 0, W, H);
+    particles.forEach(p => { p.update(); p.draw(); });
   })();
-  document.querySelectorAll('.card,.stat-card').forEach(card => {
-    card.addEventListener('mousemove', e => { const r = card.getBoundingClientRect(); const x = (e.clientX - r.left) / r.width - .5; const y = (e.clientY - r.top) / r.height - .5; card.style.transform = `perspective(800px) rotateY(${x * 5}deg) rotateX(${-y * 5}deg) translateZ(4px)`; });
-    card.addEventListener('mouseleave', () => { card.style.transform = ''; });
-  });
-  const obs = new MutationObserver(syncDataVal);
-  obs.observe(document.body, { childList: true, subtree: true, characterData: true });
+
+  // Card tilt — only on hover, no MutationObserver
+  function bindCardTilt() {
+    document.querySelectorAll('.card,.stat-card').forEach(card => {
+      if (card._tiltBound) return;
+      card._tiltBound = true;
+      card.addEventListener('mousemove', e => { const r = card.getBoundingClientRect(); const x = (e.clientX - r.left) / r.width - .5; const y = (e.clientY - r.top) / r.height - .5; card.style.transform = `perspective(800px) rotateY(${x * 5}deg) rotateX(${-y * 5}deg) translateZ(4px)`; }, { passive: true });
+      card.addEventListener('mouseleave', () => { card.style.transform = ''; });
+    });
+  }
+  bindCardTilt();
+  // Re-bind only when new cards are added, debounced
+  let tiltTimer;
+  const obs = new MutationObserver(() => { clearTimeout(tiltTimer); tiltTimer = setTimeout(bindCardTilt, 300); });
+  obs.observe(document.body, { childList: true, subtree: true });
+  // syncDataVal separately if needed
+  const obs2 = new MutationObserver(syncDataVal);
+  obs2.observe(document.body, { childList: true, subtree: true, characterData: true });
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -6670,23 +6703,26 @@ function ciGetBookmarkletCode() {
         var rows = [];
         groups.forEach(function(g){
           var gw = g.group_weight||0;
+          var scored=0,possible=0,hasScore=false;
           (g.assignments||[]).forEach(function(a){
-            var sub = a.submission||{};
-            var pct = null;
-            if (sub.score!=null && a.points_possible>0) pct = (sub.score/a.points_possible*100).toFixed(1);
-            rows.push({
-              name: a.name,
-              group: g.name,
-              weight: gw,
-              score: sub.score!=null ? sub.score.toString() : null,
-              possible: a.points_possible ? a.points_possible.toString() : null,
-              pct: pct,
-              due: a.due_at ? a.due_at.split('T')[0] : null
-            });
+            var sub=a.submission||{};
+            if(sub.score!=null&&a.points_possible>0){
+              scored+=sub.score; possible+=a.points_possible; hasScore=true;
+            }
+          });
+          var pct=hasScore&&possible>0?(scored/possible*100):null;
+          rows.push({
+            name: g.name,
+            group: g.name,
+            weight: gw,
+            score: hasScore?scored:null,
+            possible: hasScore?possible:null,
+            pct: pct!=null?parseFloat(pct.toFixed(2)):null,
+            isGroupSummary: true
           });
         });
         send({source:'api', courseName:courseName, courseId:courseId, rows:rows});
-        toast('✅ Gradintel: '+rows.length+' assignments found! Switch back to Gradintel.');
+        toast('✅ Gradintel: '+rows.length+' groups found! Switch back to Gradintel.');
       }).catch(function(){
         var domRows = extractFromDOM();
         if (domRows.length) { send({source:'dom', courseName:courseName, courseId:courseId, rows:domRows}); toast('✅ Gradintel: '+domRows.length+' grades found!'); }
@@ -6731,10 +6767,28 @@ function ciGetAllCoursesBookmarkletCode() {
         if(!Array.isArray(groups))return;
         groups.forEach(function(g){
           var gw=g.group_weight||0;
+          // Send one summary row per group (not per assignment)
+          // scored/possible = sum across all graded assignments in group
+          var scored=0,possible=0,hasScore=false;
           (g.assignments||[]).forEach(function(a){
-            var sub=a.submission||{},pct=null;
-            if(sub.score!=null&&a.points_possible>0)pct=(sub.score/a.points_possible*100).toFixed(1);
-            allRows.push({courseName:course.name,courseId:course.id,name:a.name,group:g.name,weight:gw,score:sub.score!=null?sub.score.toString():null,possible:a.points_possible?a.points_possible.toString():null,pct:pct,due:a.due_at?a.due_at.split('T')[0]:null});
+            var sub=a.submission||{};
+            if(sub.score!=null&&a.points_possible>0){
+              scored+=sub.score;
+              possible+=a.points_possible;
+              hasScore=true;
+            }
+          });
+          var pct=hasScore&&possible>0?(scored/possible*100):null;
+          allRows.push({
+            courseName:course.name,
+            courseId:course.id,
+            name:g.name,           // group name, not assignment name
+            group:g.name,
+            weight:gw,
+            score:hasScore?scored:null,
+            possible:hasScore?possible:null,
+            pct:pct!=null?parseFloat(pct.toFixed(2)):null,
+            isGroupSummary:true
           });
         });
       })
@@ -7132,10 +7186,12 @@ async function ciReceiveBmData(data) {
 function ciIsExamGroup(groupName) {
   if (!groupName) return false;
   const g = groupName.toLowerCase().trim();
-  return /\bexam\b|\bmidterm\b|\bfinal\b|\btest\b|\bquiz\b/.test(g)
-    // but NOT "hw quizzes" or "quiz practice" — those are regular work
-    ? !/\bhw\b|\bhomework\b|\bpractice\b|\bworksheet\b/.test(g)
-    : false;
+  // Match exam/exams, test/tests, quiz/quizzes, final/finals, midterm/midterms
+  const isExamLike = /\bexams?\b|\bmidterms?\b|\bfinals?\b|\btests?\b|\bquizzes\b|\bquiz\b/.test(g);
+  if (!isExamLike) return false;
+  // Exception: "hw quizzes", "homework quiz", "practice quiz", "worksheet" — those are regular work
+  const isRegularWork = /\bhw\b|\bhomework\b|\bpractice\b|\bworksheet\b/.test(g);
+  return !isRegularWork;
 }
 
 // ── COURSE-MATCH PICKER ───────────────────────────────────────
@@ -7449,167 +7505,195 @@ function ciBulkMapCourses(unmatchedNames) {
 // - Updates other_score on the existing subject — never touches exams[]
 // - Keeps the user's existing credits, never overwrites them
 async function ciAutoImport(rows, courseNameHint) {
-  // Only keep rows that have a score AND are not exam groups
-  const nonExamRows = rows.filter(function(r) {
-    return r.pct !== null && r.pct !== undefined && !ciIsExamGroup(r.group);
-  });
+  // We work with ALL rows — filtering happens per-group inside the loop.
+  const allValidRows = rows.filter(function(r) { return r.courseName; });
+  if (!allValidRows.length) { showToast('⚠️ No grade rows received from Canvas.'); return; }
 
-  if (!nonExamRows.length) {
-    showToast('⚠️ No non-exam scored assignments to sync. Exam grades are left for manual entry.');
-    return;
-  }
-
-  // Group by course name
+  // Group rows by Canvas course name
   const byCourse = {};
-  nonExamRows.forEach(function(r) {
+  allValidRows.forEach(function(r) {
     if (!byCourse[r.courseName]) byCourse[r.courseName] = [];
     byCourse[r.courseName].push(r);
   });
 
-  const skippedExamCount = rows.filter(r => r.pct !== null && ciIsExamGroup(r.group)).length;
+  // Build flat list of all subjects for the picker
+  const allSubjects = [];
+  semesters.forEach(function(sem) {
+    (sem.subjects || []).forEach(function(s) {
+      allSubjects.push({ sem, subject: s });
+    });
+  });
+
   let updatedCourses = 0;
 
-  // ── Pre-resolve ALL course matches upfront ──────────────────
-  // Exact matches resolve automatically; unmatched ones go to bulk modal once.
-  const courseMap = new Map(); // courseName → { sem, subject } or null
-  const unmatched = [];
+  for (const [canvasCourseName, courseRows] of Object.entries(byCourse)) {
 
-  // Load saved canvas→subject mappings from previous syncs
-  let savedMap = {};
-  try {
-    const memKey = 'gradintel_canvas_map_' + (currentUser?.id || '');
-    savedMap = JSON.parse(localStorage.getItem(memKey) || '{}');
-  } catch(e) {}
-
-  for (const courseName of Object.keys(byCourse)) {
-    let targetSem = null, subject = null;
-    // 1) Exact name match
-    for (const sem of semesters) {
-      const found = sem.subjects.find(function(s) {
-        return s.name.trim().toLowerCase() === courseName.trim().toLowerCase();
-      });
-      if (found) { targetSem = sem; subject = found; break; }
-    }
-    // 2) Saved memory match (from previous sync)
-    if (!subject) {
-      const savedSubjId = savedMap[courseName.trim().toLowerCase()];
-      if (savedSubjId) {
-        for (const sem of semesters) {
-          const found = sem.subjects.find(function(s) { return s.id === savedSubjId; });
-          if (found) { targetSem = sem; subject = found; break; }
-        }
+    // ── Step 1: Aggregate all rows into ONE entry per group ──────
+    // Rows may be individual assignments (old bookmarklet) or group summaries (new).
+    // Either way: sum scored/possible per group, use the group's weight (same for all rows in group).
+    const groupMap = {};
+    courseRows.forEach(function(r) {
+      const gName = r.group || r.name || '?';
+      if (!groupMap[gName]) {
+        groupMap[gName] = { name: gName, weight: null, scored: 0, possible: 0, hasScore: false };
       }
-    }
-    if (subject) {
-      courseMap.set(courseName, { sem: targetSem, subject });
-    } else {
-      unmatched.push(courseName);
-    }
-  }
-
-  // Show bulk mapping modal for all unmatched at once (if any)
-  if (unmatched.length > 0) {
-    const bulkResult = await ciBulkMapCourses(unmatched);
-    if (!bulkResult) {
-      showToast('⚠️ Sync cancelled.');
-      return;
-    }
-    bulkResult.forEach(function(val, key) {
-      courseMap.set(key, val);
+      const g = groupMap[gName];
+      // Take weight from any row that has it
+      if (r.weight !== null && r.weight !== undefined && parseFloat(r.weight) > 0) {
+        g.weight = parseFloat(r.weight);
+      }
+      // Accumulate raw points
+      if (r.score !== null && r.score !== undefined && r.possible !== null && r.possible !== undefined && parseFloat(r.possible) > 0) {
+        g.scored   += parseFloat(r.score);
+        g.possible += parseFloat(r.possible);
+        g.hasScore  = true;
+      } else if (r.pct !== null && r.pct !== undefined && !r.isGroupSummary) {
+        // individual assignment with only pct — treat as 1 point each
+        g.scored   += parseFloat(r.pct) / 100;
+        g.possible += 1;
+        g.hasScore  = true;
+      }
     });
-  }
 
-  try {
-    for (const [courseName, courseRows] of Object.entries(byCourse)) {
-      const match = courseMap.get(courseName);
-      if (!match) continue; // skipped
+    // Compute groupPct for each group
+    const allGroups = Object.values(groupMap).map(function(g) {
+      const groupPct = g.possible > 0 ? (g.scored / g.possible * 100) : null;
+      return { name: g.name, groupPct, weight: g.weight, isExam: ciIsExamGroup(g.name) };
+    });
 
-      // ── Compute other_score respecting Canvas group weights ──────────────
-      const groupBuckets = {};
-      courseRows.forEach(function(r) {
-        const gName  = r.group   || '__ungrouped__';
-        const gWeight = (r.weight !== null && r.weight !== undefined) ? parseFloat(r.weight) : null;
-        if (!groupBuckets[gName]) {
-          groupBuckets[gName] = { weight: gWeight, scored: 0, possible: 0, fallbackPct: 0, fallbackCount: 0 };
-        }
-        const b = groupBuckets[gName];
-        if (gWeight !== null && (b.weight === null || gWeight > b.weight)) b.weight = gWeight;
-        if (r.score !== null && r.possible !== null && r.possible > 0) {
-          b.scored   += r.score;
-          b.possible += r.possible;
-        } else if (r.pct !== null) {
-          b.fallbackPct   += r.pct;
-          b.fallbackCount += 1;
-        }
-      });
+    const eligibleGroups = allGroups.filter(function(g) {
+      return !g.isExam && g.groupPct !== null;
+    });
 
-      const groups = Object.values(groupBuckets);
-      groups.forEach(function(b) {
-        if (b.possible > 0) b.groupPct = b.scored / b.possible * 100;
-        else if (b.fallbackCount > 0) b.groupPct = b.fallbackPct / b.fallbackCount;
-        else b.groupPct = null;
-      });
-      const scoredGroups = groups.filter(function(b) { return b.groupPct !== null; });
+    // ── DEBUG popup removed ──
 
-      let computedOtherScore = null;
-      const totalGroupWeight = scoredGroups.reduce(function(a, b) { return a + (b.weight || 0); }, 0);
-      if (totalGroupWeight > 0) {
-        let weightedSum = 0;
-        scoredGroups.forEach(function(b) { weightedSum += (b.groupPct / 100) * (b.weight / totalGroupWeight); });
-        computedOtherScore = parseFloat((weightedSum * 100).toFixed(2));
-      } else {
-        let totalScored = 0, totalPossible = 0;
-        courseRows.forEach(function(r) {
-          if (r.score !== null && r.possible !== null && r.possible > 0) {
-            totalScored   += r.score;
-            totalPossible += r.possible;
-          } else if (r.pct !== null) {
-            totalScored   += r.pct / 100;
-            totalPossible += 1;
-          }
-        });
-        computedOtherScore = totalPossible > 0 ? parseFloat((totalScored / totalPossible * 100).toFixed(2)) : null;
+    if (eligibleGroups.length === 0) {
+      showToast('⚠️ ' + canvasCourseName + ': no scored non-exam groups — skipping.');
+      continue;
+    }
+
+    // Weighted average: sum(groupPct × weight) / sum(weights)
+    let computedOtherScore;
+    const totalWeight = eligibleGroups.reduce(function(a, g) { return a + (g.weight || 0); }, 0);
+    if (totalWeight > 0) {
+      const weightedSum = eligibleGroups.reduce(function(a, g) { return a + g.groupPct * g.weight; }, 0);
+      computedOtherScore = parseFloat((weightedSum / totalWeight).toFixed(2));
+    } else {
+      const sum = eligibleGroups.reduce(function(a, g) { return a + g.groupPct; }, 0);
+      computedOtherScore = parseFloat((sum / eligibleGroups.length).toFixed(2));
+    }
+
+    // ── Step 2: Show subject picker — auto-preselect best name match ────────
+    // Find best match by name similarity
+    const normalize = s => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const cn = normalize(canvasCourseName);
+    let bestIdx = -1, bestScore = 0;
+    allSubjects.forEach(function(item, idx) {
+      const sn = normalize(item.subject.name);
+      // Score: exact contains > word overlap
+      let sc = 0;
+      if (cn.includes(sn) || sn.includes(cn)) sc = 2;
+      else {
+        const cnWords = cn.split('');
+        let common = 0;
+        sn.split('').forEach(c => { if (cn.includes(c)) common++; });
+        sc = common / Math.max(cn.length, sn.length);
+      }
+      if (sc > bestScore) { bestScore = sc; bestIdx = idx; }
+    });
+
+    const groupSummary = eligibleGroups.map(function(g) {
+      return '<span style="display:inline-block;background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.25);border-radius:6px;padding:2px 8px;margin:2px;font-size:11px">' + g.name + ': ' + g.groupPct.toFixed(1) + '%</span>';
+    }).join('');
+
+    const chosen = await new Promise(function(resolve) {
+      let selectedIdx = bestIdx;
+
+      function buildModal() {
+        const existing = document.getElementById('_ci_sync_modal');
+        if (existing) existing.remove();
+
+        const optionsHtml = allSubjects.map(function(item, idx) {
+          const isSel = idx === selectedIdx;
+          return '<button id="_ciopt_' + idx + '" onclick="window._ciPick(' + idx + ')" style="width:100%;text-align:left;padding:10px 14px;margin-bottom:5px;background:' + (isSel ? 'rgba(129,140,248,.15)' : 'var(--surface2)') + ';border:' + (isSel ? '1.5px solid var(--accent)' : '1px solid var(--border2)') + ';border-radius:9px;cursor:pointer;font-family:\'Cabinet Grotesk\',sans-serif;font-size:13px;color:var(--text);display:flex;align-items:center;gap:8px;transition:border .15s,background .15s">' +
+            (isSel ? '<span style="color:var(--accent);font-size:16px">●</span>' : '<span style="color:var(--muted);font-size:16px">○</span>') +
+            '<span><strong>' + item.subject.name + '</strong> <span style="font-size:11px;color:var(--muted)">(' + (item.sem.name || 'Semester') + ')</span></span>' +
+            (isSel ? '<span style="margin-left:auto;font-size:10px;color:var(--accent);font-weight:700">AUTO-MATCHED</span>' : '') +
+            '</button>';
+        }).join('');
+
+        const modal = document.createElement('div');
+        modal.id = '_ci_sync_modal';
+        modal.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.75);display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(8px)';
+        // Stop clicks inside modal from falling through
+        modal.addEventListener('mousedown', e => e.stopPropagation());
+        modal.innerHTML =
+          '<div style="background:var(--surface);border:1px solid var(--border2);border-radius:20px;padding:28px;width:100%;max-width:480px;max-height:88vh;overflow-y:auto;box-shadow:0 32px 80px rgba(0,0,0,.7);position:relative">' +
+            '<div style="font-family:\'Clash Display\',sans-serif;font-weight:700;font-size:19px;margin-bottom:4px">📡 Canvas Sync</div>' +
+            '<div style="font-size:12px;color:var(--muted2);margin-bottom:10px">From Canvas: <strong style="color:var(--text)">' + canvasCourseName + '</strong></div>' +
+            '<div style="margin-bottom:12px">' + groupSummary + '</div>' +
+            '<div style="background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.3);border-radius:10px;padding:12px 16px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between">' +
+              '<span style="font-size:13px;color:var(--muted2)">Calculated Other Stuff Score</span>' +
+              '<strong style="font-family:\'Clash Display\',sans-serif;font-size:20px;color:var(--green)">' + computedOtherScore + '%</strong>' +
+            '</div>' +
+            '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:10px">Update which subject?</div>' +
+            '<div id="_ci_opts">' + optionsHtml + '</div>' +
+            '<button onclick="window._ciPick(\'new\')" style="width:100%;padding:11px;margin-top:4px;background:transparent;border:1.5px dashed var(--accent);border-radius:9px;color:var(--accent);cursor:pointer;font-family:\'Cabinet Grotesk\',sans-serif;font-size:13px;font-weight:600;transition:background .15s" onmouseover="this.style.background=\'rgba(129,140,248,.08)\'" onmouseout="this.style.background=\'transparent\'">+ Create new subject from this data</button>' +
+            '<button onclick="window._ciPick(null)" style="width:100%;padding:9px;margin-top:6px;background:transparent;border:1px solid var(--border2);border-radius:9px;color:var(--muted);cursor:pointer;font-family:\'Cabinet Grotesk\',sans-serif;font-size:12px;transition:border .15s" onmouseover="this.style.borderColor=\'var(--muted)\'" onmouseout="this.style.borderColor=\'var(--border2)\'">Skip this course</button>' +
+          '</div>';
+        document.body.appendChild(modal);
       }
 
-      if (computedOtherScore === null) continue;
+      buildModal();
 
-      const { sem: targetSem, subject } = match;
+      window._ciPick = function(idx) {
+        const modal = document.getElementById('_ci_sync_modal');
+        if (modal) modal.remove();
+        delete window._ciPick;
+        resolve(idx);
+      };
+    });
+
+    if (chosen === null) continue; // skipped
+
+    // ── Step 3: Apply or create ──────────────────────────────────
+    if (chosen === 'new') {
+      // Create a new subject in the most recent semester
+      const targetSem = semesters[semesters.length - 1];
+      if (!targetSem) { showToast('⚠️ No semester found — add a semester first.'); continue; }
+      const newSubject = {
+        id: uid(), name: canvasCourseName, credits: 3, status: 'normal',
+        other_pct: 100, exam_pct: 0, other_score: computedOtherScore, exams: []
+      };
+      targetSem.subjects.push(newSubject);
+      await saveSemesterToDB(targetSem);
+      updatedCourses++;
+      showToast('✅ Created "' + canvasCourseName + '" with score ' + computedOtherScore + '%');
+    } else {
+      const { sem: targetSem, subject } = allSubjects[chosen];
       subject.other_score = computedOtherScore;
-      if (subject.other_pct === undefined || subject.other_pct === null) {
-        subject.other_pct = 100 - (subject.exam_pct || 0);
-      }
-
       const cp = targetSem.subjects.reduce(function(a, s) { return a + s.credits * computeSubject(s).curG.p; }, 0);
       const cr = targetSem.subjects.reduce(function(a, s) { return a + s.credits; }, 0);
       targetSem._gpa = cr ? cp / cr : 0;
       await saveSemesterToDB(targetSem);
       updatedCourses++;
-
-      // Remember this mapping for future syncs (canvas name → subject id)
+      // Remember mapping
       try {
         const memKey = 'gradintel_canvas_map_' + (currentUser?.id || '');
         const mem = JSON.parse(localStorage.getItem(memKey) || '{}');
-        mem[courseName.trim().toLowerCase()] = match.subject.id;
+        mem[canvasCourseName.trim().toLowerCase()] = subject.id;
         localStorage.setItem(memKey, JSON.stringify(mem));
       } catch(e) {}
     }
-
-    updateStats(); renderDashboard(); renderCourses(); renderHistory(); renderWIFull();
-
-    let msg = '✅ Canvas synced! Updated other score for ' + updatedCourses + ' course' + (updatedCourses !== 1 ? 's' : '') + '.';
-    if (skippedExamCount > 0) msg += ' (' + skippedExamCount + ' exam grade' + (skippedExamCount !== 1 ? 's' : '') + ' skipped — enter those manually)';
-    showToast(msg);
-    if (updatedCourses > 0) fireConfetti();
-
-    const syncMsg = document.getElementById('ci-bm-sync-msg');
-    if (syncMsg) syncMsg.textContent = msg.replace('✅ ', '');
-
-    ciShowPreview(ciBmRows, 'bm');
-
-  } catch(e) {
-    showToast('❌ Sync failed: ' + e.message);
-    console.error(e);
   }
+
+  updateStats(); renderDashboard(); renderCourses(); renderHistory(); renderWIFull();
+  const msg = '✅ Canvas synced! Updated other score for ' + updatedCourses + ' course' + (updatedCourses !== 1 ? 's' : '') + '.';
+  showToast(msg);
+  if (updatedCourses > 0) fireConfetti();
+  const syncMsg = document.getElementById('ci-bm-sync-msg');
+  if (syncMsg) syncMsg.textContent = msg.replace('✅ ', '');
+  ciShowPreview(ciBmRows, 'bm');
 }
 
 // ciDoImport: used by CSV manual import button
@@ -8760,9 +8844,8 @@ function cvCourseToSubject(course) {
     otherPct = 100;
   }
 
-  // Normalise exam weights to sum to 100
-  var totalW = exams.reduce(function(s, e) { return s + e.weight; }, 0);
-  if (totalW > 0) exams.forEach(function(e) { e.weight = parseFloat((e.weight / totalW * 100).toFixed(2)); });
+  // Keep exam weights as absolute percentages of total course grade — do NOT normalize to 100
+  // examTotalPct already holds the correct sum
 
   return {
     id:          uid(),
