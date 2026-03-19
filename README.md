@@ -98,4 +98,6 @@ Found a bug or have a feature idea? Use the  Feedback  tab inside the app, or re
 
 ---
 
-© 2025 Anshul Raman. All rights reserved. This project is not open source — please do not redistribute, clone, or self-host.
+📜 License
+© 2026 Anshul Raman. All rights reserved.
+This project is licensed under CC BY-NC-ND 4.0 — you may not use, reproduce, or distribute this work commercially or in modified form without explicit written permission from the author.
